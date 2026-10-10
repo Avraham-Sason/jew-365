@@ -32,6 +32,19 @@ function isSundayTishaBav(day: DateTime): boolean {
   return hd.getMonth() === months.AV && (hd.getDate() === 9 || hd.getDate() === 10) && hd.getDay() === SUNDAY;
 }
 
+// The last day of a Shabbat / Yom Tov block: holy itself, and the next day is not.
+function closesHolyBlock(day: DateTime, location: Location): boolean {
+  return (
+    HebcalService.isHolyDay(day.toJSDate(), location) &&
+    !HebcalService.isHolyDay(day.plus({ days: 1 }).toJSDate(), location)
+  );
+}
+
+// When the night opens: tzeit, or the block's exit on the day that closes one (`HebcalService`).
+function nightfall(zmanim: Zmanim, location: Location): Date {
+  return HebcalService.nightfall(zmanim, location);
+}
+
 export { candleLightingMinutes, isJerusalem };
 
 // The Omer is counted at nightfall, and that night belongs to the NEXT Hebrew day. So the count
@@ -181,7 +194,7 @@ export const MITZVOT: Mitzvah[] = [
       },
       { anchor: 'start', offsetMin: 120, label: 'תזכורת — ערבית', skipIfDone: true },
     ],
-    computeWindow: ({ zmanim }) => win(zmanim.tzeitHakochavim, zmanim.chatzotLayla),
+    computeWindow: ({ zmanim, location }) => win(nightfall(zmanim, location), zmanim.chatzotLayla),
   },
   {
     id: 'birchot_hashachar',
@@ -241,14 +254,11 @@ export const MITZVOT: Mitzvah[] = [
       // Havdalah closes a Shabbat / Yom Tov block, so it is due only on the block's last day:
       // Shabbat that flows into Yom Tov is separated in kiddush instead, and a Yom Tov that ends on
       // a weekday still needs it. When the Tisha B'Av fast falls on Sunday, motzaei Shabbat has only
-      // the flame and the cup waits for the end of the fast on Sunday night.
+      // the flame and the cup waits for the end of the fast on Sunday night, at tzeit itself.
       const day = dayOf(zmanim, location);
-      const closesBlock =
-        HebcalService.isHolyDay(day.toJSDate(), location) &&
-        !HebcalService.isHolyDay(day.plus({ days: 1 }).toJSDate(), location);
-      if (!closesBlock && !isSundayTishaBav(day)) return null;
-      const end = new Date(zmanim.tzeitHakochavim.getTime() + 90 * 60_000);
-      return win(zmanim.tzeitHakochavim, end);
+      if (!closesHolyBlock(day, location) && !isSundayTishaBav(day)) return null;
+      const start = nightfall(zmanim, location);
+      return win(start, new Date(start.getTime() + 90 * 60_000));
     },
   },
   {
@@ -277,7 +287,7 @@ export const MITZVOT: Mitzvah[] = [
     ],
     computeWindow: (ctx) => {
       if (omerDayFor(ctx.zmanim.chatzot, ctx.location.tz) === null) return null;
-      return win(ctx.zmanim.tzeitHakochavim, endOfOmerNight(ctx));
+      return win(nightfall(ctx.zmanim, ctx.location), endOfOmerNight(ctx));
     },
   },
 ];

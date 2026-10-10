@@ -23,8 +23,24 @@ import { HebcalService } from '@/services/HebcalService';
 import { SIDDUR_ASSETS } from '../siddurAssets.generated';
 import { findMitzvah } from '../mitzvot';
 import { Mitzvah, Nusach } from '@/types/mitzvah';
-import { DayFeatures, DayFlag, MitzvahTextId, Run, SiddurText, SiddurTextId, StandaloneTextId } from '@/types/siddur';
-import { dayFeatures, liturgicalDay, matchesCondition, resolveSiddurText, segmentBlocks } from '@/utils/siddur';
+import {
+  DayFeatures,
+  DayFlag,
+  MitzvahTextId,
+  Run,
+  SiddurSection,
+  SiddurText,
+  SiddurTextId,
+  StandaloneTextId,
+} from '@/types/siddur';
+import {
+  dayFeatures,
+  liturgicalDay,
+  matchesCondition,
+  pickerEntries,
+  resolveSiddurText,
+  segmentBlocks,
+} from '@/utils/siddur';
 import { keepsCholHamoed } from '@/utils/skipRules';
 
 const NUSCHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
@@ -3365,6 +3381,139 @@ describe('chanukah_candles', () => {
     ).toBe(true);
     for (const title of ['הנרות הללו', 'מעוז צור']) {
       expect(sectionNamed('sefard', plainNight, title).segments.every((segment) => !segment.en)).toBe(true);
+    }
+  });
+});
+
+describe('shacharit chapters', () => {
+  // The section picker lists a long text's chapters, not every section: the user's division of
+  // Shacharit (2026-10-10), with the Rosh Chodesh and Chol HaMoed additions as their own stops.
+  const tuesday = day(9, months.CHESHVAN, 5787);
+  const monday = day(8, months.CHESHVAN, 5787);
+  const roshChodesh = day(1, months.CHESHVAN, 5787);
+  const cholHamoedPesach = day(18, months.NISAN, 5786);
+  const tishaBav = day(9, months.AV, 5786);
+  const chaptersOn = (nusach: Nusach, features: DayFeatures) =>
+    pickerEntries(resolveSiddurText(load(nusach, 'shacharit'), features)).map((entry) => entry.title.he);
+  const sectionsOn = (nusach: Nusach, features: DayFeatures) => resolveSiddurText(load(nusach, 'shacharit'), features);
+  const WEEKDAY_CHAPTERS: Record<Nusach, string[]> = {
+    edot_hamizrach: [
+      'ברכות השחר',
+      'פתח אליהו',
+      'עטיפת טלית והנחת תפילין',
+      'קרבנות',
+      'הודו',
+      'פסוקי דזמרה',
+      'קריאת שמע וברכותיה',
+      'תפילת העמידה',
+      'אשרי ובא לציון',
+      'בית יעקב',
+      'קוה אל ה׳',
+    ],
+    sefard: [
+      'מודה אני',
+      'עטיפת טלית והנחת תפילין',
+      'מה טובו',
+      'ברכות השחר',
+      'קרבנות',
+      'הודו',
+      'פסוקי דזמרה',
+      'קריאת שמע וברכותיה',
+      'תפילת העמידה',
+      'אשרי ובא לציון',
+      'בית יעקב',
+      'קוה אל ה׳',
+    ],
+    ashkenaz: [
+      'מודה אני',
+      'עטיפת טלית והנחת תפילין',
+      'מה טובו',
+      'ברכות השחר',
+      'קרבנות',
+      'פסוקי דזמרה',
+      'קריאת שמע וברכותיה',
+      'תפילת העמידה',
+      'אשרי ובא לציון',
+      'עלינו לשבח',
+      'שיר של יום',
+    ],
+    chabad: [
+      'ברכות השחר',
+      'עטיפת טלית והנחת תפילין',
+      'מה טובו',
+      'קרבנות',
+      'הודו',
+      'פסוקי דזמרה',
+      'קריאת שמע וברכותיה',
+      'תפילת העמידה',
+      'אשרי ובא לציון',
+      'בית יעקב',
+      'קוה אל ה׳',
+    ],
+  };
+
+  it.each(NUSCHAOT)('%s lists the weekday chapters in order, on Monday as on Tuesday', (nusach) => {
+    expect(chaptersOn(nusach, tuesday)).toEqual(WEEKDAY_CHAPTERS[nusach]);
+    expect(chaptersOn(nusach, monday)).toEqual(WEEKDAY_CHAPTERS[nusach]);
+  });
+
+  it.each(NUSCHAOT)('%s adds Hallel and Musaf as chapters on Rosh Chodesh and Chol HaMoed', (nusach) => {
+    for (const festival of [roshChodesh, cholHamoedPesach]) {
+      const chapters = chaptersOn(nusach, festival);
+      expect(chapters.indexOf('הלל')).toBe(chapters.indexOf('תפילת העמידה') + 1);
+      expect(chapters.indexOf('מוסף')).toBeGreaterThan(chapters.indexOf('אשרי ובא לציון'));
+      // Sefard says Beit Yaakov only without Musaf; Chabad says it before Tachanun on a Musaf day.
+      const expected = WEEKDAY_CHAPTERS[nusach].filter((title) => nusach !== 'sefard' || title !== 'בית יעקב');
+      if (nusach === 'chabad')
+        expected.splice(expected.indexOf('אשרי ובא לציון'), 0, ...expected.splice(expected.indexOf('בית יעקב'), 1));
+      expect(chapters.filter((title) => !['הלל', 'מוסף'].includes(title))).toEqual(expected);
+    }
+  });
+
+  it('drops the tallit and tefillin chapter on Tisha B’Av with its section', () => {
+    for (const nusach of NUSCHAOT) {
+      expect(chaptersOn(nusach, tishaBav)).not.toContain('עטיפת טלית והנחת תפילין');
+    }
+  });
+
+  it('opens Korbanot right after Hannah’s prayer, Hodu at Hodu and Pesukei Dezimra at Baruch She’amar', () => {
+    const edot = sectionsOn('edot_hamizrach', tuesday);
+    const korbanot = edot.findIndex((section) => section.chapter?.he === 'קרבנות');
+    expect(edot[korbanot - 1].title.he).toBe('תפילת חנה');
+    expect(edot[korbanot].title.he).toBe('פרשת העקדה');
+    const firstWords = (section: SiddurSection) =>
+      letters(
+        section.segments
+          .flatMap((segment) =>
+            segment.he
+              .flat()
+              .filter((run) => run.s !== 'n')
+              .map((run) => run.t),
+          )
+          .join(' '),
+      ).slice(0, 120);
+    for (const nusach of ['edot_hamizrach', 'sefard', 'chabad'] as Nusach[]) {
+      const sections = sectionsOn(nusach, tuesday);
+      expect(firstWords(sections.find((section) => section.chapter?.he === 'הודו')!)).toMatch(/הודו ל\S+ קראו בשמו/);
+      expect(firstWords(sections.find((section) => section.chapter?.he === 'פסוקי דזמרה')!)).toMatch(/ברוך שאמר/);
+    }
+  });
+
+  it('starts every chapter at the first section of a run that shares its title', () => {
+    for (const nusach of NUSCHAOT) {
+      const sections = sectionsOn(nusach, tuesday);
+      expect(sections[0].chapter).toBeDefined();
+      sections.forEach((section, index) => {
+        if (section.chapter && index > 0) expect(sections[index - 1].title.he).not.toBe(section.title.he);
+      });
+    }
+  });
+
+  it('no other text carries chapters, so their pickers keep listing every section', () => {
+    for (const nusach of NUSCHAOT) {
+      for (const id of TEXT_IDS.filter((candidate) => candidate !== 'shacharit')) {
+        expect(load(nusach, id).sections.some((section) => section.chapter)).toBe(false);
+      }
     }
   });
 });

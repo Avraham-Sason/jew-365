@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginStart: 'auto',
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

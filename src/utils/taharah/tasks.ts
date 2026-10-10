@@ -1,5 +1,6 @@
 import { CycleState, TaharahEvent, TaharahSettings, TaharahTask, TaharahTaskKind } from '@/types/taharah';
 import { Location } from '@/types/zmanim';
+import { HebcalService } from '@/services/HebcalService';
 import { locationNoon } from '@/utils/locationDay';
 import { deriveCycle, husbandTevilaOn } from './cycle';
 import { civilHebrewDayAt, currentOnah, nextTevilaNight, onsetCandidates, zmanimOfDay } from './onot';
@@ -77,10 +78,12 @@ export function taharahTasksFor(
       abs + 1 >= state.tevilaDay &&
       nextTevilaNight(abs + 1, location) === abs + 1) ||
     (settings.role === 'husband' && husbandTevilaOn(state, abs + 1, location));
+  // The tevila opens at nightfall: tzeit, or on motzaei Shabbat / Yom Tov the block's exit, so the
+  // reminder is not one strictly inside the block and swallowed.
   if (tevilaTonight) {
     tasks.push({
       kind: 'tevila',
-      start: zmanim.tzeitHakochavim,
+      start: HebcalService.nightfall(zmanim, location),
       end: nightEnd,
       day: abs + 1,
       done: false,

@@ -3,6 +3,7 @@ import { at, zmanimFor } from '@/testing/zmanim';
 import { Location } from '@/types/zmanim';
 import { CITIES } from '@/data/cities';
 import { candleLightingMinutes } from '@/data/mitzvot';
+import { HOLY_BLOCK_EXIT_MIN } from '@/services/ZmanimService';
 
 // Boundary instants are derived from the zmanim themselves rather than written as clock times, so
 // the fixtures cannot silently mean a different moment than the one they claim.
@@ -149,13 +150,15 @@ describe('HebcalService holy blocks', () => {
   const lightingOn = (loc: Location, date: string) =>
     minutesFrom(zmanimFor(noonAt(loc, date), loc).shkia, -candleLightingMinutes(loc));
   const tzeitOn = (loc: Location, date: string) => zmanimFor(noonAt(loc, date), loc).tzeitHakochavim;
+  const exitOn = (loc: Location, date: string) => minutesFrom(tzeitOn(loc, date), HOLY_BLOCK_EXIT_MIN);
 
-  it('a plain Shabbat runs from candle lighting on Friday to tzeit on Saturday', () => {
+  it('a plain Shabbat runs from candle lighting on Friday to ten minutes after tzeit on Saturday', () => {
     const block = HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2026-04-25'), JERUSALEM_CITY)!;
     expect(block.days).toEqual(['2026-04-25']);
     expect(block.kind).toBe('shabbat');
     expect(block.start).toEqual(lightingOn(JERUSALEM_CITY, '2026-04-24'));
-    expect(block.end).toEqual(tzeitOn(JERUSALEM_CITY, '2026-04-25'));
+    expect(block.end).toEqual(exitOn(JERUSALEM_CITY, '2026-04-25'));
+    expect(block.end.getTime() - tzeitOn(JERUSALEM_CITY, '2026-04-25').getTime()).toBe(10 * 60_000);
     // Jerusalem lights 40 minutes before shkia.
     expect(
       zmanimFor(noonAt(JERUSALEM_CITY, '2026-04-24'), JERUSALEM_CITY).shkia.getTime() - block.start.getTime(),
@@ -167,17 +170,17 @@ describe('HebcalService holy blocks', () => {
     expect(block.days).toEqual(['2028-09-21', '2028-09-22', '2028-09-23']);
     expect(block.kind).toBe('shabbatYomTov');
     expect(block.start).toEqual(lightingOn(JERUSALEM_CITY, '2028-09-20'));
-    expect(block.end).toEqual(tzeitOn(JERUSALEM_CITY, '2028-09-23'));
+    expect(block.end).toEqual(exitOn(JERUSALEM_CITY, '2028-09-23'));
     // Every day of the run reports the same block.
     expect(HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2028-09-21'), JERUSALEM_CITY)).toEqual(block);
     expect(HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2028-09-23'), JERUSALEM_CITY)).toEqual(block);
   });
 
-  it('Shabbat that flows into Rosh Hashana ends at tzeit of the second day', () => {
+  it('Shabbat that flows into Rosh Hashana ends at the exit of the second day', () => {
     const block = HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2027-10-02'), JERUSALEM_CITY)!;
     expect(block.days).toEqual(['2027-10-02', '2027-10-03']);
     expect(block.start).toEqual(lightingOn(JERUSALEM_CITY, '2027-10-01'));
-    expect(block.end).toEqual(tzeitOn(JERUSALEM_CITY, '2027-10-03'));
+    expect(block.end).toEqual(exitOn(JERUSALEM_CITY, '2027-10-03'));
   });
 
   it('Shavuot on Friday flows into Shabbat', () => {
@@ -190,7 +193,7 @@ describe('HebcalService holy blocks', () => {
     const diaspora = HebcalService.holyBlockOn(noonAt(NEW_YORK, '2027-04-22'), NEW_YORK)!;
     expect(diaspora.days).toEqual(['2027-04-22', '2027-04-23', '2027-04-24']);
     expect(diaspora.start).toEqual(lightingOn(NEW_YORK, '2027-04-21'));
-    expect(diaspora.end).toEqual(tzeitOn(NEW_YORK, '2027-04-24'));
+    expect(diaspora.end).toEqual(exitOn(NEW_YORK, '2027-04-24'));
     // In Israel 16 Nisan is chol hamoed, so Pesach I and the Shabbat after it are separate blocks.
     expect(HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2027-04-22'), JERUSALEM_CITY)!.days).toEqual([
       '2027-04-22',
@@ -206,11 +209,13 @@ describe('HebcalService holy blocks', () => {
     expect(HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2028-09-30'), JERUSALEM_CITY)!.kind).toBe('yomKippur');
   });
 
-  it('holyBlockAt follows the instant across candle lighting and tzeit', () => {
+  it('holyBlockAt follows the instant across candle lighting and the exit', () => {
     const block = HebcalService.holyBlockOn(noonAt(JERUSALEM_CITY, '2026-04-25'), JERUSALEM_CITY)!;
     expect(HebcalService.holyBlockAt(minutesFrom(block.start, -1), JERUSALEM_CITY)).toBeNull();
     expect(HebcalService.holyBlockAt(block.start, JERUSALEM_CITY)).toEqual(block);
     expect(HebcalService.holyBlockAt(at(JERUSALEM_CITY, '2026-04-24T23:00'), JERUSALEM_CITY)).toEqual(block);
+    // Tzeit itself is still inside: Shabbat leaves ten minutes later.
+    expect(HebcalService.holyBlockAt(tzeitOn(JERUSALEM_CITY, '2026-04-25'), JERUSALEM_CITY)).toEqual(block);
     expect(HebcalService.holyBlockAt(block.end, JERUSALEM_CITY)).toEqual(block);
     expect(HebcalService.holyBlockAt(minutesFrom(block.end, 1), JERUSALEM_CITY)).toBeNull();
   });

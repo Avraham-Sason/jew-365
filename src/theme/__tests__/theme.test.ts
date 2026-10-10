@@ -1,6 +1,19 @@
 import fs from 'fs';
 import path from 'path';
-import { BRAND, T_LIGHT, T_DARK, T_PLUM, THEMES, THEME_NAMES, DARK_THEMES, isDarkTheme, ThemeColors } from '../colors';
+import {
+  BRAND,
+  T_LIGHT,
+  T_PINK,
+  T_PURPLE,
+  T_BLUE,
+  T_DARK,
+  T_PLUM,
+  THEMES,
+  THEME_NAMES,
+  DARK_THEMES,
+  isDarkTheme,
+  ThemeColors,
+} from '../colors';
 import { ribbonThresholds, durations, spacing, radius } from '../tokens';
 import { APP_FONTS, fontFamilies, typography } from '../typography';
 import he from '@/i18n/he.json';
@@ -40,9 +53,12 @@ const contrast = (a: string, b: string) => {
 
 describe('Theme', () => {
   it('THEMES lists exactly the named palettes, in order', () => {
-    expect(THEME_NAMES).toEqual(['gold', 'dark', 'plum']);
+    expect(THEME_NAMES).toEqual(['gold', 'pink', 'purple', 'blue', 'dark', 'plum']);
     expect(Object.keys(THEMES)).toEqual([...THEME_NAMES]);
     expect(THEMES.gold).toBe(T_LIGHT);
+    expect(THEMES.pink).toBe(T_PINK);
+    expect(THEMES.purple).toBe(T_PURPLE);
+    expect(THEMES.blue).toBe(T_BLUE);
     expect(THEMES.dark).toBe(T_DARK);
     expect(THEMES.plum).toBe(T_PLUM);
   });
@@ -66,7 +82,21 @@ describe('Theme', () => {
   it('dark and plum are the dark palettes', () => {
     expect(DARK_THEMES).toEqual(['dark', 'plum']);
     expect(THEME_NAMES.filter((name) => isDarkTheme(name))).toEqual([...DARK_THEMES]);
-    expect(isDarkTheme('gold')).toBe(false);
+    for (const name of ['gold', 'pink', 'purple', 'blue'] as const) expect(isDarkTheme(name)).toBe(false);
+  });
+
+  it('the light palettes share white surfaces and the status colours', () => {
+    for (const name of ['pink', 'purple', 'blue'] as const) {
+      const palette = THEMES[name];
+      expect({ name, surface: palette.surface, tabBg: palette.tabBg }).toEqual({
+        name,
+        surface: T_LIGHT.surface,
+        tabBg: T_LIGHT.tabBg,
+      });
+      for (const token of ['urgent', 'onUrgent', 'urgentBg', 'urgentBorder', 'warning', 'safe'] as const) {
+        expect({ name, token, value: palette[token] }).toEqual({ name, token, value: T_LIGHT[token] });
+      }
+    }
   });
 
   it('the palettes differ in background, accent and header', () => {

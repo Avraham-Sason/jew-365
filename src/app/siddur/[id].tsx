@@ -73,6 +73,8 @@ import {
   autoScrollPixelsPerSecond,
   dayFeatures,
   liturgicalDay,
+  pickerEntries,
+  pickerEntryAt,
   resolveSiddurText,
   siddurLineHeight,
 } from '@/utils/siddur';
@@ -400,7 +402,8 @@ export default function SiddurScreen() {
     () => ({ fontSize, language, colors, toggled, prayerMode }),
     [fontSize, language, colors, toggled, prayerMode],
   );
-  const titleOf = (section: SiddurSection) => (language === 'en' ? section.title.en : section.title.he);
+  const titleOf = (titled: { title: { he: string; en: string } }) =>
+    language === 'en' ? titled.title.en : titled.title.he;
   const labelOf = (label: PassageLabel) => (language === 'en' ? label.en : label.he);
   const labeledEdge = (language === 'he') === I18nManager.isRTL ? styles.labeledLeftEdge : styles.labeledRightEdge;
   const segmentViews = (section: SiddurSection, segments: SiddurSegment[], start: number, color: string) => {
@@ -534,7 +537,8 @@ export default function SiddurScreen() {
       </>
     );
   };
-  const currentSection = sections[Math.min(shownSection, sections.length - 1)];
+  const picker = useMemo(() => pickerEntries(sections), [sections]);
+  const currentEntry = pickerEntryAt(picker, sections, Math.min(shownSection, sections.length - 1));
   const jumpTo = (index: number, deadline = Date.now() + JUMP_TIMEOUT_MS) => {
     const list = listRef.current;
     clearTimeout(jumpTimer.current);
@@ -602,45 +606,58 @@ export default function SiddurScreen() {
         subtitle={subtitle}
         onBack={goBack}
         actions={
-          <View style={styles.headerControls}>
-            <Pressable
-              onPress={toggleAutoScroll}
-              accessibilityRole="switch"
-              accessibilityLabel={t('siddur.autoScroll')}
-              accessibilityState={{ checked: autoScrollOn }}
-              hitSlop={6}
-              style={({ pressed }) => [
-                styles.autoScrollBtn,
-                autoScrollOn
-                  ? { backgroundColor: colors.gold, borderColor: colors.gold }
-                  : { backgroundColor: HEADER_PILL_BG, borderColor: PILL_BORDER },
-                { opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path
-                  d={autoScrollOn ? 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z' : 'M8 5v14l11-7z'}
-                  fill={autoScrollOn ? colors.onGold : colors.headerText}
+          <View style={styles.headerActions}>
+            {hasMinyanPassages ? (
+              <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.prayerMode')}>
+                <SegmentedControl
+                  tone="header"
+                  options={PRAYER_MODES.map((mode) => ({ value: mode, label: t(`prayerMode.${mode}`) }))}
+                  value={prayerMode}
+                  onChange={changePrayerMode}
+                  style={{ minWidth: PRAYER_MODE_MIN_WIDTH[language] }}
                 />
-              </Svg>
-            </Pressable>
-            <ScrollSpeedStepper tone="header" level={scrollSpeed} onChange={setScrollSpeed} />
+              </View>
+            ) : null}
+            <View style={styles.headerControls}>
+              <Pressable
+                onPress={toggleAutoScroll}
+                accessibilityRole="switch"
+                accessibilityLabel={t('siddur.autoScroll')}
+                accessibilityState={{ checked: autoScrollOn }}
+                hitSlop={6}
+                style={({ pressed }) => [
+                  styles.autoScrollBtn,
+                  autoScrollOn
+                    ? { backgroundColor: colors.gold, borderColor: colors.gold }
+                    : { backgroundColor: HEADER_PILL_BG, borderColor: PILL_BORDER },
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
+              >
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path
+                    d={autoScrollOn ? 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z' : 'M8 5v14l11-7z'}
+                    fill={autoScrollOn ? colors.onGold : colors.headerText}
+                  />
+                </Svg>
+              </Pressable>
+              <ScrollSpeedStepper tone="header" level={scrollSpeed} onChange={setScrollSpeed} />
+            </View>
           </View>
         }
       >
         <View style={styles.bodyRow}>
-          {sections.length > 1 && currentSection ? (
+          {picker.length > 1 && currentEntry ? (
             <Pressable
               onPress={() => setPickerOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel={`${t('siddur.pickSection')}: ${titleOf(currentSection)}`}
+              accessibilityLabel={`${t('siddur.pickSection')}: ${titleOf(currentEntry)}`}
               style={({ pressed }) => [
                 styles.picker,
                 { backgroundColor: pressed ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)' },
               ]}
             >
               <Text style={[typography.bodyBold, styles.pickerLabel, { color: colors.headerText }]} numberOfLines={1}>
-                {titleOf(currentSection)}
+                {titleOf(currentEntry)}
               </Text>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
                 <Path
@@ -654,17 +671,6 @@ export default function SiddurScreen() {
             </Pressable>
           ) : null}
           <View style={styles.headerControls}>
-            {hasMinyanPassages ? (
-              <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.prayerMode')}>
-                <SegmentedControl
-                  tone="header"
-                  options={PRAYER_MODES.map((mode) => ({ value: mode, label: t(`prayerMode.${mode}`) }))}
-                  value={prayerMode}
-                  onChange={changePrayerMode}
-                  style={{ minWidth: PRAYER_MODE_MIN_WIDTH[language] }}
-                />
-              </View>
-            ) : null}
             <SizeButton
               label="A−"
               accessibilityLabel={t('siddur.smaller')}
@@ -759,12 +765,12 @@ export default function SiddurScreen() {
 
       <BottomSheet visible={pickerOpen} title={t('siddur.pickSection')} onClose={() => setPickerOpen(false)}>
         <ScrollView ref={pickerRef} style={styles.sheetList}>
-          {sections.map((section, index) => {
-            const selected = section === currentSection;
+          {picker.map((entry) => {
+            const selected = entry.index === currentEntry?.index;
             return (
               <SheetAction
-                key={section.title.he}
-                label={titleOf(section)}
+                key={entry.index}
+                label={titleOf(entry)}
                 selected={selected}
                 onLayout={
                   selected
@@ -777,7 +783,7 @@ export default function SiddurScreen() {
                 }
                 onPress={() => {
                   setPickerOpen(false);
-                  jumpTo(index);
+                  jumpTo(entry.index);
                 }}
               />
             );
@@ -921,6 +927,14 @@ function SegmentView({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+  },
+  headerActions: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
   headerControls: {
     flexDirection: 'row',

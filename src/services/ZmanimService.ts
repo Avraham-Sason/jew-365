@@ -16,6 +16,14 @@ export function candleLightingMinutes(location: Location): number {
   return 20;
 }
 
+// Shabbat and Yom Tov end a margin after tzeit (the user's call, 2026-10-10): the block, havdalah,
+// the exit time every surface shows and the night windows that open at the exit all read it here.
+export const HOLY_BLOCK_EXIT_MIN = 10;
+
+export function holyBlockExit(zmanim: Pick<Zmanim, 'tzeitHakochavim'>): Date {
+  return new Date(zmanim.tzeitHakochavim.getTime() + HOLY_BLOCK_EXIT_MIN * 60_000);
+}
+
 const ZMANIM_CACHE_LIMIT = 90;
 const ALOT_FALLBACK_MIN = 72;
 const MISHEYAKIR_FALLBACK_MIN = 52;
@@ -168,6 +176,7 @@ export const ZmanimService = {
     const cal = buildCalendar(date, loc);
     const shkia = toDateOrNull(cal.getSeaLevelSunset());
     if (!shkia) return null;
-    return toDateOrNull(cal.getTzaisGeonim7Point083Degrees()) ?? shift(shkia, TZEIT_FALLBACK_MIN);
+    const tzeitHakochavim = toDateOrNull(cal.getTzaisGeonim7Point083Degrees()) ?? shift(shkia, TZEIT_FALLBACK_MIN);
+    return holyBlockExit({ tzeitHakochavim });
   },
 };

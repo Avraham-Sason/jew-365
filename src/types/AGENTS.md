@@ -8,7 +8,7 @@
 
 - [mitzvah.ts](mitzvah.ts) owns mitzvah, reminder, content block, and related domain shapes.
 - [zmanim.ts](zmanim.ts) owns zmanim-related shared types.
-- [siddur.ts](siddur.ts) owns siddur text, section, segment, run, condition, day-flag and passage-label shapes (`optional` and `minyan`), the `SegmentBlock` the reader renders, and the text ids: `MitzvahTextId` (a mitzvah's id), `StandaloneTextId` (a text with no mitzvah) and `SiddurGroup` (how the catalog groups the latter). The generated text assets follow it, so a change here needs `pnpm siddur:build`.
+- [siddur.ts](siddur.ts) owns siddur text, section, segment, run, condition, day-flag and passage-label shapes (`optional` and `minyan`), a section's optional `chapter` (the picker entry it opens), the `SegmentBlock` the reader renders, and the text ids: `MitzvahTextId` (a mitzvah's id), `StandaloneTextId` (a text with no mitzvah) and `SiddurGroup` (how the catalog groups the latter). The generated text assets follow it, so a change here needs `pnpm siddur:build`.
 
 - [taharah.ts](taharah.ts) owns the niddah-cycle shapes: `Onah` (a hebcal absolute day number plus night or day), `TaharahRules`, `TaharahSettings` and the preset ids, the raw `TaharahEvent` union, and the derived `CycleState`, `PerishaOnah`, `KavuaHint` and `TaharahTask`. The engine that produces the derived shapes is [../utils/taharah/](../utils/taharah/).
 

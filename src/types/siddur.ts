@@ -90,6 +90,9 @@ export type SiddurSegment = {
 
 export type SiddurSection = {
   title: { he: string; en: string };
+  // Opens a chapter of the text: the section picker lists chapters, not every section, when a text
+  // has any, and the sections up to the next chapter belong to it.
+  chapter?: { he: string; en: string };
   optional?: PassageLabel;
   minyanOnly?: boolean;
   segments: SiddurSegment[];

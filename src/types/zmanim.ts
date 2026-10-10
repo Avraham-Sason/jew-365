@@ -33,8 +33,8 @@ export type ZmanimKey = keyof Zmanim;
 export type HolyBlockKind = 'shabbat' | 'yomTov' | 'shabbatYomTov' | 'yomKippur';
 
 // A maximal run of consecutive Shabbat / Yom Tov days at one location, from candle lighting on the
-// erev until tzeit of the last day. `days` are the location's calendar dates (YYYY-MM-DD) whose
-// daytime is holy.
+// erev until the exit of the last day (`holyBlockExit()`, a margin after its tzeit). `days` are the
+// location's calendar dates (YYYY-MM-DD) whose daytime is holy.
 export type HolyBlock = {
   start: Date;
   end: Date;

@@ -265,6 +265,24 @@ export function resolveSiddurText(text: SiddurText, features: DayFeatures): Sidd
     .filter((section) => section.segments.length > 0);
 }
 
+export type PickerEntry = { index: number; title: { he: string; en: string } };
+
+// What the reader's section picker lists for a resolved text: its chapters, each at the section that
+// opens it, or every section when the text has no chapters (the short texts).
+export function pickerEntries(sections: SiddurSection[]): PickerEntry[] {
+  const chapters = sections.flatMap((section, index) => (section.chapter ? [{ index, title: section.chapter }] : []));
+  return chapters.length ? chapters : sections.map((section, index) => ({ index, title: section.title }));
+}
+
+// The picker entry the section at `index` belongs to: the last entry at or before it, or, before the
+// first chapter, the section itself.
+export function pickerEntryAt(entries: PickerEntry[], sections: SiddurSection[], index: number): PickerEntry | null {
+  const section = sections[index];
+  if (!section) return null;
+  const owner = entries.filter((entry) => entry.index <= index).pop();
+  return owner ?? { index, title: section.title };
+}
+
 export function siddurLineHeight(fontSize: number): number {
   return Math.round(fontSize * 1.75);
 }

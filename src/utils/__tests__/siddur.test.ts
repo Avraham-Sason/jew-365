@@ -5,6 +5,8 @@ import {
   dayFeatures,
   liturgicalDay,
   matchesCondition,
+  pickerEntries,
+  pickerEntryAt,
   resolveSiddurText,
   segmentBlocks,
   siddurLineHeight,
@@ -704,5 +706,49 @@ describe('aloneFolds', () => {
     expect(aloneFolds(optionalSection, 'alone').optionalOpen).toBe(true);
     expect(aloneFolds(optionalSection, 'minyan').optionalOpen).toBe(false);
     expect(aloneFolds({ ...optionalSection, optional: someSay }, 'alone').optionalOpen).toBe(false);
+  });
+});
+
+describe('pickerEntries', () => {
+  const section = (he: string, chapter?: string): SiddurSection => ({
+    title: { he, en: he },
+    ...(chapter ? { chapter: { he: chapter, en: chapter } } : {}),
+    segments: [{ he: [[{ t: he }]] }],
+  });
+
+  it('lists every section of a text without chapters', () => {
+    const sections = [section('א'), section('ב'), section('ג')];
+    expect(pickerEntries(sections)).toEqual([
+      { index: 0, title: { he: 'א', en: 'א' } },
+      { index: 1, title: { he: 'ב', en: 'ב' } },
+      { index: 2, title: { he: 'ג', en: 'ג' } },
+    ]);
+    expect(pickerEntryAt(pickerEntries(sections), sections, 1)).toEqual({ index: 1, title: { he: 'ב', en: 'ב' } });
+  });
+
+  it('lists only the chapters of a text that has them, each at the section that opens it', () => {
+    const sections = [
+      section('מודה אני', 'ברכות השחר'),
+      section('ברכות התורה'),
+      section('הודו', 'הודו'),
+      section('עלינו'),
+    ];
+    const entries = pickerEntries(sections);
+    expect(entries).toEqual([
+      { index: 0, title: { he: 'ברכות השחר', en: 'ברכות השחר' } },
+      { index: 2, title: { he: 'הודו', en: 'הודו' } },
+    ]);
+    // A section between chapters belongs to the chapter before it, the last one included.
+    expect(pickerEntryAt(entries, sections, 1)).toEqual(entries[0]);
+    expect(pickerEntryAt(entries, sections, 2)).toEqual(entries[1]);
+    expect(pickerEntryAt(entries, sections, 3)).toEqual(entries[1]);
+    expect(pickerEntryAt(entries, sections, 4)).toBeNull();
+  });
+
+  it('names a section that comes before the first chapter by its own title', () => {
+    const sections = [section('הקדמה'), section('מודה אני', 'ברכות השחר')];
+    const entries = pickerEntries(sections);
+    expect(entries).toEqual([{ index: 1, title: { he: 'ברכות השחר', en: 'ברכות השחר' } }]);
+    expect(pickerEntryAt(entries, sections, 0)).toEqual({ index: 0, title: { he: 'הקדמה', en: 'הקדמה' } });
   });
 });

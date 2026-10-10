@@ -504,6 +504,7 @@ function mergeSameTitledSections(sections) {
       if (JSON.stringify(previous.optional ?? null) !== JSON.stringify(section.optional ?? null)) {
         throw new Error(`${section.title.he}: merged sections disagree on "optional"`);
       }
+      if (section.chapter) throw new Error(`${section.title.he}: a chapter must open on the first spec of its section`);
       previous.segments.push(...section.segments);
     } else merged.push({ ...section, segments: [...section.segments] });
   }
@@ -585,6 +586,7 @@ async function buildSection(spec, ctx) {
   const matchedParts = new Set();
   if (spec.optional) checkLabel(spec.optional, label);
   if (spec.minyan) checkLabel(spec.minyan, label);
+  if (spec.chapter) checkLabel(spec.chapter, label);
   const selected = (i) => i >= from && i <= to && !spec.drop?.includes(i);
   const targets = [
     ...editsBySeg.keys(),
@@ -703,6 +705,7 @@ async function buildSection(spec, ctx) {
 
   return {
     title: spec.title,
+    ...(spec.chapter ? { chapter: spec.chapter } : {}),
     ...(spec.optional ? { optional: spec.optional } : {}),
     ...(minyanOnly ? { minyanOnly } : {}),
     segments: segments.map(({ he, en, when, optional, minyan }) => ({

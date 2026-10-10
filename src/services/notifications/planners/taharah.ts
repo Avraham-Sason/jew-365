@@ -48,7 +48,8 @@ export function bedikotMissingIn(state: CycleState, block: HolyBlock): boolean {
 
 // Nothing fires strictly inside a holy block, so a taharah reminder that would land there goes out
 // ten minutes before candle lighting instead, while it can still be acted on — unless the task
-// outlasts the block (a perisha night opening at motzaei Shabbat's shkia), when it waits for tzeit.
+// outlasts the block (a perisha night opening at motzaei Shabbat's shkia), when it waits for the
+// block's end.
 function beforeQuiet(trigger: Date, end: Date, location: Location): Date {
   const block = quietBlockAt(trigger, location);
   if (!block) return trigger;

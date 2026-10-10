@@ -243,7 +243,9 @@ describe('useUserStore theme', () => {
   it('merge maps a retired palette to gold and keeps a live one', () => {
     const { merge } = useUserStore.persist.getOptions();
     const current = useUserStore.getState();
-    expect(merge!({ theme: 'pink' }, current).theme).toBe('gold');
+    expect(merge!({ theme: 'sepia' }, current).theme).toBe('gold');
+    // Pink, purple and blue were retired on 2026-10-09 and restored on 2026-10-10: a saved pick survives.
+    expect(merge!({ theme: 'pink' }, current).theme).toBe('pink');
     expect(merge!({ theme: 'plum' }, current).theme).toBe('plum');
   });
 

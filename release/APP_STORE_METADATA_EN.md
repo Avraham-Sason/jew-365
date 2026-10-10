@@ -39,7 +39,7 @@ Track the count, the bedikot and the mikveh night, with reminders by halachic ti
 Private by design
 - No account and no server: your settings, history and data stay on your device
 - 20 cities to choose from, or GPS
-- Hebrew and English, and three themes: gold, dark and plum
+- Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
 - The app sends only technical crash reports, with no personal information
 
 ## Keywords

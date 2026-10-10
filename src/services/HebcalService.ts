@@ -1,7 +1,7 @@
 import { HDate, HebrewCalendar, Location as HebcalLocation, flags } from '@hebcal/core';
 import { DateTime } from 'luxon';
-import { CalendarInfo, HebrewDate, HolyBlock, HolyBlockKind, Location } from '@/types/zmanim';
-import { ZmanimService, candleLightingMinutes } from '@/services/ZmanimService';
+import { CalendarInfo, HebrewDate, HolyBlock, HolyBlockKind, Location, Zmanim } from '@/types/zmanim';
+import { ZmanimService, candleLightingMinutes, holyBlockExit } from '@/services/ZmanimService';
 
 function toHDate(date: Date): HDate {
   return new HDate(date);
@@ -88,7 +88,8 @@ function blockKind(days: HDate[], loc: Location): HolyBlockKind {
 
 // Shabbat and Yom Tov that touch merge into one block: Yom Tov on Friday flows into Shabbat, two
 // days of Rosh Hashana into a third that is Shabbat. The block opens at candle lighting on the
-// erev and closes at tzeit of its last day. Where the sun never sets the civil day stands in.
+// erev and closes at the exit of its last day, `holyBlockExit()` after its tzeit. Where the sun
+// never sets the civil day stands in.
 function holyBlockAround(hd: HDate, loc: Location): HolyBlock | null {
   if (!isHolyHebrewDay(hd, loc)) return null;
   let first = hd;
@@ -103,7 +104,7 @@ function holyBlockAround(hd: HDate, loc: Location): HolyBlock | null {
     start: erev
       ? new Date(erev.shkia.getTime() - candleLightingMinutes(loc) * 60_000)
       : atLocation(first.prev(), loc, 12),
-    end: closing ? closing.tzeitHakochavim : atLocation(last.next(), loc, 0),
+    end: closing ? holyBlockExit(closing) : atLocation(last.next(), loc, 0),
     days: days.map(isoDate),
     kind: blockKind(days, loc),
   };
@@ -203,14 +204,23 @@ export const HebcalService = {
     return isHolyHebrewDay(civilDayAt(date, loc), loc);
   },
 
+  // When the night after the day these zmanim belong to opens: its tzeit, or the block's exit on
+  // the last day of a Shabbat / Yom Tov block, so nothing that starts at nightfall (maariv, the
+  // Omer, havdalah, a tevila) lands inside the quiet block its own reminder could not fire in.
+  nightfall(zmanim: Zmanim, loc: Location): Date {
+    const day = civilDayAt(zmanim.chatzot, loc);
+    const closesBlock = isHolyHebrewDay(day, loc) && !isHolyHebrewDay(day.next(), loc);
+    return closesBlock ? holyBlockExit(zmanim) : zmanim.tzeitHakochavim;
+  },
+
   // The block whose daytime covers the location's calendar date of `date`.
   holyBlockOn(date: Date, loc: Location): HolyBlock | null {
     return holyBlockAround(civilDayAt(date, loc), loc);
   },
 
-  // The block whose span [candle lighting, tzeit] contains `instant`, edges included. The days
+  // The block whose span [candle lighting, exit] contains `instant`, edges included. The days
   // either side of the instant's civil day are candidates too: after candle lighting the block
-  // belongs to tomorrow, and far north tzeit can fall after midnight.
+  // belongs to tomorrow, and far north the exit can fall after midnight.
   holyBlockAt(instant: Date, loc: Location): HolyBlock | null {
     const civilDay = civilDayAt(instant, loc);
     for (const hd of [civilDay.prev(), civilDay, civilDay.next()]) {
