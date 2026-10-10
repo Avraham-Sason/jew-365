@@ -9,6 +9,7 @@
 - [_layout.tsx](_layout.tsx) owns root providers, fonts, RTL sync, onboarding redirect guard, notification handler initialization, the Shabbat gate, and the exported `ErrorBoundary` that expo-router installs at the root. The boundary reports its error to crash reporting once (scope `render`), and the default export is wrapped in `Sentry.wrap`; see [../services/AGENTS.md](../services/AGENTS.md).
 - The Shabbat gate (`useCurrentQuietBlock()` + [ShabbatScreen](../components/ShabbatScreen.tsx)) covers every route while `quietBlockAt()` holds, once onboarded — before that the location is only a default. It re-reads at the next `nextQuietBoundary()` and on every `AppState 'active'`, keeps the `Stack` mounted and hidden from accessibility so a notification tap still has a navigator, provides the block through `QuietBlockContext`, and unwinds the stack when a block starts and after any navigation inside it, so the reader's keep-awake never runs on Shabbat.
 - Every screen `Modal` closes while `useQuietBlock()` holds: a native modal would sit above the in-tree Shabbat screen.
+- [_layout.tsx](_layout.tsx) mounts [UpdateBanner](../components/UpdateBanner.tsx) once onboarded, between the `Stack` and the Shabbat screen, so the ready-update strip floats over every route and the update check runs on every return to the foreground.
 - [index.tsx](index.tsx) owns root redirects.
 - [(tabs)/AGENTS.md](<(tabs)/AGENTS.md>) owns the main tab screens.
 - [onboarding/AGENTS.md](onboarding/AGENTS.md) owns onboarding flow screens.

@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import * as Updates from 'expo-updates';
 import { Banner, BannerTone } from '@/components/Banner';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
 import { CompletedRow } from '@/components/CompletedRow';
@@ -49,7 +48,6 @@ import {
   refreshSchedulingOnForeground,
 } from '@/services/NotificationScheduler';
 import { clearLastError, reportError, useLastError } from '@/services/errors';
-import { downloadNewUpdate, reloadIntoUpdate } from '@/services/appUpdates';
 import { useI18n } from '@/i18n';
 
 type LiveItem = {
@@ -109,7 +107,6 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const { allMitzvot, enabled, location, nusach, inIsrael, language, settings, nameFor, checkInInput } = useDayModel();
   const router = useRouter();
-  const { isUpdatePending } = Updates.useUpdates();
   const user = useUserStore(
     useShallow((s) => ({
       locationStatus: s.locationStatus,
@@ -328,7 +325,6 @@ export default function HomeScreen() {
       return { tone: 'warning', text: t('home.noLocation'), onPress: () => router.push('/(tabs)/settings') };
     }
     if (user.locationStatus === 'timeout') return { tone: 'warning', text: t('home.gpsTimeout') };
-    if (isUpdatePending) return { tone: 'safe', text: t('home.updateReady'), onPress: () => reloadIntoUpdate() };
     if (isOnboarded && (gender === null || maritalStatus === null) && !introDismissed) {
       return { tone: 'accent', text: t('home.completeProfile'), onPress: openProfileIntro };
     }
@@ -374,7 +370,6 @@ export default function HomeScreen() {
         syncNotificationPermissionStatus().catch((error) => reportError('schedule', error));
         dismissCompletedPresentedNotifications().catch(() => {});
         refreshSchedulingOnForeground().catch((error) => reportError('schedule', error));
-        downloadNewUpdate().catch(() => {});
       }
     });
     return () => sub.remove();

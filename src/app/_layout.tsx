@@ -45,6 +45,7 @@ import { setLocale, t } from '@/i18n';
 import { StorageService } from '@/services/StorageService';
 import { HebcalService } from '@/services/HebcalService';
 import { QuietBlockContext, ShabbatScreen } from '@/components/ShabbatScreen';
+import { UpdateBanner } from '@/components/UpdateBanner';
 import { nextQuietBoundary, quietBlockAt } from '@/utils/skipRules';
 import { CHECK_IN_PROMPTED_KEY, latestCheckIn } from '@/utils/checkIn';
 import { getAllMitzvot } from '@/data/customMitzvotAdapter';
@@ -225,6 +226,7 @@ function RootInner() {
             <Stack.Screen name="taharah" options={{ presentation: 'card' }} />
           </Stack>
         </View>
+        {isOnboarded ? <UpdateBanner /> : null}
         <ShabbatScreen
           block={quietBlock}
           subtitle={quietBlock ? HebcalService.getHebrewDateAt(new Date(), location).hebrewDateStr : undefined}
