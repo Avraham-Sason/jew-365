@@ -215,6 +215,25 @@ describe('useUserStore prayer mode', () => {
   });
 });
 
+describe('useUserStore double-week choice', () => {
+  beforeEach(() => useUserStore.getState().reset());
+
+  it('starts unanswered, keeps a choice and resets to unanswered', () => {
+    expect(useUserStore.getState().chokDoubleChoice).toBeNull();
+    useUserStore.getState().setChokDoubleChoice('both');
+    expect(useUserStore.getState().chokDoubleChoice).toBe('both');
+    useUserStore.getState().reset();
+    expect(useUserStore.getState().chokDoubleChoice).toBeNull();
+  });
+
+  it('stays unanswered for a payload saved before the field existed and keeps a saved choice', () => {
+    const { merge } = useUserStore.persist.getOptions();
+    const current = useUserStore.getState();
+    expect(merge!({ nusach: 'sefard' }, current).chokDoubleChoice).toBeNull();
+    expect(merge!({ chokDoubleChoice: 'second' }, current).chokDoubleChoice).toBe('second');
+  });
+});
+
 describe('useMitzvotStore merge', () => {
   it('prunes a retired mitzvah from a persisted map and keeps every other entry, custom ones included', () => {
     const { merge } = useMitzvotStore.persist.getOptions();

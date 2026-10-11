@@ -30,6 +30,7 @@ pnpm lint                          # eslint (eslint-config-expo + prettier confi
 pnpm format                        # prettier --write; format:check is the read-only form
 pnpm check:dox                     # AGENTS.md links, section order and Child DOX Index
 pnpm siddur:build                  # rebuild the bundled nusach texts from pinned Sefaria and Wikisource sources
+pnpm chok:build                    # rebuild the Chok LeYisrael assets from the cached raktora pages (local only); --empty restores the committed empty map
 pnpm doctor                        # expo-doctor
 pnpm build:android:development     # EAS development APK
 pnpm build:android:preview         # EAS internal preview APK
@@ -52,7 +53,7 @@ Jest ([package.json](package.json)), Metro ([metro.config.js](metro.config.js)) 
 
 Two different mechanisms ship this app, and the choice is not stylistic: one reaches everybody within a minute, the other reaches nobody until users install a new binary.
 
-- **Anything Metro bundles** — TypeScript, JSX, i18n strings, and bundled assets (fonts and the siddur texts included) — ships as an over-the-air update: `pnpm update:preview`, or `pnpm update:production` for real users.
+- **Anything Metro bundles** — TypeScript, JSX, i18n strings, and bundled assets (fonts and the siddur texts included, and the Chok LeYisrael texts once their source's owner permits) — ships as an over-the-air update: `pnpm update:preview`, or `pnpm update:production` for real users.
 - **Anything native** — a dependency with native code, an Android permission, a config plugin under [scripts/](scripts), or an identity field in [app.json](app.json) — needs a build: `pnpm build:android:production`. EAS builds it on its own servers and runs prebuild there, which is why the native folders stay gitignored and are safe to delete locally.
 - A native module that `expo` already links transitively (`expo-file-system`, `expo-keep-awake`) may be added as a direct dependency over OTA only at the exact version the shipped binary carries. Check the committed lockfile before raising one.
 - The taharah feature added `expo-secure-store`, `expo-crypto` and `expo-local-authentication`, none of which the 1.0.16 binary carries, and set `android.allowBackup` to false so the scheduled reminders expo-notifications keeps in SharedPreferences (their ids name the taharah task and day) never ride a Google backup. Until a build with a version bump ships, nothing that imports those modules may go out as an update; 1.0.18 is that build, and it also carries `@sentry/react-native` and `expo-background-task` (which replaced `expo-background-fetch`).
@@ -94,12 +95,12 @@ Store copy lives in [release/](release).
 
 - [src/app/](src/app) - Expo Router routes. The router root is set in [app.json](app.json) via `extra.router.root`.
 - [src/app/_layout.tsx](src/app/_layout.tsx) - Root providers, font loading, onboarding redirect guard, RTL bootstrap, notification handler init, and the exported `ErrorBoundary`.
-- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: more, history, home, siddur, settings; the hidden `index` redirects to home. More is a hub of rows that open stack screens, starting with the schedule.
+- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: more, history, home, siddur, settings; the hidden `index` redirects to home. More is a hub of rows that open stack screens: the schedule, and Chok LeYisrael while its content is bundled.
 - [src/app/mitzvot.tsx](src/app/mitzvot.tsx) - The mitzvot library as a stack screen, opened from Settings and the onboarding ready screen.
 - [src/app/onboarding/](src/app/onboarding) - Onboarding flow: welcome, profile (gender, marital status and the taharah opt-in), nusach, location/notifications, ready.
 - [src/app/taharah/](src/app/taharah) - Taharat hamishpacha: dashboard, event log, calendar and minhag settings, behind the biometric lock in its `_layout.tsx`.
 - [src/app/mitzvah/[id].tsx](<src/app/mitzvah/[id].tsx>) - Static and custom mitzvah details, reminders, content blocks.
-- [src/app/siddur/[id].tsx](<src/app/siddur/[id].tsx>) - Nusach reader: a mitzvah's or a standalone text in the user's nusach and language, resolved for the day, with optional auto-scroll. Its section picker lists a text's chapters (Shacharit's eleven stations, from ברכות השחר to קוה אל ה׳, plus Hallel and Musaf on their days), or every section of a text without chapters.
+- [src/app/siddur/[id].tsx](<src/app/siddur/[id].tsx>) - Nusach reader: a mitzvah's or a standalone text in the user's nusach and language, resolved for the day, with optional auto-scroll; it also reads Chok LeYisrael (`chok_leyisrael`), a week's portion by day with a day row and, in a double week, the choice of parasha. Its section picker lists a text's chapters (Shacharit's eleven stations, from ברכות השחר to קוה אל ה׳, plus Hallel and Musaf on their days), or every section of a text without chapters.
 - [src/app/(tabs)/siddur.tsx](<src/app/(tabs)/siddur.tsx>) - Siddur tab: today's texts first, then a prayers card with shacharit, mincha and maariv taken from today's texts, then the thirteen standalone texts by group (meals, general with the blessings, the night texts and Tikkun HaKlali, festivals and celebrations), each greyed out on a day it is not said. [src/app/siddur/index.tsx](src/app/siddur/index.tsx) only redirects `/siddur` to it.
 - [src/app/schedule.tsx](src/app/schedule.tsx) - Schedule, a stack screen opened from the More tab: day, week and month views with previous / next arrows in its header, and a day drilldown into `/day/[date]`.
 - [src/app/day/[date].tsx](<src/app/day/[date].tsx>) - Read-only per-day route for schedule/history drilldown.
@@ -113,13 +114,14 @@ Store copy lives in [release/](release).
 - [src/stores/](src/stores) - Zustand stores persisted through MMKV.
 - [src/components/](src/components) - Reusable React Native UI.
 - [src/theme/](src/theme) - Theme colors, typography, spacing, animation/radius tokens.
-- [src/utils/](src/utils) - Pure helpers: day timeline, history stats, the weekly report, the shared `skipOn` predicate, the Chok LeYisrael portion of a day or an instant ([src/utils/chok.ts](src/utils/chok.ts)), and the taharah engine under [src/utils/taharah/](src/utils/taharah).
+- [src/utils/](src/utils) - Pure helpers: day timeline, history stats, the weekly report, the shared `skipOn` predicate, the Chok LeYisrael portion of a day or an instant and the reader text built from its assets ([src/utils/chok.ts](src/utils/chok.ts)), and the taharah engine under [src/utils/taharah/](src/utils/taharah).
 - [src/hooks/](src/hooks) - Shared React hooks (`useNow`).
 - [src/i18n/](src/i18n) - Flat [he.json](src/i18n/he.json) and [en.json](src/i18n/en.json) dictionaries plus a tiny translation wrapper.
 - [src/testing/](src/testing) - Test-only fixture helpers. Never imported by shipped code.
 - [locales/](locales) - Native string tables (`he.json`, `en.json`) wired by `locales` in [app.json](app.json): the app's display name per language on iOS (`CFBundleDisplayName`) and Android (`app_name`), and the iOS location and Face ID permission prompts. Each file is split into `ios` and `android` objects, because Expo writes every top-level key into Android `strings.xml` and Android lint rejects a translated key with no default-locale entry. They are native, so a change ships only in a build.
 - [scripts/](scripts) - Local workflow scripts and Expo config plugins.
 - [scripts/siddur/](scripts/siddur) - Build from pinned Sefaria and Wikisource sources to [assets/siddur/](assets/siddur), the generated nusach texts.
+- [scripts/chok/](scripts/chok) - Build from the raktora.50webs.com pages of "חוק לישראל השלם" to the Chok LeYisrael assets and [src/data/chokAssets.generated.ts](src/data/chokAssets.generated.ts). Until the owner's written permission the assets and the page cache are gitignored and the committed map is empty, which hides every Chok LeYisrael surface.
 - [design/jew-in-time/](design/jew-in-time) - Claude Design handoff. Use it only for UI/design work; read its README and Hi-Fi prototype before porting visuals. [design/stage1-previews/index.html](design/stage1-previews/index.html) is the preview board for the shipped design system (logo, icon styles, palettes, type scale).
 - [docs/](docs) - Public site published through GitHub Pages: support page, the privacy policy both stores link to, and [taharah-review.html](docs/taharah-review.html), the rule table a rav reviews.
 - [release/](release) - Store listing and privacy policy drafts.
@@ -239,7 +241,7 @@ The web scheduler file is intentionally a no-op shim. If adding exported schedul
 
 All primary stores use Zustand with MMKV persistence through `StorageService.createZustandStorage()`, except `useTaharahStore`, which persists to its own encrypted instance. Every store passes `version` and the identity `migrate` from [persistOptions.ts](src/stores/persistOptions.ts): without a `migrate`, zustand discards the persisted state on a version mismatch.
 
-- `useUserStore` (`user-store`): nusach, location, theme (one of the six palette names), language, notification permission/toggle, profile fields, halachic opinions, in-Israel flag, onboarding flag, the reader's text size and auto-scroll (`siddurAutoScroll`, off by default, and `siddurScrollSpeed`, a level into the 15 `SIDDUR_SCROLL_SPEEDS`), `prayerMode` (`minyan` or `alone`, `minyan` by default; `alone` folds the minyan-only passages in the siddur reader), the hilula notices switch (`hilulotEnabled`, off by default), the Rosh Chodesh notices switch (`roshChodeshEnabled`, off by default), the weekly report switch (`weeklyReportEnabled`, on by default), `gender` and `maritalStatus` (`married` or `single`), each `null` until answered, taharah opt-in.
+- `useUserStore` (`user-store`): nusach, location, theme (one of the six palette names), language, notification permission/toggle, profile fields, halachic opinions, in-Israel flag, onboarding flag, the reader's text size and auto-scroll (`siddurAutoScroll`, off by default, and `siddurScrollSpeed`, a level into the 15 `SIDDUR_SCROLL_SPEEDS`), `prayerMode` (`minyan` or `alone`, `minyan` by default; `alone` folds the minyan-only passages in the siddur reader), the hilula notices switch (`hilulotEnabled`, off by default), the Rosh Chodesh notices switch (`roshChodeshEnabled`, off by default), the weekly report switch (`weeklyReportEnabled`, on by default), the Chok LeYisrael double-week choice (`chokDoubleChoice`: `first`, `second` or `both`, `null` until a double week first asks), `gender` and `maritalStatus` (`married` or `single`), each `null` until answered, taharah opt-in.
 - `useMitzvotStore` (`mitzvot-store`): enabled state and custom reminders per mitzvah.
 - `useCompletionsStore` (`completions-store`): `completions[YYYY-MM-DD][mitzvahId] = timestamp` and parallel `skipped` map, `checkIns[firstHolyDay] = finishedAt`, and `archivedDays` — runs of kept days that retention pruned, so the streak reaches past 400 days.
 - `useCustomMitzvotStore` (`custom-mitzvot-store`): user-created mitzvah definitions.
@@ -259,7 +261,7 @@ All primary stores use Zustand with MMKV persistence through `StorageService.cre
 - `setLocale()` and `useI18n()` are lightweight wrappers. The `i18n-js` package is installed but the current app does not rely on the normal `i18n-js` runtime API.
 - RTL is dynamic based on `useUserStore.language`. `_layout.tsx` calls `I18nManager.allowRTL/forceRTL`; native language direction changes can require a reload.
 - Web also sets `document.documentElement.dir/lang` and `body.dir`.
-- Main reusable UI components: `MitzvahCard`, `CompletedRow`, `ReminderEditor`, `TimeRibbon`, `BottomTabs`, `NavBar`, `AppLogo`, `ShabbatScreen`, `ChipRow`, `SettingsSection`, `DayStepper`, `OnboardingDots`, `ChoiceRow`, `ThemeSwatchRow`, `ScrollSpeedStepper`, `TaharahLock`, `ScreenHeader` / `HeaderPill`, `SegmentedControl`, `ConfirmDialog`, `BottomSheet` / `SheetAction`, `Banner`, `SectionLabel`, `ListRow`, `IconTile` and `MitzvahIcon`.
+- Main reusable UI components: `MitzvahCard`, `CompletedRow`, `ReminderEditor`, `TimeRibbon`, `BottomTabs`, `NavBar`, `AppLogo`, `ShabbatScreen`, `ChipRow`, `SettingsSection`, `DayStepper`, `OnboardingDots`, `ChoiceRow`, `ThemeSwatchRow`, `ScrollSpeedStepper`, `TaharahLock`, `ScreenHeader` / `HeaderPill`, `SegmentedControl`, `ConfirmDialog`, `BottomSheet` / `SheetAction`, `Banner`, `SectionLabel`, `ListRow`, `IconTile`, `MitzvahIcon` and `ChokWeekControls`.
 - Design-system rules, each guarded by [designSystem.test.ts](src/app/__tests__/designSystem.test.ts) where a source scan can check it:
   - A stack screen renders `ScreenHeader` (back pill, title, `actions`); a tab renders `NavBar`. Neither keeps a local back button or header style.
   - Icons come from `MitzvahIcon` / `IconTile`, a mitzvah's through `iconFor(mitzvah.icon)`; no text glyph stands in for one.
@@ -334,6 +336,7 @@ pnpm typecheck
 - Version bump: raise `version` in [app.json](app.json) and [package.json](package.json) in the same edit, and only in a change that also produces a native build. See [Release and Updates](#release-and-updates) for why a bump on its own strands every installed user.
 - New taharah rule or preset value: change [taharahPresets.ts](src/data/taharahPresets.ts), raise `TAHARAH_RULES_VERSION`, update the pinned values in its test and the same cell in [docs/taharah-review.html](docs/taharah-review.html), then run `pnpm test:tz -- src/utils/__tests__/taharah`.
 - New taharah event type or task kind: extend [taharah.ts](src/types/taharah.ts), the engine, the `taharah.task` union of `PendingNotificationMeta` in [ids.ts](src/services/notifications/ids.ts) and the web shim, the taharah planner, and the log screen.
+- Chok LeYisrael content: follow [scripts/chok/AGENTS.md](scripts/chok/AGENTS.md). No raktora text, page cache or generated asset is committed, published or built into an app before the owner's written permission; restore the empty map with `pnpm chok:build --empty` after any local full build.
 
 ## Documentation Notes
 

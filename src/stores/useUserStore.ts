@@ -5,6 +5,7 @@ import { createZustandStorage } from '@/services/StorageService';
 import { STORE_VERSION, migrate, onRehydrateStorage } from './persistOptions';
 import { Nusach, HalachicOpinion } from '@/types/mitzvah';
 import { Location } from '@/types/zmanim';
+import { ChokDoubleChoice } from '@/types/chok';
 import { CITIES } from '@/data/cities';
 import type { LocationSource, LocationStatus } from '@/services/LocationService';
 import { THEME_NAMES, ThemeName } from '@/theme/colors';
@@ -47,6 +48,7 @@ type UserState = {
   hilulotEnabled: boolean;
   roshChodeshEnabled: boolean;
   weeklyReportEnabled: boolean;
+  chokDoubleChoice: ChokDoubleChoice | null;
   gender: Gender | null;
   maritalStatus: MaritalStatus | null;
   taharahEnabled: boolean;
@@ -70,6 +72,7 @@ type UserState = {
   setHilulotEnabled: (v: boolean) => void;
   setRoshChodeshEnabled: (v: boolean) => void;
   setWeeklyReportEnabled: (v: boolean) => void;
+  setChokDoubleChoice: (choice: ChokDoubleChoice) => void;
   setGender: (g: Gender | null) => void;
   setMaritalStatus: (m: MaritalStatus | null) => void;
   setTaharahEnabled: (v: boolean) => void;
@@ -118,6 +121,7 @@ export const useUserStore = create<UserState>()(
       hilulotEnabled: false,
       roshChodeshEnabled: false,
       weeklyReportEnabled: true,
+      chokDoubleChoice: null,
       gender: null,
       maritalStatus: null,
       taharahEnabled: false,
@@ -143,6 +147,7 @@ export const useUserStore = create<UserState>()(
       setHilulotEnabled: (v) => set({ hilulotEnabled: v }),
       setRoshChodeshEnabled: (v) => set({ roshChodeshEnabled: v }),
       setWeeklyReportEnabled: (v) => set({ weeklyReportEnabled: v }),
+      setChokDoubleChoice: (choice) => set({ chokDoubleChoice: choice }),
       setGender: (g) => set({ gender: g }),
       setMaritalStatus: (m) => set({ maritalStatus: m }),
       setTaharahEnabled: (v) => set({ taharahEnabled: v }),
@@ -168,6 +173,7 @@ export const useUserStore = create<UserState>()(
           hilulotEnabled: false,
           roshChodeshEnabled: false,
           weeklyReportEnabled: true,
+          chokDoubleChoice: null,
           gender: null,
           maritalStatus: null,
           taharahEnabled: false,

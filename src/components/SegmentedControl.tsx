@@ -5,7 +5,7 @@ import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 
 type Props<T extends string> = {
-  options: readonly { value: T; label: string }[];
+  options: readonly { value: T; label: string; accessibilityLabel?: string }[];
   value: T;
   onChange: (value: T) => void;
   tone?: 'header' | 'surface';
@@ -27,6 +27,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, t
             key={option.value}
             onPress={() => onChange(option.value)}
             accessibilityRole="radio"
+            accessibilityLabel={option.accessibilityLabel}
             accessibilityState={{ selected, checked: selected }}
             hitSlop={6}
             style={[styles.option, { backgroundColor: selected ? fill : 'transparent' }]}

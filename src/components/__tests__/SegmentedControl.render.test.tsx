@@ -66,3 +66,28 @@ describe('SegmentedControl', () => {
     expect(screen.getByText('עברית')).toHaveStyle({ color: colors.headerSub });
   });
 });
+
+describe('SegmentedControl accessibility label', () => {
+  beforeEach(() => {
+    useUserStore.getState().reset();
+  });
+
+  it('names an option by its accessibility label when it has one, else by its label', () => {
+    const onChange = jest.fn();
+    renderWithTheme(
+      <SegmentedControl
+        options={[
+          { value: 'a', label: 'א׳', accessibilityLabel: 'יום ראשון' },
+          { value: 'b', label: 'ב׳' },
+        ]}
+        value="a"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'יום ראשון' })).toBeSelected();
+    expect(screen.getByRole('radio', { name: 'ב׳' })).not.toBeSelected();
+    expect(screen.getByText('א׳')).toBeOnTheScreen();
+    fireEvent.press(screen.getByRole('radio', { name: 'ב׳' }));
+    expect(onChange).toHaveBeenCalledWith('b');
+  });
+});

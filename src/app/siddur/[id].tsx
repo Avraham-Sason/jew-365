@@ -33,6 +33,7 @@ import * as Haptics from 'expo-haptics';
 import { DateTime } from 'luxon';
 import Svg, { Path } from 'react-native-svg';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
+import { CHOK_TEXT_ID, chokAsset, hasChokContent } from '@/data/chok';
 import {
   SIDDUR_TEXTS,
   STANDALONE_TEXTS,
@@ -46,7 +47,7 @@ import {
 } from '@/data/siddur';
 import { useNow } from '@/hooks/useNow';
 import { HDate } from '@hebcal/core';
-import { loadSiddurText } from '@/services/SiddurService';
+import { loadChokParasha, loadSiddurText } from '@/services/SiddurService';
 import { HebcalService } from '@/services/HebcalService';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import {
@@ -58,6 +59,7 @@ import {
 } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
+import { ChokWeekControls } from '@/components/ChokWeekControls';
 import { HEADER_PILL_BG, ScreenHeader } from '@/components/ScreenHeader';
 import { ScrollSpeedStepper } from '@/components/ScrollSpeedStepper';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -65,6 +67,7 @@ import { useQuietBlock } from '@/components/ShabbatScreen';
 import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies, typography } from '@/theme/typography';
+import { ChokAsset, ChokDoubleChoice, ChokSectionKind, ChokSlot } from '@/types/chok';
 import { PassageLabel, Run, SiddurSection, SiddurSegment, SiddurText } from '@/types/siddur';
 import {
   OptionalBlock,
@@ -78,7 +81,17 @@ import {
   resolveSiddurText,
   siddurLineHeight,
 } from '@/utils/siddur';
-import { useI18n } from '@/i18n';
+import {
+  CHOK_SECTION_KINDS,
+  CHOK_SLOTS,
+  HAFTARAH_VARIANT,
+  chokParashaName,
+  chokReaderPortion,
+  chokSlotsOf,
+  chokText,
+  chokWeekName,
+} from '@/utils/chok';
+import { translate, useI18n } from '@/i18n';
 
 const KEEP_AWAKE_TAG = 'siddur-reader';
 // Native RN swaps physical left/right under RTL (Android and iOS); react-native-web keeps them literal.
@@ -96,11 +109,22 @@ const PILL_BORDER = 'rgba(255,255,255,0.18)';
 const PLAY_PATH = 'M8 5v14l11-7z';
 const PAUSE_PATH = 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z';
 const PRAYER_MODES = ['minyan', 'alone'] as const;
+const CHOK_KIND_NAMES = Object.fromEntries(
+  CHOK_SECTION_KINDS.map((kind) => [kind, translate(`chok.kind.${kind}`, undefined, 'en')]),
+) as Record<ChokSectionKind, string>;
 // iOS reports every non-animated scrollTo as the end of a fling, and the JS ScrollView then counts
 // itself as animating and swallows the next tap. Moving the contentOffset prop scrolls without that.
 const SCROLLS_BY_PROP = Platform.OS === 'ios';
 
-type LoadState = { status: 'loading' } | { status: 'ready'; text: SiddurText } | { status: 'error' };
+type LoadState =
+  | { status: 'loading' }
+  | { status: 'ready'; text: SiddurText }
+  | { status: 'chok'; assets: readonly ChokAsset[] }
+  | { status: 'error' };
+
+function parseSlotParam(value: string | undefined): ChokSlot | null {
+  return CHOK_SLOTS.find((slot) => slot === value) ?? null;
+}
 
 function parseDateParam(value: string | undefined): Date | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -255,8 +279,9 @@ export default function SiddurScreen() {
   const quiet = useQuietBlock() !== null;
   const { language, t } = useI18n();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id: string; date?: string }>();
-  const mitzvah = useMemo(() => findAnyMitzvah(params.id), [params.id]);
+  const params = useLocalSearchParams<{ id: string; date?: string; slot?: string }>();
+  const chok = params.id === CHOK_TEXT_ID;
+  const mitzvah = useMemo(() => (chok ? undefined : findAnyMitzvah(params.id)), [chok, params.id]);
   const nusach = useUserStore((s) => s.nusach);
   const location = useUserStore((s) => s.location);
   const inIsrael = useUserStore((s) => s.inIsrael);
@@ -268,7 +293,9 @@ export default function SiddurScreen() {
   const setScrollSpeed = useUserStore((s) => s.setSiddurScrollSpeed);
   const prayerMode = useUserStore((s) => s.prayerMode);
   const setPrayerMode = useUserStore((s) => s.setPrayerMode);
-  const standalone = mitzvah ? null : standaloneTextId(params.id);
+  const doubleChoice = useUserStore((s) => s.chokDoubleChoice);
+  const setDoubleChoice = useUserStore((s) => s.setChokDoubleChoice);
+  const standalone = mitzvah || chok ? null : standaloneTextId(params.id);
   const requestedDate = useMemo(() => parseDateParam(params.date), [params.date]);
   const windowDate = useMemo(() => requestedDate ?? new Date(), [requestedDate]);
   const mitzvahText = mitzvah && !mitzvah.isCustom ? mitzvahTextId(mitzvah.id) : null;
@@ -284,11 +311,23 @@ export default function SiddurScreen() {
     () => (todayAbs !== null ? new HDate(todayAbs) : liturgicalDay(windowDate, evening)),
     [todayAbs, windowDate, evening],
   );
+  const [chokSlot, setChokSlot] = useState<ChokSlot | null>(() => parseSlotParam(params.slot));
+  const chokPortion = useMemo(
+    () => (chok ? chokReaderPortion({ now, date: requestedDate, slot: chokSlot }, location, inIsrael) : null),
+    [chok, now, requestedDate, chokSlot, location, inIsrael],
+  );
+  const chokWeekKey = chokPortion ? chokPortion.parashiyot.join('|') : '';
+  const chokWeek = useMemo(() => (chokWeekKey ? chokWeekKey.split('|') : []), [chokWeekKey]);
+  const shownSlot = chokPortion?.slot ?? null;
+  const [asking, setAsking] = useState(false);
+  const asked = useRef(false);
   const place = useMemo(() => siddurPlace(location, inIsrael), [location, inIsrael]);
   const features = useMemo(() => dayFeatures(hebrewDay, place), [hebrewDay, place]);
-  const available = standalone
-    ? hasStandaloneText(standalone, nusach, features)
-    : Boolean(mitzvah && hasSiddurText(mitzvah, nusach, windowDate, place));
+  const available = chok
+    ? hasChokContent() && chokWeek.length > 0 && chokWeek.every((parasha) => chokAsset(parasha) !== undefined)
+    : standalone
+      ? hasStandaloneText(standalone, nusach, features)
+      : Boolean(mitzvah && hasSiddurText(mitzvah, nusach, windowDate, place));
   const done = useCompletionsStore((s) => Boolean(mitzvah && s.completions[dateKey(windowDate)]?.[mitzvah.id]));
   const markDone = useCompletionsStore((s) => s.markDone);
   const [attempt, setAttempt] = useState(0);
@@ -354,6 +393,16 @@ export default function SiddurScreen() {
 
   useEffect(() => {
     if (!available) return undefined;
+    if (chok) {
+      let active = true;
+      setLoad({ status: 'loading' });
+      Promise.all(chokWeek.map(loadChokParasha))
+        .then((assets) => active && setLoad({ status: 'chok', assets }))
+        .catch(() => active && setLoad({ status: 'error' }));
+      return () => {
+        active = false;
+      };
+    }
     if (mitzvah?.isCustom) {
       const text = customSiddurText(mitzvah, nusach);
       setLoad(text ? { status: 'ready', text } : { status: 'error' });
@@ -368,12 +417,33 @@ export default function SiddurScreen() {
     return () => {
       active = false;
     };
-  }, [mitzvah, available, nusach, textId, attempt]);
+  }, [mitzvah, available, nusach, textId, attempt, chok, chokWeek]);
 
-  const sections = useMemo(
-    () => (load.status === 'ready' ? resolveSiddurText(load.text, features) : []),
-    [load, features],
-  );
+  useEffect(() => {
+    if (chokWeek.length < 2 || doubleChoice !== null || asked.current) return;
+    asked.current = true;
+    setAsking(true);
+  }, [chokWeek, doubleChoice]);
+
+  const readyText = useMemo(() => {
+    if (load.status === 'ready') return load.text;
+    if (load.status !== 'chok' || !shownSlot) return null;
+    return chokText(load.assets, {
+      slot: shownSlot,
+      choice: doubleChoice ?? 'first',
+      variant: HAFTARAH_VARIANT[nusach],
+      kindNames: CHOK_KIND_NAMES,
+    });
+  }, [load, shownSlot, doubleChoice, nusach]);
+
+  const sections = useMemo(() => (readyText ? resolveSiddurText(readyText, features) : []), [readyText, features]);
+
+  useEffect(() => {
+    if (!chok) return;
+    setToggled(new Set());
+    setShownSection(0);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [chok, chokWeekKey, shownSlot, doubleChoice, listRef]);
 
   const hasMinyanPassages = useMemo(
     () => sections.some((section) => section.minyanOnly || section.segments.some((segment) => segment.minyan)),
@@ -394,10 +464,22 @@ export default function SiddurScreen() {
     }
   };
   const nameOf = (entry: { he: string; en?: string }) => (language === 'en' && entry.en ? entry.en : entry.he);
-  const name = mitzvah ? nameOf(mitzvah.name) : standalone ? nameOf(STANDALONE_TEXTS[standalone].name) : '';
+  const name = chok
+    ? t('chok.title')
+    : mitzvah
+      ? nameOf(mitzvah.name)
+      : standalone
+        ? nameOf(STANDALONE_TEXTS[standalone].name)
+        : '';
   const hebrewDateLabel = language === 'he' ? hebrewDay.renderGematriya() : hebrewDay.render('en');
   const occasions = HebcalService.getHolidays(hebrewDay.greg(), location, language);
-  const subtitle = [t(`nusach.${nusach}`), hebrewDateLabel, ...occasions].join(' · ');
+  const subtitle = chokPortion
+    ? `${t('chok.parashaOf', { name: chokWeekName(chokPortion.parashiyot, language) })} · ${t(`chok.slot.${chokPortion.slot}`)}`
+    : [t(`nusach.${nusach}`), hebrewDateLabel, ...occasions].join(' · ');
+  const chooseDouble = (choice: ChokDoubleChoice) => {
+    setDoubleChoice(choice);
+    setAsking(false);
+  };
   const listExtraData = useMemo(
     () => ({ fontSize, language, colors, toggled, prayerMode }),
     [fontSize, language, colors, toggled, prayerMode],
@@ -564,7 +646,7 @@ export default function SiddurScreen() {
   const currentIndex = sizeIndex === -1 ? SIDDUR_FONT_SIZES.length - 1 : sizeIndex;
 
   const body = (() => {
-    if (!mitzvah && !standalone) return <Message text={t('errors.generic')} />;
+    if (!mitzvah && !standalone && !chok) return <Message text={t('errors.generic')} />;
     if (!available) return <Message text={t('siddur.unavailable')} />;
     if (load.status === 'loading') {
       return (
@@ -603,6 +685,18 @@ export default function SiddurScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenHeader title={name} subtitle={subtitle} onBack={goBack}>
         <View style={styles.toolbarStack}>
+          {chokPortion && available ? (
+            <ChokWeekControls
+              slots={chokSlotsOf(chokPortion.parashiyot[0])}
+              slot={chokPortion.slot}
+              onSlot={setChokSlot}
+              names={chokPortion.parashiyot.map((parasha) => chokParashaName(parasha, language))}
+              choice={doubleChoice ?? 'first'}
+              onChoice={chooseDouble}
+              asking={asking}
+              onAskClose={() => setAsking(false)}
+            />
+          ) : null}
           {picker.length > 1 && currentEntry ? (
             <Pressable
               onPress={() => setPickerOpen(true)}
@@ -712,13 +806,19 @@ export default function SiddurScreen() {
                 )
               ) : null}
 
-              {load.status === 'ready' && load.text.credits.length ? (
+              {readyText?.dedication ? (
+                <Text style={[typography.caption, styles.dedication, { color: colors.textSub }]}>
+                  {readyText.dedication}
+                </Text>
+              ) : null}
+
+              {readyText?.credits.length ? (
                 <View style={styles.credits}>
                   <Text style={[typography.captionBold, { color: colors.textSub }]}>{t('siddur.sources')}</Text>
                   <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
                     {t('siddur.adapted')}
                   </Text>
-                  {load.text.credits.map((credit) => (
+                  {readyText.credits.map((credit) => (
                     <Pressable
                       key={credit.title}
                       onPress={() => Linking.openURL(credit.url).catch(() => {})}
@@ -896,6 +996,7 @@ function SegmentView({
       return { fontFamily: fontFamilies.heebo.regular, fontSize: Math.round(fontSize * 0.62), color: colors.textMuted };
     }
     if (run.s === 'b') return { fontFamily: fontFamilies.siddur.bold };
+    if (run.s === 't') return { fontSize: Math.round(fontSize * 0.82), color: colors.textSub };
     return null;
   };
   return (
@@ -1061,6 +1162,10 @@ const styles = StyleSheet.create({
   doneText: {
     textAlign: 'center',
     paddingVertical: spacing.lg,
+  },
+  dedication: {
+    marginTop: spacing.xl,
+    textAlign: 'center',
   },
   credits: {
     marginTop: spacing.xl,

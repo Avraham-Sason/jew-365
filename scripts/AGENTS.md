@@ -12,10 +12,11 @@
 - [jest-timezone-setup.js](jest-timezone-setup.js) is a Jest `setupFiles` guard. When `JEST_TZ` is set, it fails the run unless the test process really runs in that zone.
 - [withMitzvahNotificationAction.js](withMitzvahNotificationAction.js) is an Expo config plugin that injects Android notification action handling.
 - [check-dox.js](check-dox.js) enforces the mechanical half of the DOX contract: dead links, plain-text file references, section order, and Child DOX Index accuracy.
-- [jest-asset-stub.js](jest-asset-stub.js) stands in for siddur asset modules under Jest, where Metro asset resolution does not exist.
-- [publish-update.js](publish-update.js) backs every `pnpm update:*`. It reads the update messages EAS holds for the channel's branch and the [../app.json](../app.json) `version` (the runtime version, by the `appVersion` policy) and takes the next number: one above the highest `<version>-<n>:` message prefix, or, when no message carries one, one above the count of updates. It prefixes `--message` with `<version>-<n>: `, puts `n` in `EXPO_PUBLIC_UPDATE_NUMBER`, which Metro inlines into the bundle, and runs `eas update --clear-cache` so no cached transform keeps an older number. A branch EAS does not know yet starts at 1. It refuses to publish without `--message` or when EAS cannot list the branch.
+- [jest-asset-stub.js](jest-asset-stub.js) stands in for siddur and Chok LeYisrael asset modules under Jest, where Metro asset resolution does not exist.
+- [publish-update.js](publish-update.js) backs every `pnpm update:*`. It reads the update messages EAS holds for the channel's branch and the [../app.json](../app.json) `version` (the runtime version, by the `appVersion` policy) and takes the next number: one above the highest `<version>-<n>:` message prefix, or, when no message carries one, one above the count of updates. It prefixes `--message` with `<version>-<n>: `, puts `n` in `EXPO_PUBLIC_UPDATE_NUMBER`, which Metro inlines into the bundle, and runs `eas update --clear-cache` so no cached transform keeps an older number. A branch EAS does not know yet starts at 1. It refuses to publish without `--message` or when EAS cannot list the branch. It refuses to publish while [../src/data/chokAssets.generated.ts](../src/data/chokAssets.generated.ts) differs from the last commit (`chokMapCommitted()`), so a local Chok LeYisrael build never ships by accident.
 - Script tests live in [__tests__/](__tests__/).
 - [siddur/AGENTS.md](siddur/AGENTS.md) owns the siddur content build.
+- [chok/AGENTS.md](chok/AGENTS.md) owns the Chok LeYisrael content build, local only until the source's owner gives written permission.
 
 ## Local Contracts
 
@@ -43,3 +44,4 @@
 ## Child DOX Index
 
 - [siddur/AGENTS.md](siddur/AGENTS.md) - Build from pinned Sefaria and Wikisource sources to the bundled, day-conditioned nusach texts.
+- [chok/AGENTS.md](chok/AGENTS.md) - Build from the raktora pages of "חוק לישראל השלם" to the Chok LeYisrael assets.

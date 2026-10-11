@@ -38,6 +38,7 @@ module.exports = defineConfig([
       'docs/*',
       '.claude/*',
       'src/data/siddurAssets.generated.ts',
+      'src/data/chokAssets.generated.ts',
     ],
   },
   {

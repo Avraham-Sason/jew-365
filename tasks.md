@@ -1,122 +1,105 @@
 # Tasks
 
-Standalone siddur catalog: texts not tied to a mitzvah or a notification (Birkat Hamazon, Tefilat Haderech, …), read through the existing nusach reader. Decisions of 2026-10-08: entry from a home shortcut and the library header, no sixth tab; Retzei / VeHachalitzenu and the Yom Tov Yaaleh Veyavo are never shown; every text ships for all four nuschaot or not at all; no commit or OTA without per-action approval.
+Open items first, by priority; completed work stays below for the record. Standing rules: no commit or OTA without per-action approval; every siddur text ships for all four nuschaot or not at all; English under a Hebrew segment is the pinned source's translation of exactly that segment (`scripts/siddur/AGENTS.md`, Local Contracts).
 
-## High Priority
-- [x] Split `SiddurTextId` into mitzvah and standalone ids
-  **What it is:** In `src/types/siddur.ts` add `MitzvahTextId` (the ten existing ids), `StandaloneTextId` (`birkat_hamazon`, `al_hamichya`, `borei_nefashot`, `tefilat_haderech`) and `SiddurGroup`; `SiddurTextId` becomes their union.
-  **What it solves:** Today a text id is a mitzvah id, so nothing can describe a text that has no mitzvah.
-  **Expected result:** `pnpm typecheck` passes with the generated asset map typed over the union.
+Leftovers of the 2026-10-11 English alignment round (commit 1d6a37f, update 1.0.18-7) were recorded on 2026-10-11.
 
-- [x] Add the standalone text registry to `src/data/siddur.ts`
-  **What it is:** `STANDALONE_TEXTS: Record<StandaloneTextId, { name: {he, en}; group; available?: Condition }>`, `SIDDUR_TEXT_IDS` over both registries, `siddurTextId()` accepting both, `standaloneText(id)` and `hasStandaloneText(id, nusach, features)` (asset present and `available` holds).
-  **What it solves:** One registry, mirroring `MITZVOT`, is the single source for names, grouping and availability of catalog texts; `hasSiddurText()` stays the mitzvah bridge untouched.
-  **Expected result:** `siddur.test.ts` ships-every-text check iterates both registries and passes once the assets exist.
+## High Priority — Chok LeYisrael and the "More" tab (branch `hok-leisrael`)
 
-- [x] Expose the Hebrew day in effect at an instant from `HebcalService`
-  **What it is:** `HebcalService.hebrewDayAt(instant, location): HDate` returning the last candidate of the existing `hebrewDaysAt()` (after shkia the next Hebrew day).
-  **What it solves:** A standalone text opened with no date must resolve "now" at the location, the same rule the home header already uses; no second copy of the shkia rule.
-  **Expected result:** A dated test in `HebcalService.test.ts` shows the day advancing at shkia in four zones (`pnpm test:tz`).
+User decisions of 2026-10-11: the schedule tab becomes "עוד" / "More", a hub holding the schedule and Chok LeYisrael; the text is the complete "חוק לישראל השלם" of raktora.50webs.com, used only with its owner's written permission; Chok LeYisrael is a mitzvah in the library under the `learning` category, off by default (reminders, "סיימתי", history, streak, weekly report); Rashi and Bartenura are included, folded closed by default; Hebrew only; the permission request says only that the app has no ads.
 
-- [x] Decouple the reader route from the mitzvah
-  **What it is:** `src/app/siddur/[id].tsx` resolves `id` as a text id: a mitzvah (static or custom) as today, else a standalone entry. For standalone: `date` optional (default `hebrewDayAt(now)` re-read through `useNow`), name from the registry, availability from `hasStandaloneText()`, no "סיימתי" button. Existing `/siddur/<mitzvahId>?date=` links are unchanged.
-  **What it solves:** The reader currently needs a mitzvah and a window date, which standalone texts do not have.
-  **Expected result:** `/siddur/birkat_hamazon` renders the text for the current Hebrew day; `/siddur/mincha?date=…` behaves exactly as before; `routes.test.ts` and `typecheck` pass.
+Day rules, decided 2026-10-11 after research: a week takes the parasha of its Shabbat; a week whose Shabbat is a festival follows hebcal's `findParshaHaShavua()` rule (`@hebcal/leyning`; written in `src/utils/chok.ts`, not copied, so no licence notice is owed): a Shabbat on 3–22 Tishrei in Israel or 3–23 abroad gives Vezot Haberacha, any other festival Shabbat gives the next parasha read. Nothing is learned on Yom Tov itself (Ben Ish Chai, year 2, Lech Lecha 9; Kaf HaChaim 132:7); Chol HaMoed is learned. In a double week the user chooses the first parasha, the second or both: a reader control with the three options, asked once through a sheet and remembered for later double weeks (the Chida learned the first only; no source found for both). Days of the current week that were missed, Yom Tov days included, show as closed make-up folds at the top of the reader before today's portion (the Ari via Kaf HaChaim 132:6: a missed day is made up the next day, before that day's portion).
 
-- [x] Add the catalog screen `src/app/siddur/index.tsx`
-  **What it is:** A stack route listing `STANDALONE_TEXTS` grouped by `SiddurGroup` (group headings from i18n, names from the registry in the UI language), rows styled like the library rows, each pushing `/siddur/[id]`. Registered in the root `_layout.tsx` with `presentation: 'card'`.
-  **What it solves:** The user-facing entry to the standalone siddur.
-  **Expected result:** The screen lists the four M1 texts under "סעודה" and "דרך"; `routes.test.ts` includes `siddur/index`.
+Findings of 2026-10-11: no openly licensed complete Chok LeYisrael exists (none on Sefaria or in Otzaria; Hebrew Wikisource has 3 complete weeks of bare references). raktora has all 54 parashiyot fully vocalized, one windows-1255 page per parasha (`hokleisrael/<name>.htm`), machine-marked: `<!--It=…,c=,p=-->` Torah, `Io` Onkelos, `Ir` Rashi, `In` Nevi'im, `Ip` Rashi on Nevi'im, `Ik` Ketuvim, `Ih` the Friday haftarah (Sephardi and Ashkenazi variants where they differ), each closed by `<!--ep-->`; Mishnah with Bartenura, Gemara, Zohar, halacha and mussar are plain HTML under per-day anchors. Seven slots per parasha (Sunday to Thursday, Thursday night, Friday; Vezot Haberacha has no Friday). About 300–340 KB of text per parasha, ~17 MB for the whole work.
 
-- [x] Add the home shortcut and the library header button
-  **What it is:** On home, a slim pressable row after the banners (title `siddur.catalog.title`, caption `siddur.catalog.caption`) opening `/siddur`; in the library tab, a siddur button beside the "+" in the `NavBar` `left` slot.
-  **What it solves:** Decision 5a: entry from home and the library, no sixth tab.
-  **Expected result:** Both open the catalog; home keeps its tab position and layout.
+Hard rule until the permission arrives in writing: the repository is public, so no Chok text (source cache or generated asset) is committed, and nothing that carries it ships. Parser tests run on a synthetic fixture. A local full build (`pnpm chok:build`) is allowed for validation and previews; `pnpm chok:build --empty` restores the committed empty map before anything is committed, published or built.
 
-- [x] Add i18n keys for the catalog
-  **What it is:** `siddur.catalog.title`, `siddur.catalog.caption`, `siddur.catalog.open`, `siddur.group.meals`, `siddur.group.travel` (plus later groups) in both `he.json` and `en.json`.
-  **What it solves:** Normal UI copy goes through i18n; the parity test enforces both dictionaries.
-  **Expected result:** `pnpm test -- src/i18n/__tests__/i18n.test.ts` passes.
+- [ ] Obtain written permission from the raktora owner
+  **What it is:** Send the permission request (drafted in Hebrew, ready to send) to raktora@walla.co.il and keep the written reply.
+  **What it solves:** The site is marked "כל הזכויות שמורות"; the app may not bundle its text without permission.
+  **Expected result:** A written yes that covers bundling the full text in the free app with credit, stored with the release records; or a no, which sends the content back to the user's source decision.
 
-- [x] Add the new day flags for yesterday's inserts
-  **What it is:** `DayFlag`s `yaalehVeyavoYesterday` (the previous Hebrew day was Rosh Chodesh or Chol Hamoed and today is not) and `alHanissimYesterday` (previous day Chanukah or Purim, today not), computed in `dayFeatures()`.
-  **What it solves:** A meal begun before sunset keeps yesterday's inserts; the date alone cannot decide, so the reader folds them under a `WHEN_SAID` label on the following day.
-  **Expected result:** Dated tests in `src/utils/__tests__/siddur.test.ts` for the day after Rosh Chodesh, the day after Chanukah and an ordinary day.
+- [ ] Confirm the remaining defaults
+  **What it is:** Defaults taken without a user decision, to confirm or flip: Israel versus abroad follows `inIsrael`; the haftarah variant is the Sephardi one for Edot HaMizrach and the Ashkenazi one for the other nuschaot; the Thursday-night slot is readable but not tracked on its own; Friday of a Vezot Haberacha week has no portion.
+  **What it solves:** Each is a reversible default living in one named place.
+  **Expected result:** Each recorded in the chok AGENTS.md and pinned by a dated test.
 
-- [x] Manifest: Birkat Hamazon for all four nuschaot
-  **What it is:** `TEXTS.birkat_hamazon` from Metsudah Ashkenaz `Berachot > Birkat HaMazon`, Metsudah Sefard `Birchat HaMazon > Birchat HaMazon`, Edot `Post Meal Blessing`, Chabad `Blessings > Birkat HaMazon`. Sections: the psalm before, zimun (`SAID_BY` labels for the leader, the diners and one who did not eat), the four blessings, Harachaman. Conditions: Al Hanissim on `chanukah`/`purim`, Yaaleh Veyavo on `roshChodesh`/`cholHamoedPesach`/`cholHamoedSukkot` only, Harachaman for Rosh Chodesh / Sukkot by flag, the Sukkot wedding and brit variants folded, Shabbat / Yom Tov / Rosh Hashana lines and the forgetting-rules dropped, the Sefard sheva-berachot zimun folded under `WHEN_SAID`, the "migdol" alternative resolved by `musaf`.
-  **What it solves:** The first and largest standalone text, with the user's insert policy applied.
-  **Expected result:** `pnpm siddur:build` passes twice with no diff; dated cases in `siddur.test.ts`: Rosh Chodesh shows Yaaleh Veyavo, Chanukah and Purim show Al Hanissim, a weekday shows neither, Retzei never appears.
+- [x] Turn the schedule tab into the "More" hub (commit 3a3f3b2, 2026-10-11; the same pass fixed the month grid that wrapped after six cells, the badge over two-digit dates, the full-height week cards, and drew every chevron as the `chevronLeft` / `chevronRight` icon, because the `‹` glyph mirrors in Hebrew and pointed back)
+  **What it is:** `src/app/(tabs)/schedule.tsx` moves to the stack route `src/app/schedule.tsx` (`ScreenHeader` with back, its segmented control and arrows in the header body). A new `src/app/(tabs)/more.tsx` takes the tab's place (home stays third) with a `NavBar` and one bordered card of `ListRow`s: the schedule and Chok LeYisrael (caption: today's parasha and slot). `BottomTabs` swaps `schedule` for `more` with its own icon; `calendar` and `chok` join `ICON_NAMES`; `nav.more` and the row copy go into both dictionaries.
+  **What it solves:** Room for Chok LeYisrael and later additions without a sixth tab.
+  **Expected result:** `routes.test.ts`, `designSystem.test.ts` and the i18n parity suite pass; the hub and the schedule render at 360 and 375 widths in both languages on the web preview; the day drilldown from the schedule still opens `/day/[date]`.
 
-- [x] Manifest: Al Hamichya and Borei Nefashot for all four nuschaot
-  **What it is:** `TEXTS.al_hamichya` from Daat Ashkenaz `Brachot Achronot > Al Hamichyah`, Torat Emet Sefard `Blessings > Me'ein Shalosh`, Edot (derived; the Edot source has no Me'ein Shalosh leaf, so take the verified Sefard wording or add a pinned source), Chabad `Blessings > Berakha Acharona` 0–13. `TEXTS.borei_nefashot` from Daat Ashkenaz `Borei Nefashot`, Torat Emet Sefard `Blessings > Borei Nefashot`, Edot `Blessings on Enjoyments` 11–12, Chabad `Berakha Acharona` 14–15. The grain / wine / fruit alternatives stay as labelled inline alternatives; the Israel / abroad ending uses `inIsrael`; Rosh Chodesh and Chol Hamoed inserts by flag; the Shabbat and Yom Tov inserts dropped.
-  **What it solves:** The two after-blessings that follow a snack, the most frequent use of the catalog.
-  **Expected result:** Build passes; dated tests assert the Rosh Chodesh insert and the Israel ending.
+- [x] Build the Chok LeYisrael assets from the pinned raktora pages (built 2026-10-11, local only: 54 assets, 18.56 MB raw, 4.62 MB gzipped; the committed map stays empty until the permission; the delivery choice moves to the release task)
+  **What it is:** `scripts/chok/` with its own AGENTS.md: fetch each of the 54 pages once into a gitignored cache, decode windows-1255, parse by the markup codes and day anchors into the reader's section/segment shape (Torah verse with its Onkelos, Rashi and Rashi on Nevi'im and Bartenura as closed folds, haftarah per variant), NFC-normalize, and write `assets/chok/<parasha>.chok` plus `src/data/chokAssets.generated.ts`. The build fails on a missing slot, a verse count that breaks the 6/4/5/6/5/26/rest rule, an empty section or a second run that changes a file.
+  **What it solves:** The content, reproducibly, from one pinned source with its credit and dedication.
+  **Expected result:** 54 × 7 slots (6 for Vezot Haberacha) built; parser tests green on a synthetic fixture; total size measured and the delivery chosen (plain, or gzip with a pure-JS inflate so it still ships over the air).
 
-- [x] Manifest: Tefilat Haderech for all four nuschaot
-  **What it is:** `TEXTS.tefilat_haderech` from Daat Ashkenaz `Berachot > Tefillat HaDerech` (English from the community translation, pinned as a new source), Torat Emet Sefard `Blessings > Traveler's Prayer` 0–20 plus the city prayers and the Ramban sea prayer folded under `WHEN_SAID`, Edot `Traveler's Prayer` with the verses folded as `SOME_SAY`, Chabad `The Travelers' Prayer`.
-  **What it solves:** The second text the user named.
-  **Expected result:** Build passes; `siddur.test.ts` asserts the prayer opens with "יהי רצון" in every nusach.
+- [x] Resolve the portion for a day (commit 3a3f3b2, 2026-10-11)
+  **What it is:** Pure `chokParashiyot()`, `chokPortionAt()`, `chokPortionOn()` and `chokMakeUpsBefore()` in `src/utils/chok.ts` over hebcal `getSedra(year, inIsrael).lookup()`: the learning day runs alot to alot, Thursday from nightfall is the Thursday-night slot, motzaei Shabbat is the next parasha's Sunday, plus the rules decided above (festival rule written after hebcal's, not copied).
+  **What it solves:** One answer for the reader, the hub caption, the mitzvah window and the notification.
+  **Expected result:** Dated tests for an ordinary, a double, a festival and a diverging Israel/abroad week, green under `pnpm test:tz`.
 
-- [x] Add `pnpm siddur:build` output and the generated map for the four texts
-  **What it is:** Run the build, commit the new `assets/siddur/<nusach>/<id>.siddur` files and `siddurAssets.generated.ts`.
-  **What it solves:** Assets are generated, never hand-edited; Metro bundles them for the OTA.
-  **Expected result:** Sixteen new asset files; a second build changes nothing.
+- [x] Read Chok LeYisrael in the siddur reader (built and verified 2026-10-11 against a local full build; the day row is a header-tone SegmentedControl because seven ChipRow pills do not fit 320 points in English; Rashi on every book, Bartenura and the Zohar's Hebrew translation fold closed; the Targum of the prophets shows beside Onkelos)
+  **What it is:** A third text kind in `/siddur/[id]` (`chok_leyisrael` with `date`), loaded per parasha; `SiddurText.nusach` becomes optional; the subtitle names the parasha and slot; a slot row (`ChipRow`: א׳ ב׳ ג׳ ד׳ ה׳ ליל ו׳ ו׳) switches within the week; the section picker lists Torah, Nevi'im, Ketuvim, Mishnah, Gemara, Zohar, halacha and mussar; credits show the source and its dedication.
+  **What it solves:** Text size, auto-scroll, the picker, keep-awake and "סיימתי" come from the existing reader instead of a second copy.
+  **Expected result:** Every slot of three sample parashiyot opens, folds start closed, the toolbar still fits one line at 360 points.
 
-- [x] Tests for the reader decoupling and the catalog
-  **What it is:** `src/data/__tests__/siddur.test.ts` cases for the registry (`standaloneText`, `hasStandaloneText` with and without the asset / condition), `routes.test.ts` for `siddur/index`, and the dated content cases named above; run `pnpm test:tz -- src/utils/__tests__/siddur.test.ts src/data/__tests__/siddur.test.ts`.
-  **What it solves:** The suite must fail for the reason it claims: wrong insert, missing nusach, broken route.
-  **Expected result:** All suites green in four zones.
+- [ ] Add Chok LeYisrael as a learning mitzvah
+  **What it is:** A `chok_leyisrael` registry entry, category `learning`, off by default, with its window, default reminder, `skipOn` (Shabbat, Yom Tov) and `hasSiddurText()` support, so the reminder offers "open text", home, history, the streak, the check-in and the weekly report follow it; the store `merge` brings it to existing installs; "סיימתי" in the reader; and the make-up folds at the top of the reader for this week's missed days (`chokMakeUpsBefore()` minus the marked ones, Yom Tov days included), shown only while the mitzvah is on. Hidden with the rest of the feature while `hasChokContent()` is false.
+  **What it solves:** Tracking and reminders through the machinery every mitzvah already uses.
+  **Expected result:** The mitzvah suites, the scheduler and response-handler suites and `pnpm test:tz -- src/data` pass; enabling it in the library schedules its reminder.
 
-- [x] DOX pass for M1
-  **What it is:** Update `scripts/siddur/AGENTS.md` (standalone specs, new labels, source additions), `src/data/AGENTS.md` (the standalone registry), `src/app/siddur/AGENTS.md` (catalog route, optional date, no done button), `src/app/(tabs)/AGENTS.md` (home shortcut, library button), `src/utils/AGENTS.md` (yesterday flags), `src/services/AGENTS.md` (`hebrewDayAt`), root `AGENTS.md` (Source Map, Common Change Checklist: "New standalone text"), then `pnpm check:dox`.
-  **What it solves:** The DOX contract: every meaningful change is reflected in the nearest owning doc.
-  **Expected result:** `pnpm check:dox` passes and the docs describe the shipped behavior.
+- [ ] DOX, store copy and release
+  **What it is:** Update the AGENTS.md chain (root source map, app, tabs, components, data, siddur reader, new chok build), the store copy in `release/` and `docs/index.html`; with the permission in hand: set `DEDICATION` if the owner wants it, drop or keep the Zohar's Hebrew translation per the owner's answer about its source, choose the delivery (18.56 MB raw against 4.62 MB gzipped; check whether EAS Update serves assets compressed, else gzip the assets and inflate in JS), remove `assets/chok/` from `.gitignore`, commit the full build; then, with the user's approval, publish over the air (no native change: `expo-asset` and `expo-file-system` are already in the binary).
+  **What it solves:** Keeps the contracts true and ships the feature.
+  **Expected result:** `pnpm check:dox`, `pnpm typecheck`, `pnpm lint` and `pnpm test:tz` green; a numbered production update.
 
 ## Medium Priority
-- [x] M2: Kriat Shema al Hamita for all four nuschaot
-  **What it is:** `kriat_shema_al_hamita` from Metsudah Sefard `Bedtime Shema`, Edot `Bedtime Shema`, Chabad `Bedtime Shema`, and Ashkenaz from a pinned source (Metsudah Ashkenaz has no leaf; candidates: Daat Ashkenaz or Hebrew Wikisource). Night text: resolves for the Hebrew day already in effect.
-  **What it solves:** M2 scope.
-  **Expected result:** Build and dated tests pass; the catalog shows it under a "לילה" group.
+- [ ] Add "affects X" indicators to the custom-mitzvah settings
+  **What it is:** On `src/app/custom-mitzvah.tsx`, next to each setting that already carries an explanation (skip on Shabbat / Yom Tov, active days, reminders, rich content), add a small visual indicator naming the surface the setting changes: the schedule, the notification, the reader, history. Reuse an existing shared component (`ChipRow` or a caption variant); no new one-off styling.
+  **What it solves:** Item 5 of the custom-mitzvah rework of 2026-10-11 asked for an explanation *and* a visual indicator per setting; the completeness check marked it partial because only the explanations shipped.
+  **Expected result:** Every explained setting shows its indicator in Hebrew and English at 360 and 375 widths without wrapping into a third line; `designSystem.test.ts` stays green.
 
-- [x] M2: Asher Yatzar as a standalone text
-  **What it is:** `asher_yatzar` reusing the leaves the morning blessings already map (Ashkenaz `Preparatory Prayers > Asher Yatzar`, the Sefard, Edot and Chabad morning-blessing segments).
-  **What it solves:** The most frequent daytime blessing, said outside the morning service.
-  **Expected result:** Build passes; one segment per nusach, verified identical to the morning text.
-
-- [x] M2: Birchot hanehenin and birchot hare'iya
-  **What it is:** `birchot_hanehenin` (hamotzi, mezonot, hagafen, haetz, haadama, shehakol, netilat yadayim, spices) and `birchot_hareiya` (thunder, lightning, rainbow, sea, blossoming trees, shehecheyanu) from Daat Ashkenaz `Barachot Rishonot` / `Blessings on Sights Sounds and Smells`, Torat Emet Sefard `Blessings > …` and `Mealtime Blessings`, Edot `Blessings on Enjoyments` / `Assorted Blessings and Prayers`, Chabad `Blessings > Various Blessings`. Each blessing is its own section so the picker jumps to it.
-  **What it solves:** M2 scope.
-  **Expected result:** Build passes; a test asserts each blessing title appears once per nusach.
-
-- [x] Fold yesterday's inserts in Birkat Hamazon and Al Hamichya
-  **What it is:** On `yaalehVeyavoYesterday` / `alHanissimYesterday` the insert appears folded under `WHEN_SAID` "אם התחילו לאכול לפני השקיעה ב…" instead of being hidden.
-  **What it solves:** A meal that began on Rosh Chodesh, Chol Hamoed, Chanukah or Purim and ends after nightfall keeps the insert.
-  **Expected result:** A dated test shows the fold on the day after Rosh Chodesh and no insert two days later.
-
-- [x] Halachic review list for the standalone texts
-  **What it is:** Append the M1–M3 items a rav should confirm (bein hashmashot resolution, the folded forgetting rule, source substitutions between nuschaot) to the existing review notes in `scripts/siddur/AGENTS.md`.
-  **What it solves:** Open items are recorded where the earlier milestones keep theirs.
-  **Expected result:** The list exists before the preview-channel publish.
+- [ ] Fold the Sefard sustenance prayer inside Shema Koleinu
+  **What it is:** In `sefardShacharit()`, `sefardMincha()` and `sefardMaariv()` (`scripts/siddur/manifest.js`), put the "אתה הוא יהוה האלהים הזן ומפרנס" prayer and its instruction under a `SOME_SAY` label (a new label, "יש מוסיפים תפילה על הפרנסה" / "Some add a prayer for sustenance"), while the chatimah "כי אתה שומע תפלת כל פה" stays outside the fold with the English the alignment round moved onto it. Check the three services: in shacharit the chatimah shares the prayer's source segment (cut it with `optionalParts` + `until`), in mincha and maariv it has its own segment.
+  **What it solves:** The source prints "One may add the following prayer", which the project's fold rule ("יש נוהגים / יש אומרים / מי שרוצה") covers, yet the prayer shows open to every reader.
+  **Expected result:** `pnpm siddur:build` passes twice with no diff; a dated case in `src/data/__tests__/siddur.test.ts` shows the fold label on the three Sefard services and the chatimah visible outside it with its English.
 
 ## Low Priority
-- [x] M3: Kiddush Levana
-  **What it is:** `kiddush_levana` from Metsudah Ashkenaz `Weekday > Maariv > Birkat HaLevana`, Torat Emet Sefard `Kiddush Levanah`, Edot `Blessing of the Moon`, Chabad `Kiddush Levanah`; a new `DayFlag` `kiddushLevana` (nights 3–15 of the Hebrew month) gating `available`, with Tisha B'Av and Yom Kippur handled by the existing flags.
-  **What it solves:** M3 scope.
-  **Expected result:** Build passes; the catalog hides it outside the window; dated tests for nights 2, 3, 15 and 16.
+- [ ] Decide the three aligned-but-inaccurate translations
+  **What it is:** Three places where the English sits under the right Hebrew but renders it wrongly or incompletely, left alone because the policy forbids writing a translation: Ashkenaz `tefilat_haderech` renders "לחן ולחסד ולרחמים" as "peace, kindness, and mercy" (Community translation); Chabad mincha's Ten Days "מי כמוך" adds "kindness" ("for a life of kindness" for "לחיים ברחמים"); Edot `tefilat_haderech` has no English for "ותשלח ברכה במעשה ידינו". Options per case: an `enEdits` word fix justified as a typo-class correction (precedent: "fill the verse" → "fill the universe"), a different pinned source for that leaf, or leaving it.
+  **What it solves:** Closes the last items the alignment audit surfaced without widening the "no authored translation" rule silently.
+  **Expected result:** Each of the three is either fixed in the manifest with a pinned test or recorded as accepted in `scripts/siddur/AGENTS.md`; the user's decision is noted on the task.
 
-- [x] M3: Mezuzah blessing and Sheva Berachot
-  **What it is:** `mezuzah` from Torat Emet Sefard `Blessings > Mezuzah`, Edot `Assorted Blessings and Prayers > Mezuza`, Chabad `Various Blessings`, Ashkenaz from Daat `Birkhot Hamitzvot`; `sheva_berachot` from Metsudah Sefard `Various Blessings > Sheva Berachot`, Edot `Sheva Berachot`, Chabad `Sheva Berakhot`, Ashkenaz from Metsudah Shabbat `The Seven Marriage Blessings`.
-  **What it solves:** M3 scope.
-  **Expected result:** Build passes; both appear under a "ברכות" group.
+- [ ] Let an edit reach memory-filled English (Edot maariv half-Kaddish note)
+  **What it is:** The Edot maariv instruction "ואומר החזן חצי קדיש" has no source English; the translation memory filled it from Ashkenaz's post-Yishtabach note, whose tail says this Kaddish closes Pesukei Dezimrah. The alignment round dropped it (`enDrop`) because `enEdits` only run on source English. Add a build mechanism in `scripts/siddur/build.js` for English that arrives through `fillTranslations()` (either `enEdits` entries flagged `memory: true` applied after the fill, or a per-segment `enMemory: false` plus an explicit `en` on the spec taken verbatim from a named source segment), document it in `scripts/siddur/AGENTS.md`, then restore the one sentence "The Half-Kaddish is recited by the Chazzan." on that segment.
+  **What it solves:** The note is Hebrew-only for English readers today; the general gap is that no manifest mechanism can correct or trim a memory fill.
+  **Expected result:** The build fails on a memory edit that does not match exactly once; the Edot maariv dump shows the one-sentence English; the "English stays aligned" test keeps `/in this case, the Pesukei Dezimrah/` out of every maariv text.
 
-- [x] M3: Chanukah candles
-  **What it is:** `chanukah_candles` from Daat Ashkenaz `Festivals > Chanukah > Service for Lighting Chanukah Candles`, Torat Emet Sefard `Chanukah > Menorah Lighting`, Edot `Hanukkah > Menorah Lighting`, Chabad `Chanukah`; `available` on `chanukah` with Shehecheyanu on the first night.
-  **What it solves:** M3 scope.
-  **Expected result:** Build passes; the first night shows Shehecheyanu and the second does not.
+## Open Questions
+- Should the "no authored translation" rule allow single-word corrections where the pinned translation is wrong rather than typo'd ("peace" for "לחן")? The three cases above wait on this.
 
-- [ ] Publish M1–M3 over the air
-  **What it is:** After the 1.0.17 native build is installed by users, `pnpm update:preview` for review and `pnpm update:production` on approval.
-  **What it solves:** Everything here is JS and bundled assets; nothing native changes.
-  **Expected result:** The phone shows the catalog on `1.0.17-<n>`.
+## Completed
 
+### Standalone siddur catalog (2026-10-08 plan, shipped on 1.0.18)
+Texts not tied to a mitzvah or a notification, read through the existing nusach reader. Decisions of 2026-10-08: entry from a home shortcut and the library header, no sixth tab; Retzei / VeHachalitzenu and the Yom Tov Yaaleh Veyavo are never shown.
+
+- [x] Split `SiddurTextId` into mitzvah and standalone ids
+- [x] Add the standalone text registry to `src/data/siddur.ts`
+- [x] Expose the Hebrew day in effect at an instant from `HebcalService`
+- [x] Decouple the reader route from the mitzvah
+- [x] Add the catalog screen (now the siddur tab, `src/app/(tabs)/siddur.tsx`)
+- [x] Add the home shortcut and the library header button
+- [x] Add i18n keys for the catalog
+- [x] Add the new day flags for yesterday's inserts
+- [x] Manifest: Birkat Hamazon for all four nuschaot
+- [x] Manifest: Al Hamichya and Borei Nefashot for all four nuschaot
+- [x] Manifest: Tefilat Haderech for all four nuschaot
+- [x] Add `pnpm siddur:build` output and the generated map
+- [x] Tests for the reader decoupling and the catalog
+- [x] DOX pass for M1
+- [x] M2: Kriat Shema al Hamita, Asher Yatzar, birchot hanehenin and birchot hare'iya
+- [x] Fold yesterday's inserts in Birkat Hamazon and Al Hamichya
+- [x] Halachic review list for the standalone texts
+- [x] M3: Kiddush Levana, mezuzah blessing, Sheva Berachot, Chanukah candles
+- [x] Publish M1–M3 over the air (shipped in the 1.0.18 production updates; Tikkun HaKlali joined on 1.0.18-5)

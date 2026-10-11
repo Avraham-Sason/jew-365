@@ -4,14 +4,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ListRow } from '@/components/ListRow';
 import { NavBar } from '@/components/NavBar';
+import { CHOK_TEXT_ID, hasChokContent } from '@/data/chok';
+import { useNow } from '@/hooks/useNow';
+import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
+import { chokPortionAt, chokWeekName } from '@/utils/chok';
 import { useI18n } from '@/i18n';
 
 export default function MoreScreen() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const router = useRouter();
+  const now = useNow();
+  const location = useUserStore((s) => s.location);
+  const inIsrael = useUserStore((s) => s.inIsrael);
+  const chok = hasChokContent();
+  const portion = chok ? chokPortionAt(now, location, inIsrael) : null;
+  const chokCaption = portion
+    ? `${t('chok.parashaOf', { name: chokWeekName(portion.parashiyot, language) })} · ${t(`chok.slot.${portion.slot}`)}`
+    : t('chok.nothingToday');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -25,6 +37,15 @@ export default function MoreScreen() {
             chevron
             onPress={() => router.push('/schedule')}
           />
+          {chok ? (
+            <ListRow
+              icon="chok"
+              title={t('chok.title')}
+              caption={chokCaption}
+              chevron
+              onPress={() => router.push({ pathname: '/siddur/[id]', params: { id: CHOK_TEXT_ID } })}
+            />
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

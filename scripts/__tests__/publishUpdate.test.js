@@ -1,4 +1,4 @@
-const { nextUpdateNumber, labelMessage } = require('../publish-update');
+const { nextUpdateNumber, labelMessage, chokMapCommitted } = require('../publish-update');
 
 const listed = (message) => `"${message}" (5 hours ago by avraham-sason)`;
 
@@ -52,5 +52,21 @@ describe('labelMessage', () => {
   it('refuses to publish without a message', () => {
     expect(() => labelMessage(['--non-interactive'], '1.0.16-5')).toThrow('--message');
     expect(() => labelMessage(['--message'], '1.0.16-5')).toThrow('--message');
+  });
+});
+
+describe('chokMapCommitted', () => {
+  it('passes when git reports the generated Chok map unchanged from HEAD', () => {
+    const run = jest.fn(() => ({ status: 0 }));
+    expect(chokMapCommitted(run)).toBe(true);
+    expect(run).toHaveBeenCalledWith('git', ['diff', '--quiet', 'HEAD', '--', 'src/data/chokAssets.generated.ts'], {
+      encoding: 'utf8',
+    });
+  });
+
+  it('refuses when the map differs, and when git cannot answer', () => {
+    expect(chokMapCommitted(() => ({ status: 1 }))).toBe(false);
+    expect(chokMapCommitted(() => ({ status: 128 }))).toBe(false);
+    expect(chokMapCommitted(() => ({ status: null }))).toBe(false);
   });
 });

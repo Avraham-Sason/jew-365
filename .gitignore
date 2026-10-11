@@ -25,3 +25,5 @@ android/
 expo-env.d.ts
 # @end expo-cli
 scripts/siddur/.cache/
+scripts/chok/.cache/
+assets/chok/

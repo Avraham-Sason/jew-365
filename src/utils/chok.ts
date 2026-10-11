@@ -1,24 +1,65 @@
-import { HDate, getSedra, months } from '@hebcal/core';
+import { HDate, Locale, getSedra, months } from '@hebcal/core';
+import { CHOK_TEXT_ID } from '@/data/chok';
 import { HebcalService } from '@/services/HebcalService';
 import { ZmanimService } from '@/services/ZmanimService';
 import { dateKey } from '@/stores/useCompletionsStore';
+import { ChokAsset, ChokDoubleChoice, ChokSection, ChokSectionKind, ChokSlot, HaftarahVariant } from '@/types/chok';
+import { Nusach } from '@/types/mitzvah';
+import { SiddurSection, SiddurText } from '@/types/siddur';
 import { Location } from '@/types/zmanim';
 import { locationNoon } from '@/utils/locationDay';
 import { quietBlockAt } from '@/utils/skipRules';
 import { civilHebrewDayAt, dayNoon, hebrewDay } from '@/utils/taharah/onot';
 
-export type ChokSlot = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'thuNight' | 'fri';
+export type { ChokSlot };
 
 export type ChokPortion = { parashiyot: string[]; slot: ChokSlot; shabbat: HDate };
 
 export type ChokMakeUp = { dateKey: string; slot: ChokSlot; holy: boolean };
 
+export type ChokReaderRequest = { now: Date; date?: Date | null; slot?: ChokSlot | null };
+
+export type ChokTextOptions = {
+  slot: ChokSlot;
+  choice: ChokDoubleChoice;
+  variant: HaftarahVariant;
+  kindNames: Readonly<Record<ChokSectionKind, string>>;
+};
+
 export const CHOK_SLOTS: readonly ChokSlot[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri'];
+
+export const CHOK_SECTION_KINDS: readonly ChokSectionKind[] = [
+  'torah',
+  'neviim',
+  'ketuvim',
+  'mishnah',
+  'gemara',
+  'zohar',
+  'halacha',
+  'mussar',
+  'haftarah',
+];
 
 export const VEZOT_HABERACHA = 'Vezot Haberakhah';
 
+export const HAFTARAH_VARIANT: Readonly<Record<Nusach, HaftarahVariant>> = {
+  ashkenaz: 'ashkenazi',
+  sefard: 'ashkenazi',
+  edot_hamizrach: 'sephardi',
+  chabad: 'ashkenazi',
+};
+
 const VEZOT_SLOTS: readonly ChokSlot[] = CHOK_SLOTS.filter((slot) => slot !== 'fri');
 const SLOT_OF_WEEKDAY: readonly (ChokSlot | null)[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', null];
+const SLOT_POSITION: Readonly<Record<ChokSlot, number>> = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  thuNight: 4.5,
+  fri: 5,
+};
 const THURSDAY = 4;
 const SATURDAY = 6;
 const WEEK_DAYS = 7;
@@ -93,4 +134,52 @@ export function chokMakeUpsBefore(day: Date, location: Location, inIsrael: boole
     }
   }
   return makeUps;
+}
+
+function latestPortionBefore(day: HDate, inIsrael: boolean): ChokPortion {
+  const shabbat = day.onOrAfter(SATURDAY);
+  const parashiyot = chokParashiyot(shabbat, inIsrael);
+  const earlier = chokSlotsOf(parashiyot[0]).filter((slot) => SLOT_POSITION[slot] < day.getDay());
+  return { parashiyot, slot: earlier[earlier.length - 1] ?? 'sun', shabbat };
+}
+
+export function chokReaderPortion(request: ChokReaderRequest, location: Location, inIsrael: boolean): ChokPortion {
+  const { now, date, slot } = request;
+  const found = date ? chokPortionOn(date, location, inIsrael) : chokPortionAt(now, location, inIsrael);
+  const day = date
+    ? civilHebrewDayAt(locationNoon(date, location), location)
+    : HebcalService.hebrewNightAt(now, location).prev();
+  const portion = found ?? latestPortionBefore(day, inIsrael);
+  return slot && chokSlotsOf(portion.parashiyot[0]).includes(slot) ? { ...portion, slot } : portion;
+}
+
+export function chokParashaName(parasha: string, language: 'he' | 'en'): string {
+  return language === 'en' ? parasha : Locale.gettext(parasha, 'he-x-NoNikud');
+}
+
+export function chokWeekName(parashiyot: readonly string[], language: 'he' | 'en'): string {
+  return parashiyot.map((parasha) => chokParashaName(parasha, language)).join(language === 'en' ? '-' : '־');
+}
+
+export function chokSlotSections(asset: ChokAsset, slot: ChokSlot, variant: HaftarahVariant): ChokSection[] {
+  return (asset.slots[slot] ?? []).filter((section) => !section.variant || section.variant === variant);
+}
+
+export function chokText(assets: readonly ChokAsset[], options: ChokTextOptions): SiddurText {
+  const { slot, choice, variant, kindNames } = options;
+  const chosen = assets.length < 2 || choice === 'both' ? assets : [assets[choice === 'first' ? 0 : 1]];
+  const prefixed = chosen.length > 1;
+  const sections = chosen.flatMap((asset) => {
+    const he = chokParashaName(asset.parasha, 'he');
+    return chokSlotSections(asset, slot, variant).map((section, index): SiddurSection => ({
+      title: prefixed
+        ? { he: `${he} · ${section.heading}`, en: `${asset.parasha} · ${kindNames[section.kind]}` }
+        : { he: section.heading, en: kindNames[section.kind] },
+      ...(prefixed && index === 0 ? { chapter: { he, en: asset.parasha } } : {}),
+      segments: section.segments,
+    }));
+  });
+  const credits = [...new Map(chosen.map((asset) => [asset.credit.title, asset.credit])).values()];
+  const dedication = chosen.find((asset) => asset.dedication)?.dedication;
+  return { id: CHOK_TEXT_ID, sections, credits, ...(dedication ? { dedication } : {}) };
 }

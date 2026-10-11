@@ -31,6 +31,7 @@
     "test:tz": "node scripts/test-timezones.js",
     "check:dox": "node scripts/check-dox.js",
     "siddur:build": "node scripts/siddur/build.js",
+    "chok:build": "node scripts/chok/build.js",
     "prepare": "husky"
   },
   "dependencies": {
@@ -112,6 +113,7 @@
     ],
     "moduleNameMapper": {
       "\\.siddur$": "<rootDir>/scripts/jest-asset-stub.js",
+      "\\.chok$": "<rootDir>/scripts/jest-asset-stub.js",
       "(?:^|/)crashReporting$": "<rootDir>/src/services/crashReporting.ts"
     }
   },

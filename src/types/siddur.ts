@@ -76,7 +76,7 @@ export type Condition = {
   omerDay?: number;
 };
 
-export type Run = { t: string; s?: 'b' | 'n'; when?: Condition };
+export type Run = { t: string; s?: 'b' | 'n' | 't'; when?: Condition };
 
 export type PassageLabel = { he: string; en: string; when?: Condition; alone?: boolean };
 
@@ -111,10 +111,11 @@ export type SiddurCredit = {
 };
 
 export type SiddurText = {
-  nusach: Nusach;
+  nusach?: Nusach;
   id: string;
   sections: SiddurSection[];
   credits: SiddurCredit[];
+  dedication?: string;
 };
 
 export type MitzvahTextId =
