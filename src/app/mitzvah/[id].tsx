@@ -351,11 +351,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ContentBlockView({ block, highlighted }: { block: ContentBlock; highlighted: boolean }) {
   const { colors } = useTheme();
   const { language, t } = useI18n();
+  const router = useRouter();
   const text = language === 'en' && block.en ? block.en : block.he;
-  if (block.type === 'link') {
+  if (block.type === 'link' || block.type === 'siddur') {
+    const onPress =
+      block.type === 'link'
+        ? () => Linking.openURL(block.url).catch(() => {})
+        : () => router.push({ pathname: '/siddur/[id]', params: { id: block.textId } });
     return (
       <Pressable
-        onPress={() => Linking.openURL(block.url).catch(() => {})}
+        onPress={onPress}
+        accessibilityRole="button"
         style={[
           styles.contentBlock,
           styles.linkBlock,
@@ -363,7 +369,9 @@ function ContentBlockView({ block, highlighted }: { block: ContentBlock; highlig
         ]}
       >
         <Text style={[typography.bodyBold, { color: colors.goldText, flex: 1 }]}>{text}</Text>
-        <Text style={[typography.micro, { color: colors.textMuted }]}>{t('detail.openLink')}</Text>
+        <Text style={[typography.micro, { color: colors.textMuted }]}>
+          {block.type === 'link' ? t('detail.openLink') : t('detail.openSiddur')}
+        </Text>
       </Pressable>
     );
   }

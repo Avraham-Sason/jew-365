@@ -22,7 +22,6 @@ const custom = (id: string, createdAt: number, name = 'משימה'): CustomMitzv
   endHHMM: '09:00',
   reminders: [],
   skipOn: [],
-  category: 'daily-morning',
   createdAt,
 });
 

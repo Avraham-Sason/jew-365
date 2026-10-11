@@ -164,7 +164,7 @@ Each `Mitzvah` has:
 
 When adding or changing a mitzvah, update `MITZVOT`, any relevant i18n/UI labels, and tests under [src/data/__tests__/](src/data/__tests__), [src/services/__tests__/](src/services/__tests__), and any affected route/component tests.
 
-Custom mitzvot live in `useCustomMitzvotStore` and are adapted through [customMitzvotAdapter.ts](src/data/customMitzvotAdapter.ts). Custom IDs are generated as `custom_<timestamp>_<suffix>`. Use `getAllMitzvot(nusach?)` or `findAnyMitzvah()` when a screen/service must include custom mitzvot. Passing the nusach applies `nuschaotSupported` filtering; every surface that lists mitzvot must filter the same way.
+Custom mitzvot live in `useCustomMitzvotStore` and are adapted through [customMitzvotAdapter.ts](src/data/customMitzvotAdapter.ts). Custom IDs are generated as `custom_<timestamp>_<suffix>`. Use `getAllMitzvot(nusach?)` or `findAnyMitzvah()` when a screen/service must include custom mitzvot. Passing the nusach applies `nuschaotSupported` filtering; every surface that lists mitzvot must filter the same way. A custom mitzvah applies only on its `activeDays` (absent means every day), takes its category from its hours, and may carry a `siddur` content block that opens a bundled text in the reader but never joins its custom text or its notification body.
 
 ## Zmanim and Calendar
 

@@ -1466,6 +1466,18 @@ describe('hasSiddurText', () => {
       { he: [[{ t: 'ברוך אתה', s: 'b' }]], en: 'Blessed are You' },
     ]);
   });
+
+  it('keeps a siddur block out of the custom text, so it neither offers nor fills the reader', () => {
+    const siddurOnly = custom([{ type: 'siddur', he: 'x', textId: 'asher_yatzar' }]);
+    expect(customSiddurText(siddurOnly, 'sefard')).toBeNull();
+    expect(hasSiddurText(siddurOnly, 'sefard', new Date(), ISRAEL)).toBe(false);
+
+    const mixed = custom([
+      { type: 'text', he: 'שלום' },
+      { type: 'siddur', he: 'x', textId: 'asher_yatzar' },
+    ]);
+    expect(customSiddurText(mixed, 'sefard')?.sections[0].segments).toEqual([{ he: [[{ t: 'שלום' }]] }]);
+  });
 });
 
 describe('standalone texts', () => {

@@ -87,6 +87,7 @@ describe('pickBodyForReminder', () => {
         { type: 'text', he: 'טקסט' },
         { type: 'blessing', he: 'ברכה' },
         { type: 'link', he: 'קישור', url: 'https://example.com' },
+        { type: 'siddur', he: 'אשר יצר', textId: 'asher_yatzar' },
       ],
     };
     expect(pickBodyForReminder(reminder, mitzvah, new Date('2026-05-06T00:00:00Z'))).toBe('fallback\nטקסט\nברכה');

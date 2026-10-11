@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon';
-import { CustomMitzvah, Mitzvah, MitzvahWindow, Nusach } from '@/types/mitzvah';
+import { CustomMitzvah, Mitzvah, MitzvahWindow, Nusach, Weekday } from '@/types/mitzvah';
 import { MITZVOT, findMitzvah as findStaticMitzvah } from '@/data/mitzvot';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
+import { categoryForWindow, isActiveOn } from '@/utils/customMitzvah';
 
 const ALL_NUSCHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
 
@@ -25,10 +26,10 @@ export function customToMitzvah(c: CustomMitzvah): Mitzvah {
     name: { he: c.name },
     icon: 'custom',
     timeType: 'range-within-day',
-    category: c.category,
+    category: categoryForWindow(c.startHHMM, c.endHHMM),
     skipOn: c.skipOn,
     nuschaotSupported: ALL_NUSCHAOT,
-    defaultReminders: c.reminders,
+    defaultReminders: c.reminders.map(({ bodyVariants: _dropped, ...reminder }) => reminder),
     contentBlocks: c.contentBlocks,
     isCustom: true,
     computeWindow: ({ date, location }) => {
@@ -40,6 +41,7 @@ export function customToMitzvah(c: CustomMitzvah): Mitzvah {
         { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() },
         { zone: location.tz },
       );
+      if (!isActiveOn(c.activeDays, (base.weekday % 7) as Weekday)) return null;
       const start = base.set({ hour: sh, minute: sm, second: 0, millisecond: 0 });
       let end = base.set({ hour: eh, minute: em, second: 0, millisecond: 0 });
       // On a DST spring-forward day both endpoints can collapse onto the same instant, which used

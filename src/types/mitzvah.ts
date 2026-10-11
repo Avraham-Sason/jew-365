@@ -1,3 +1,4 @@
+import type { SiddurTextId } from './siddur';
 import { Location, Zmanim } from './zmanim';
 
 export type Nusach = 'ashkenaz' | 'sefard' | 'edot_hamizrach' | 'chabad';
@@ -21,6 +22,8 @@ export type TimeType =
 
 export type MitzvahCategory =
   'daily-morning' | 'daily-afternoon' | 'daily-evening' | 'daily-allday' | 'weekly' | 'seasonal' | 'learning';
+
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type SkipContext = 'shabbat' | 'yomtov' | 'cholHamoed' | 'fastDay';
 
@@ -50,7 +53,8 @@ export type ComputeContext = {
 export type ContentBlock =
   | { type: 'text'; he: string; en?: string }
   | { type: 'blessing'; he: string; en?: string }
-  | { type: 'link'; he: string; en?: string; url: string };
+  | { type: 'link'; he: string; en?: string; url: string }
+  | { type: 'siddur'; he: string; en?: string; textId: SiddurTextId };
 
 export type Mitzvah = {
   id: string;
@@ -74,7 +78,7 @@ export type CustomMitzvah = {
   endHHMM: string;
   reminders: Reminder[];
   skipOn: SkipContext[];
-  category: MitzvahCategory;
+  activeDays?: Weekday[];
   contentBlocks?: ContentBlock[];
   createdAt: number;
 };

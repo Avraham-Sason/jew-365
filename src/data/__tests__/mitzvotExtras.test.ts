@@ -5,8 +5,11 @@ jest.mock('react-native-mmkv', () => {
 
 import { MITZVOT } from '../mitzvot';
 import { CITIES } from '../cities';
+import { customToMitzvah } from '../customMitzvotAdapter';
 import { HebcalService } from '@/services/HebcalService';
 import { at, zmanimFor } from '@/testing/zmanim';
+import { CustomMitzvah, UserSettings } from '@/types/mitzvah';
+import { categoryForWindow } from '@/utils/customMitzvah';
 
 describe('Mitzvot extras', () => {
   it('7.2 nusach options match supported set', () => {
@@ -130,5 +133,92 @@ describe('nusach filtering', () => {
       [...all, restricted].filter((m: { nuschaotSupported: string[] }) => m.nuschaotSupported.includes(nusach));
     expect(filter('chabad').map((m: { id: string }) => m.id)).toContain('chabad_only');
     expect(filter('ashkenaz').map((m: { id: string }) => m.id)).not.toContain('chabad_only');
+  });
+});
+
+const customMitzvah = (overrides: Partial<CustomMitzvah> = {}): CustomMitzvah => ({
+  id: 'custom_1_a',
+  name: 'לימוד',
+  startHHMM: '08:00',
+  endHHMM: '12:00',
+  reminders: [{ anchor: 'start', offsetMin: 0, label: 'זמן ללמוד' }],
+  skipOn: [],
+  createdAt: 1,
+  ...overrides,
+});
+
+describe('custom mitzvah reminders', () => {
+  it('drops stored bodyVariants, so only registry mitzvot rotate their notification body', () => {
+    const custom = customMitzvah({
+      reminders: [{ anchor: 'start', offsetMin: 0, label: 'זמן ללמוד', bodyVariants: ['א', 'ב'] }],
+    });
+    const [reminder] = customToMitzvah(custom).defaultReminders;
+    expect(reminder).toEqual({ anchor: 'start', offsetMin: 0, label: 'זמן ללמוד' });
+    expect(custom.reminders[0].bodyVariants).toEqual(['א', 'ב']);
+  });
+});
+
+describe('custom mitzvah category', () => {
+  it.each([
+    ['08:00', '12:00', 'daily-morning'],
+    ['06:00', '20:00', 'daily-allday'],
+  ])('%s to %s is derived as %s', (startHHMM, endHHMM, expected) => {
+    const mitzvah = customToMitzvah(customMitzvah({ startHHMM, endHHMM }));
+    expect(mitzvah.category).toBe(expected);
+    expect(mitzvah.category).toBe(categoryForWindow(startHHMM, endHHMM));
+  });
+
+  it('ignores a category key left on a mitzvah stored before the category was derived', () => {
+    const stored = { ...customMitzvah({ startHHMM: '17:00', endHHMM: '19:00' }), category: 'learning' };
+    expect(customToMitzvah(stored).category).toBe('daily-evening');
+  });
+});
+
+describe('custom mitzvah active days', () => {
+  const JERUSALEM = CITIES[0];
+  const SETTINGS: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
+  const windowOn = (custom: CustomMitzvah, date: Date) =>
+    customToMitzvah(custom).computeWindow({
+      date,
+      location: JERUSALEM,
+      settings: SETTINGS,
+      zmanim: zmanimFor(date, JERUSALEM),
+    });
+  const SUNDAY = new Date(2026, 9, 11);
+  const SATURDAY = new Date(2026, 9, 17);
+  const WEEK = Array.from({ length: 7 }, (_, offset) => new Date(2026, 9, 11 + offset));
+  const sundayToThursday = customMitzvah({ activeDays: [0, 1, 2, 3, 4] });
+
+  it('has no window on a day that is not listed, and a window at the configured hours on one that is', () => {
+    expect(SATURDAY.getDay()).toBe(6);
+    expect(windowOn(sundayToThursday, SATURDAY)).toBeNull();
+    const nextSunday = new Date(2026, 9, 18);
+    expect(nextSunday.getDay()).toBe(0);
+    const window = windowOn(sundayToThursday, nextSunday);
+    expect(window?.start.getTime()).toBe(at(JERUSALEM, '2026-10-18T08:00').getTime());
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, '2026-10-18T12:00').getTime());
+  });
+
+  it('judges each weekday of a week against the list', () => {
+    expect(SUNDAY.getDay()).toBe(0);
+    expect(WEEK.map((day) => windowOn(sundayToThursday, day) !== null)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+  });
+
+  it('is active every day when no days are set', () => {
+    const everyDay = customMitzvah({ activeDays: undefined });
+    expect(WEEK.map((day) => windowOn(everyDay, day) !== null)).toEqual([true, true, true, true, true, true, true]);
+    expect(windowOn(everyDay, SATURDAY)).not.toBeNull();
+  });
+
+  it('never has a window with an empty list', () => {
+    expect(WEEK.some((day) => windowOn(customMitzvah({ activeDays: [] }), day) !== null)).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { HDate } from '@hebcal/core';
-import { Mitzvah, Nusach } from '@/types/mitzvah';
+import { ContentBlock, Mitzvah, Nusach } from '@/types/mitzvah';
 import { Location } from '@/types/zmanim';
 import { HebcalService } from '@/services/HebcalService';
 import {
@@ -105,7 +105,10 @@ export function standaloneTextDay(id: StandaloneTextId, instant: Date, location:
 }
 
 export function customSiddurText(mitzvah: Mitzvah, nusach: Nusach): SiddurText | null {
-  const blocks = mitzvah.contentBlocks?.filter((block) => block.type !== 'link') ?? [];
+  const blocks = (mitzvah.contentBlocks ?? []).filter(
+    (block): block is Extract<ContentBlock, { type: 'text' | 'blessing' }> =>
+      block.type === 'text' || block.type === 'blessing',
+  );
   if (!blocks.length) return null;
   return {
     nusach,
