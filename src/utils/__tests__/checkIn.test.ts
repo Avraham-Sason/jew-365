@@ -1,8 +1,16 @@
-import { checkInDeadline, checkInFor, checkInLastDay, latestCheckIn, pendingCheckInIds } from '../checkIn';
+import {
+  checkInDeadline,
+  checkInFor,
+  checkInLastDay,
+  latestCheckIn,
+  overlapsBlock,
+  pendingCheckInIds,
+} from '../checkIn';
+import { judgeDay } from '../historyStats';
 import { findMitzvah } from '@/data/mitzvot';
 import { CITIES } from '@/data/cities';
 import { HebcalService } from '@/services/HebcalService';
-import { UserSettings } from '@/types/mitzvah';
+import { Mitzvah, UserSettings } from '@/types/mitzvah';
 import { at } from '@/testing/zmanim';
 
 const JERUSALEM = CITIES[0];
@@ -39,6 +47,41 @@ describe('checkIn', () => {
     expect(idsOn(checkIn, '2026-11-14')).not.toContain('tefillin');
     expect(idsOn(checkIn, '2026-11-14')).not.toContain('maariv');
     expect(idsOn(checkIn, '2026-11-14')).not.toContain('havdalah');
+  });
+
+  it('counts a window that ends exactly at candle lighting as reaching into the block', () => {
+    const lighting = block.start.getTime();
+    const morning = new Date(lighting - 10 * 3_600_000);
+    expect(overlapsBlock({ start: morning, end: block.start }, block)).toBe(true);
+    expect(overlapsBlock({ start: morning, end: new Date(lighting - 1) }, block)).toBe(false);
+    expect(overlapsBlock({ start: block.end, end: new Date(block.end.getTime() + 3_600_000) }, block)).toBe(false);
+  });
+
+  it('asks about a window that ends at candle lighting on the erev of Shabbat and of Yom Tov, and keeps it pending', () => {
+    const untilLighting: Mitzvah = {
+      id: 'until_lighting',
+      name: { he: 'עד ההדלקה' },
+      icon: 'custom',
+      timeType: 'range-within-day',
+      category: 'daily-allday',
+      skipOn: [],
+      nuschaotSupported: ['ashkenaz'],
+      defaultReminders: [],
+      computeWindow: ({ zmanim, location }) => {
+        if (HebcalService.isHolyDay(zmanim.chatzot, location)) return null;
+        const next = HebcalService.holyBlockOn(new Date(zmanim.chatzot.getTime() + 86_400_000), location);
+        return next && { start: zmanim.alotHaShachar, end: next.start };
+      },
+    };
+    const only = input({ mitzvot: [untilLighting] });
+    const asked = (checkIn: ReturnType<typeof checkInFor>) =>
+      checkIn!.days.map((day) => [day.key, day.items.map((item) => item.mitzvah.id)]);
+    expect(asked(checkInFor(block, only, block.end))).toEqual([['2026-11-13', ['until_lighting']]]);
+    const pesach = HebcalService.holyBlockOn(at(JERUSALEM, '2027-04-22T12:00'), JERUSALEM)!;
+    expect(asked(checkInFor(pesach, only, pesach.end))).toEqual([['2027-04-21', ['until_lighting']]]);
+    expect(judgeDay(new Date(2026, 10, 13), only, new Date(2026, 10, 15, 12)).pending).toEqual(['until_lighting']);
+    expect(judgeDay(new Date(2026, 10, 13), only, new Date(2026, 10, 16, 12)).missed).toEqual(['until_lighting']);
+    expect(judgeDay(new Date(2027, 3, 21), only, new Date(2027, 3, 23, 12)).pending).toEqual(['until_lighting']);
   });
 
   it('stays open from tzeit until midnight ending the first weekday after the block', () => {

@@ -158,6 +158,55 @@ describe('chokText', () => {
   it('has no sections for a slot the parasha does not carry', () => {
     expect(chokText([VAYAKHEL], { ...options, slot: 'tue' }).sections).toEqual([]);
   });
+
+  it('puts one closed fold per make-up day before the portion, its sections headed inside it', () => {
+    const label = { he: 'השלמה: יום ראשון', en: 'Make-up: Sunday' };
+    const text = chokText([VAYAKHEL], {
+      ...options,
+      slot: 'fri',
+      variant: 'sephardi',
+      makeUps: [{ dateKey: '2028-03-19', slot: 'sun', label }],
+    });
+    expect(text.sections.map((s) => s.title.he)).toEqual([
+      'השלמה: יום ראשון',
+      'תורה',
+      'הפטרה כמנהג הספרדים',
+      'משנה שבת פרק כב',
+    ]);
+    expect(text.sections[0]).toEqual({
+      title: label,
+      optional: label,
+      segments: [
+        { he: [[{ t: 'תורה', s: 'b' }]], en: 'Torah' },
+        ...VAYAKHEL.slots.sun![0].segments,
+        { he: [[{ t: 'נביאים - מלכים א - פרק ז', s: 'b' }]], en: 'Prophets' },
+        ...VAYAKHEL.slots.sun![1].segments,
+      ],
+    });
+  });
+
+  it('builds a make-up day with the choice and the variant of the week, and no chapter of its own', () => {
+    const label = { he: 'השלמה: יום שישי', en: 'Make-up: Friday' };
+    const text = chokText([VAYAKHEL, PEKUDEI], {
+      ...options,
+      slot: 'sun',
+      makeUps: [{ dateKey: '2028-03-24', slot: 'fri', label }],
+    });
+    const fold = text.sections[0];
+    expect(fold.chapter).toBeUndefined();
+    expect(fold.segments.filter((segment) => segment.he[0][0].s === 'b').map((segment) => segment.he[0][0].t)).toEqual([
+      'ויקהל · תורה',
+      'ויקהל · הפטרה כמנהג האשכנזים',
+      'ויקהל · משנה שבת פרק כב',
+      'פקודי · תורה',
+      'פקודי · הפטרה כמנהג האשכנזים',
+      'פקודי · משנה שבת פרק כב',
+    ]);
+    expect(pickerEntries(text.sections)).toEqual([
+      { index: 1, title: { he: 'ויקהל', en: 'Vayakhel' } },
+      { index: 3, title: { he: 'פקודי', en: 'Pekudei' } },
+    ]);
+  });
 });
 
 describe('chokReaderPortion', () => {

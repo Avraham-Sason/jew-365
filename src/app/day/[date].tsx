@@ -13,7 +13,7 @@ import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { buildDayTimeline } from '@/utils/buildDayTimeline';
 import { latestCheckIn, pendingCheckInIds } from '@/utils/checkIn';
-import { clockOf, formatRemaining } from '@/utils/clock';
+import { clockRange, formatRemaining } from '@/utils/clock';
 import { useI18n } from '@/i18n';
 
 const EMPTY_COMPLETIONS = Object.freeze({}) as Completions;
@@ -81,10 +81,7 @@ export default function DayRoute() {
             const totalMs = item.windowEnd ? item.windowEnd.getTime() - item.time.getTime() : 1;
             const remainingMs = item.windowEnd ? item.windowEnd.getTime() - Date.now() : 0;
             const pct = totalMs > 0 ? Math.max(0, Math.min(1, remainingMs / totalMs)) : 0;
-            const timeRange = t('detail.timeRange', {
-              start: clockOf(item.time),
-              end: clockOf(item.windowEnd ?? item.time),
-            });
+            const timeRange = clockRange(item.time, item.windowEnd ?? item.time, t);
             const waiting = !item.done && Boolean(item.mitzvahId && pending.has(item.mitzvahId));
             const missed = isPast && !item.done && !waiting;
             const statusText = waiting

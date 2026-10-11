@@ -100,7 +100,7 @@ Store copy lives in [release/](release).
 - [src/app/onboarding/](src/app/onboarding) - Onboarding flow: welcome, profile (gender, marital status and the taharah opt-in), nusach, location/notifications, ready.
 - [src/app/taharah/](src/app/taharah) - Taharat hamishpacha: dashboard, event log, calendar and minhag settings, behind the biometric lock in its `_layout.tsx`.
 - [src/app/mitzvah/[id].tsx](<src/app/mitzvah/[id].tsx>) - Static and custom mitzvah details, reminders, content blocks.
-- [src/app/siddur/[id].tsx](<src/app/siddur/[id].tsx>) - Nusach reader: a mitzvah's or a standalone text in the user's nusach and language, resolved for the day, with optional auto-scroll; it also reads Chok LeYisrael (`chok_leyisrael`), a week's portion by day with a day row and, in a double week, the choice of parasha. Its section picker lists a text's chapters (Shacharit's eleven stations, from ברכות השחר to קוה אל ה׳, plus Hallel and Musaf on their days), or every section of a text without chapters.
+- [src/app/siddur/[id].tsx](<src/app/siddur/[id].tsx>) - Nusach reader: a mitzvah's or a standalone text in the user's nusach and language, resolved for the day, with optional auto-scroll; it also reads Chok LeYisrael (`chok_leyisrael`), a week's portion by day with a day row and, in a double week, the choice of parasha, and, while the Chok LeYisrael mitzvah is on, "סיימתי" for a day of the current week up to today and a closed make-up fold for each earlier unmarked day of the week. Its section picker lists a text's chapters (Shacharit's eleven stations, from ברכות השחר to קוה אל ה׳, plus Hallel and Musaf on their days), or every section of a text without chapters.
 - [src/app/(tabs)/siddur.tsx](<src/app/(tabs)/siddur.tsx>) - Siddur tab: today's texts first, then a prayers card with shacharit, mincha and maariv taken from today's texts, then the thirteen standalone texts by group (meals, general with the blessings, the night texts and Tikkun HaKlali, festivals and celebrations), each greyed out on a day it is not said. [src/app/siddur/index.tsx](src/app/siddur/index.tsx) only redirects `/siddur` to it.
 - [src/app/schedule.tsx](src/app/schedule.tsx) - Schedule, a stack screen opened from the More tab: day, week and month views with previous / next arrows in its header, and a day drilldown into `/day/[date]`.
 - [src/app/day/[date].tsx](<src/app/day/[date].tsx>) - Read-only per-day route for schedule/history drilldown.
@@ -153,8 +153,11 @@ Static mitzvah IDs currently include:
 - `candle_lighting`
 - `havdalah`
 - `sefirat_haomer`
+- `chok_leyisrael`, only while `hasChokContent()` holds
 
 Default enabled mitzvot are `tefillin`, `krias_shma_shacharit`, `shacharit`, `mincha`, and `maariv`. `tzitzit` was removed on 2026-10-11 (the user's call): `RETIRED_MITZVOT` in [useMitzvotStore.ts](src/stores/useMitzvotStore.ts) prunes it from every persisted map on hydrate, its old completion rows stay in storage and still count for the streak, and the tallit katan blessing survives as a fold at the top of the `tefillin` siddur text.
+
+Chok LeYisrael (`chok_leyisrael`, `CHOK_LEYISRAEL` in [src/data/mitzvot.ts](src/data/mitzvot.ts), the user's call on 2026-10-11) is a `learning` mitzvah, off by default, appended to `MITZVOT` only while `hasChokContent()` holds, so with the committed empty map no surface lists, schedules or judges it. Its window is the reader's learning day: from alot to the next day's alot, or to candle lighting when a holy block opens that evening, and `null` on Shabbat, Yom Tov and the Friday of a Vezot Haberakhah week. Its reminders fire 240 minutes after alot and, only while it is not done, 945 minutes after alot (between 19:50 and 21:40 on a weekday in Jerusalem and Los Angeles over the year; after candle lighting, so dropped, on every Friday and erev there). An earlier day of the current week is marked late from the reader's make-up folds; a Yom Tov day can be marked too, but has no window, so it reaches only the streak.
 
 Each `Mitzvah` has:
 
@@ -274,7 +277,7 @@ Jest uses the `jest-expo` preset configured in [package.json](package.json).
 
 Coverage areas:
 
-- [src/data/__tests__/](src/data/__tests__) - registry integrity, windows, city data, skip metadata, nusach filtering, and siddur content per nusach on dated days.
+- [src/data/__tests__/](src/data/__tests__) - registry integrity, windows, city data, skip metadata, nusach filtering, siddur content per nusach on dated days, and the Chok LeYisrael mitzvah against a mocked asset map ([chokMitzvah.test.ts](src/data/__tests__/chokMitzvah.test.ts), also under `pnpm test:tz`).
 - [src/services/__tests__/](src/services/__tests__) - zmanim, Hebcal, location, storage, scheduler, notification responses, settings logic, web-shim parity, exact-alarm config.
 - [src/stores/__tests__/](src/stores/__tests__) - store behavior and completion/skipped edge cases.
 - [src/utils/__tests__/](src/utils/__tests__) - day timeline, history stats, cross-surface `skipOn` agreement, liturgical day flags, the weekly report (`weeklyReport.test.ts`), the Chok LeYisrael portion ([chok.test.ts](src/utils/__tests__/chok.test.ts), also under `pnpm test:tz`), and the taharah engine (`taharah.*.test.ts`: onot, cycle, vestot, tasks, summary), which also runs under `pnpm test:tz -- src/utils/__tests__/taharah`.

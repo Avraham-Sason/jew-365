@@ -12,7 +12,9 @@ import {
   SiddurTextId,
   StandaloneTextId,
 } from '@/types/siddur';
+import { CHOK_TEXT_ID } from './chok';
 import { isJerusalem } from './mitzvot';
+import { chokDayHasText } from '@/utils/chok';
 import { dayFeatures, liturgicalDay, matchesCondition } from '@/utils/siddur';
 import { SIDDUR_ASSETS } from './siddurAssets.generated';
 
@@ -67,6 +69,8 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
     availableLabel: { he: 'בחנוכה', en: 'On Chanukah' },
   },
 };
+
+const CHOK_DAYS: Condition = { none: ['shabbat', 'yomTov', 'yomKippur'] };
 
 export const SIDDUR_GROUPS: readonly SiddurGroup[] = ['meals', 'general', 'occasions'];
 
@@ -136,6 +140,10 @@ export function siddurPlace(location: Location, inIsrael: boolean): Place {
 
 export function hasSiddurText(mitzvah: Mitzvah, nusach: Nusach, windowDate: Date, place: Place): boolean {
   if (mitzvah.isCustom) return customSiddurText(mitzvah, nusach) !== null;
+  if (mitzvah.id === CHOK_TEXT_ID) {
+    const day = liturgicalDay(windowDate, false);
+    return chokDayHasText(day, place.inIsrael) && matchesCondition(CHOK_DAYS, dayFeatures(day, place));
+  }
   const id = mitzvahTextId(mitzvah.id);
   if (!id || siddurAsset(nusach, id) === undefined) return false;
   const { evening, available } = SIDDUR_TEXTS[id];

@@ -2,11 +2,16 @@ import { HDate } from '@hebcal/core';
 import {
   CHOK_SLOTS,
   VEZOT_HABERACHA,
+  chokDayHasText,
+  chokDoneDay,
   chokMakeUpsBefore,
+  chokOpenMakeUps,
   chokParashiyot,
   chokPortionAt,
   chokPortionOn,
+  chokSlotDay,
   chokSlotsOf,
+  chokToday,
 } from '../chok';
 import type { ChokPortion } from '../chok';
 import { CITIES } from '@/data/cities';
@@ -367,6 +372,110 @@ describe('chokMakeUpsBefore', () => {
       { dateKey: '2026-09-30', slot: 'wed', holy: false },
       { dateKey: '2026-10-01', slot: 'thu', holy: false },
     ]);
+  });
+});
+
+describe('the day a portion belongs to', () => {
+  const VAYETZEI = { parashiyot: ['Vayetzei'], shabbat: new HDate(day(2026, 11, 21)) };
+  const VEZOT = { parashiyot: ['Vezot Haberakhah'], shabbat: new HDate(day(2026, 10, 3)) };
+  const keyOf = (date: Date | null) => date && dateKey(date);
+
+  it('chokSlotDay maps a slot to its weekday of that week, Thursday night to Thursday', () => {
+    expect(keyOf(chokSlotDay({ ...VAYETZEI, slot: 'sun' }))).toBe('2026-11-15');
+    expect(keyOf(chokSlotDay({ ...VAYETZEI, slot: 'mon' }))).toBe('2026-11-16');
+    expect(keyOf(chokSlotDay({ ...VAYETZEI, slot: 'thuNight' }))).toBe('2026-11-19');
+    expect(keyOf(chokSlotDay({ ...VAYETZEI, slot: 'fri' }))).toBe('2026-11-20');
+  });
+
+  it('chokToday is the learning day in effect: before alot the previous one, Thursday night Thursday', () => {
+    expect(keyOf(chokToday(at(JERUSALEM, '2026-11-16T02:00'), JERUSALEM, true))).toBe('2026-11-15');
+    expect(keyOf(chokToday(at(JERUSALEM, '2026-11-16T12:00'), JERUSALEM, true))).toBe('2026-11-16');
+    expect(keyOf(chokToday(at(JERUSALEM, '2026-11-19T20:00'), JERUSALEM, true))).toBe('2026-11-19');
+    expect(keyOf(chokToday(at(JERUSALEM, '2026-11-21T20:00'), JERUSALEM, true))).toBe('2026-11-22');
+    expect(keyOf(chokToday(at(LOS_ANGELES, '2027-06-14T02:00'), LOS_ANGELES, false))).toBe('2027-06-13');
+  });
+
+  it('chokToday falls back to the civil day when the day has no portion: the Friday of Vezot Haberakhah', () => {
+    expect(keyOf(chokToday(at(JERUSALEM, '2026-10-02T08:00'), JERUSALEM, true))).toBe('2026-10-02');
+  });
+
+  it('chokDoneDay marks a day slot of this week up to today, never Thursday night', () => {
+    const wednesday = day(2026, 11, 18);
+    expect(keyOf(chokDoneDay({ ...VAYETZEI, slot: 'sun' }, wednesday))).toBe('2026-11-15');
+    expect(keyOf(chokDoneDay({ ...VAYETZEI, slot: 'wed' }, wednesday))).toBe('2026-11-18');
+    expect(chokDoneDay({ ...VAYETZEI, slot: 'thu' }, wednesday)).toBeNull();
+    expect(chokDoneDay({ ...VAYETZEI, slot: 'thuNight' }, day(2026, 11, 20))).toBeNull();
+    expect(keyOf(chokDoneDay({ ...VAYETZEI, slot: 'thu' }, day(2026, 11, 20)))).toBe('2026-11-19');
+  });
+
+  it('chokDoneDay refuses another week', () => {
+    expect(chokDoneDay({ ...VAYETZEI, slot: 'mon' }, day(2026, 11, 23))).toBeNull();
+    expect(
+      chokDoneDay(
+        { parashiyot: ['Vayishlach'], shabbat: new HDate(day(2026, 11, 28)), slot: 'sun' },
+        day(2026, 11, 18),
+      ),
+    ).toBeNull();
+  });
+
+  it('chokDoneDay lets the Friday of Vezot Haberakhah mark Thursday', () => {
+    expect(keyOf(chokDoneDay({ ...VEZOT, slot: 'thu' }, day(2026, 10, 2)))).toBe('2026-10-01');
+  });
+});
+
+describe('chokOpenMakeUps', () => {
+  const MARK = 1_000;
+  const keys = (makeUps: { dateKey: string }[]) => makeUps.map((makeUp) => makeUp.dateKey);
+
+  it('lists the earlier days of the week that are not marked done', () => {
+    expect(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, undefined)).toEqual([
+      { dateKey: '2026-11-15', slot: 'sun', holy: false },
+      { dateKey: '2026-11-16', slot: 'mon', holy: false },
+      { dateKey: '2026-11-17', slot: 'tue', holy: false },
+    ]);
+    expect(
+      keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, { '2026-11-16': { chok_leyisrael: MARK } }, undefined)),
+    ).toEqual(['2026-11-15', '2026-11-17']);
+  });
+
+  it('ignores the marks of other mitzvot', () => {
+    expect(
+      keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, { '2026-11-16': { tefillin: MARK } }, undefined)),
+    ).toEqual(['2026-11-15', '2026-11-16', '2026-11-17']);
+  });
+
+  it('starts on the day the mitzvah was switched on', () => {
+    const mondayAfternoon = new Date(2026, 10, 16, 15).getTime();
+    expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, mondayAfternoon))).toEqual([
+      '2026-11-16',
+      '2026-11-17',
+    ]);
+    const tuesdayMidnight = new Date(2026, 10, 17).getTime();
+    expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, tuesdayMidnight))).toEqual(['2026-11-17']);
+    expect(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, new Date(2026, 10, 18, 9).getTime())).toEqual([]);
+  });
+
+  it('keeps a Yom Tov day until it is marked', () => {
+    expect(chokOpenMakeUps(day(2027, 4, 23), JERUSALEM, true, {}, undefined)).toEqual([
+      { dateKey: '2027-04-18', slot: 'sun', holy: false },
+      { dateKey: '2027-04-19', slot: 'mon', holy: false },
+      { dateKey: '2027-04-20', slot: 'tue', holy: false },
+      { dateKey: '2027-04-21', slot: 'wed', holy: false },
+      { dateKey: '2027-04-22', slot: 'thu', holy: true },
+    ]);
+    expect(
+      keys(chokOpenMakeUps(day(2027, 4, 23), JERUSALEM, true, { '2027-04-22': { chok_leyisrael: MARK } }, undefined)),
+    ).toEqual(['2027-04-18', '2027-04-19', '2027-04-20', '2027-04-21']);
+  });
+
+  it('has nothing on Sunday', () => {
+    expect(chokOpenMakeUps(day(2026, 11, 15), JERUSALEM, true, {}, undefined)).toEqual([]);
+  });
+});
+
+describe('chokDayHasText', () => {
+  it('is false while the generated map is empty', () => {
+    expect(chokDayHasText(new HDate(day(2026, 11, 16)), true)).toBe(false);
   });
 });
 

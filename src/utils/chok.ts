@@ -1,12 +1,13 @@
 import { HDate, Locale, getSedra, months } from '@hebcal/core';
-import { CHOK_TEXT_ID } from '@/data/chok';
+import { CHOK_TEXT_ID, chokAsset, hasChokContent } from '@/data/chok';
 import { HebcalService } from '@/services/HebcalService';
 import { ZmanimService } from '@/services/ZmanimService';
-import { dateKey } from '@/stores/useCompletionsStore';
+import { Completions, dateKey } from '@/stores/useCompletionsStore';
 import { ChokAsset, ChokDoubleChoice, ChokSection, ChokSectionKind, ChokSlot, HaftarahVariant } from '@/types/chok';
 import { Nusach } from '@/types/mitzvah';
 import { SiddurSection, SiddurText } from '@/types/siddur';
 import { Location } from '@/types/zmanim';
+import { calendarDay } from '@/utils/checkIn';
 import { locationNoon } from '@/utils/locationDay';
 import { quietBlockAt } from '@/utils/skipRules';
 import { civilHebrewDayAt, dayNoon, hebrewDay } from '@/utils/taharah/onot';
@@ -17,6 +18,8 @@ export type ChokPortion = { parashiyot: string[]; slot: ChokSlot; shabbat: HDate
 
 export type ChokMakeUp = { dateKey: string; slot: ChokSlot; holy: boolean };
 
+export type ChokMakeUpFold = { dateKey: string; slot: ChokSlot; label: { he: string; en: string } };
+
 export type ChokReaderRequest = { now: Date; date?: Date | null; slot?: ChokSlot | null };
 
 export type ChokTextOptions = {
@@ -24,6 +27,7 @@ export type ChokTextOptions = {
   choice: ChokDoubleChoice;
   variant: HaftarahVariant;
   kindNames: Readonly<Record<ChokSectionKind, string>>;
+  makeUps?: readonly ChokMakeUpFold[];
 };
 
 export const CHOK_SLOTS: readonly ChokSlot[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri'];
@@ -136,6 +140,47 @@ export function chokMakeUpsBefore(day: Date, location: Location, inIsrael: boole
   return makeUps;
 }
 
+function slotDay(portion: ChokPortion): HDate {
+  return hebrewDay(portion.shabbat.abs() - SATURDAY + Math.floor(SLOT_POSITION[portion.slot]));
+}
+
+export function chokSlotDay(portion: ChokPortion): Date {
+  return slotDay(portion).greg();
+}
+
+export function chokToday(now: Date, location: Location, inIsrael: boolean): Date {
+  const portion = chokPortionAt(now, location, inIsrael);
+  return portion ? chokSlotDay(portion) : civilHebrewDayAt(now, location).greg();
+}
+
+export function chokDoneDay(portion: ChokPortion, today: Date): Date | null {
+  if (portion.slot === 'thuNight') return null;
+  const day = slotDay(portion);
+  const current = new HDate(today);
+  const sameWeek = portion.shabbat.abs() === current.onOrAfter(SATURDAY).abs();
+  return sameWeek && day.abs() <= current.abs() ? day.greg() : null;
+}
+
+export function chokOpenMakeUps(
+  today: Date,
+  location: Location,
+  inIsrael: boolean,
+  completions: Completions,
+  enabledAt: number | undefined,
+): ChokMakeUp[] {
+  return chokMakeUpsBefore(today, location, inIsrael).filter(
+    (makeUp) =>
+      !completions[makeUp.dateKey]?.[CHOK_TEXT_ID] &&
+      (enabledAt === undefined || enabledAt < calendarDay(makeUp.dateKey, 1).getTime()),
+  );
+}
+
+export function chokDayHasText(day: HDate, inIsrael: boolean): boolean {
+  if (!hasChokContent()) return false;
+  const portion = portionOf(day, SLOT_OF_WEEKDAY[day.getDay()], inIsrael);
+  return portion !== null && portion.parashiyot.every((parasha) => chokAsset(parasha) !== undefined);
+}
+
 function latestPortionBefore(day: HDate, inIsrael: boolean): ChokPortion {
   const shabbat = day.onOrAfter(SATURDAY);
   const parashiyot = chokParashiyot(shabbat, inIsrael);
@@ -165,11 +210,14 @@ export function chokSlotSections(asset: ChokAsset, slot: ChokSlot, variant: Haft
   return (asset.slots[slot] ?? []).filter((section) => !section.variant || section.variant === variant);
 }
 
-export function chokText(assets: readonly ChokAsset[], options: ChokTextOptions): SiddurText {
-  const { slot, choice, variant, kindNames } = options;
-  const chosen = assets.length < 2 || choice === 'both' ? assets : [assets[choice === 'first' ? 0 : 1]];
+function slotText(
+  chosen: readonly ChokAsset[],
+  slot: ChokSlot,
+  variant: HaftarahVariant,
+  kindNames: Readonly<Record<ChokSectionKind, string>>,
+): SiddurSection[] {
   const prefixed = chosen.length > 1;
-  const sections = chosen.flatMap((asset) => {
+  return chosen.flatMap((asset) => {
     const he = chokParashaName(asset.parasha, 'he');
     return chokSlotSections(asset, slot, variant).map((section, index): SiddurSection => ({
       title: prefixed
@@ -179,6 +227,26 @@ export function chokText(assets: readonly ChokAsset[], options: ChokTextOptions)
       segments: section.segments,
     }));
   });
+}
+
+function makeUpSection(sections: readonly SiddurSection[], label: ChokMakeUpFold['label']): SiddurSection {
+  return {
+    title: label,
+    optional: label,
+    segments: sections.flatMap((section) => [
+      { he: [[{ t: section.title.he, s: 'b' as const }]], en: section.title.en },
+      ...section.segments,
+    ]),
+  };
+}
+
+export function chokText(assets: readonly ChokAsset[], options: ChokTextOptions): SiddurText {
+  const { slot, choice, variant, kindNames, makeUps = [] } = options;
+  const chosen = assets.length < 2 || choice === 'both' ? assets : [assets[choice === 'first' ? 0 : 1]];
+  const sections = [
+    ...makeUps.map((makeUp) => makeUpSection(slotText(chosen, makeUp.slot, variant, kindNames), makeUp.label)),
+    ...slotText(chosen, slot, variant, kindNames),
+  ];
   const credits = [...new Map(chosen.map((asset) => [asset.credit.title, asset.credit])).values()];
   const dedication = chosen.find((asset) => asset.dedication)?.dedication;
   return { id: CHOK_TEXT_ID, sections, credits, ...(dedication ? { dedication } : {}) };

@@ -2,8 +2,10 @@ import { HDate, months } from '@hebcal/core';
 import { DateTime } from 'luxon';
 import { ComputeContext, Mitzvah, MitzvahWindow, Nusach } from '@/types/mitzvah';
 import { Location, Zmanim } from '@/types/zmanim';
+import { CHOK_TEXT_ID, hasChokContent } from '@/data/chok';
 import { HebcalService } from '@/services/HebcalService';
 import { ZmanimService, candleLightingMinutes, isJerusalem } from '@/services/ZmanimService';
+import { chokPortionOn } from '@/utils/chok';
 
 const ALL_NUSCHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
 const SUNDAY = 0;
@@ -74,12 +76,38 @@ function omerDayFor(date: Date, timeZone?: string): number | null {
   return days >= 1 && days <= 49 ? days : null;
 }
 
-// Counting is valid all night, at the latest until alot hashachar. Falls back to chatzot halayla if
-// the next day's zmanim cannot be computed.
-function endOfOmerNight({ location, zmanim }: ComputeContext): Date {
+// The next day's alot hashachar: the Omer may be counted until then, and the Chok LeYisrael learning
+// day ends then. Falls back to chatzot halayla if the next day's zmanim cannot be computed.
+function nextAlot({ location, zmanim }: ComputeContext): Date {
   const nextDay = dayOf(zmanim, location).plus({ days: 1 }).toJSDate();
   return ZmanimService.getZmanim(nextDay, location)?.alotHaShachar ?? zmanim.chatzotLayla;
 }
+
+export const CHOK_LEYISRAEL: Mitzvah = {
+  id: CHOK_TEXT_ID,
+  name: { he: 'חק לישראל', en: 'Chok LeYisrael' },
+  icon: 'chok',
+  timeType: 'range-within-day',
+  category: 'learning',
+  skipOn: ['shabbat', 'yomtov'],
+  nuschaotSupported: ALL_NUSCHAOT,
+  defaultReminders: [
+    {
+      anchor: 'start',
+      offsetMin: 240,
+      label: 'זמן לימוד חק לישראל',
+      bodyVariants: ['זמן לימוד חק לישראל', 'חק לישראל של היום מחכה לך', 'כמה דקות של תורה עם חק לישראל'],
+    },
+    { anchor: 'start', offsetMin: 945, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
+  ],
+  computeWindow: (ctx) => {
+    const day = dayOf(ctx.zmanim, ctx.location);
+    const date = new Date(day.year, day.month - 1, day.day);
+    if (!hasChokContent() || !chokPortionOn(date, ctx.location, ctx.settings.inIsrael)) return null;
+    const block = HebcalService.holyBlockOn(day.plus({ days: 1 }).toJSDate(), ctx.location);
+    return win(ctx.zmanim.alotHaShachar, block?.start ?? nextAlot(ctx));
+  },
+};
 
 export const MITZVOT: Mitzvah[] = [
   {
@@ -269,9 +297,10 @@ export const MITZVOT: Mitzvah[] = [
     ],
     computeWindow: (ctx) => {
       if (omerDayFor(ctx.zmanim.chatzot, ctx.location.tz) === null) return null;
-      return win(nightfall(ctx.zmanim, ctx.location), endOfOmerNight(ctx));
+      return win(nightfall(ctx.zmanim, ctx.location), nextAlot(ctx));
     },
   },
+  ...(hasChokContent() ? [CHOK_LEYISRAEL] : []),
 ];
 
 export function findMitzvah(id: string): Mitzvah | undefined {

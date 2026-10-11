@@ -50,7 +50,6 @@ export function judgeDay(day: Date, input: HistoryInput, now: Date): DayVerdict 
   const doneMap = input.completions[key] ?? {};
   const skippedMap = input.skipped?.[key] ?? {};
   let block: ReturnType<typeof blockForDay> | undefined;
-  const dayOpen = now.getTime() < dayEnd.getTime();
   for (const mitzvah of input.mitzvot) {
     if (!wasEnabledBy(mitzvah, dayEnd, input.enabledSince)) continue;
     const window = mitzvah.computeWindow({ date: day, location, settings, zmanim });
@@ -67,7 +66,8 @@ export function judgeDay(day: Date, input: HistoryInput, now: Date): DayVerdict 
     // Looked up only for a day with something unmarked: most days of a long streak never need it.
     if (block === undefined) block = blockForDay(day, location);
     const inBlock = block !== null && overlapsBlock(window, block);
-    if (inBlock ? checkInPending(block!, input.checkIns ?? {}, now) : dayOpen) {
+    const open = now.getTime() < Math.max(dayEnd.getTime(), window.end.getTime());
+    if (inBlock ? checkInPending(block!, input.checkIns ?? {}, now) : open) {
       verdict.pending.push(mitzvah.id);
     } else {
       verdict.missed.push(mitzvah.id);

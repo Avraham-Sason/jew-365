@@ -3,7 +3,11 @@ const mockText = jest.fn();
 
 jest.mock('expo-asset', () => ({ Asset: { fromModule: (id: number) => mockFromModule(id) } }));
 jest.mock('expo-file-system', () => ({ File: jest.fn().mockImplementation(() => ({ text: () => mockText() })) }));
-jest.mock('@/data/chok', () => ({ chokAsset: (parasha: string) => (parasha === 'Noach' ? 7 : undefined) }));
+jest.mock('@/data/chok', () => ({
+  CHOK_TEXT_ID: 'chok_leyisrael',
+  chokAsset: (parasha: string) => (parasha === 'Noach' ? 7 : undefined),
+  hasChokContent: () => false,
+}));
 
 import type { ChokAsset } from '@/types/chok';
 

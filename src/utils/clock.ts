@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 
-type Translate = (scope: string) => string;
+type Translate = (scope: string, options?: Record<string, unknown>) => string;
 
 export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -21,4 +21,9 @@ export function formatRemaining(ms: number, t: Translate): string {
 
 export function clockOf(date: Date, zone?: string): string {
   return DateTime.fromJSDate(date, { zone }).toFormat('HH:mm');
+}
+
+export function clockRange(start: Date, end: Date, t: Translate): string {
+  const nextDay = DateTime.fromJSDate(end).startOf('day') > DateTime.fromJSDate(start).startOf('day');
+  return t(nextDay ? 'detail.timeRangeNextDay' : 'detail.timeRange', { start: clockOf(start), end: clockOf(end) });
 }

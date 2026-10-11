@@ -21,7 +21,7 @@ import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { ContentBlock, Reminder } from '@/types/mitzvah';
 import { currentOrNextWindow } from '@/utils/buildDayTimeline';
-import { clockOf } from '@/utils/clock';
+import { clockOf, clockRange } from '@/utils/clock';
 import { mitzvahName } from '@/utils/mitzvahName';
 import { reminderFires } from '@/utils/skipRules';
 import { buildTriggerTime } from '@/services/NotificationScheduler';
@@ -84,12 +84,7 @@ export default function MitzvahDetailScreen() {
         ? t('mitzvah.cycle.seasonal')
         : t('mitzvah.cycle.daily');
 
-  const timeRange = window
-    ? t('detail.timeRange', {
-        start: clockOf(window.start),
-        end: clockOf(window.end),
-      })
-    : '-';
+  const timeRange = window ? clockRange(window.start, window.end, t) : '-';
 
   const saveReminder = (value: Reminder) => {
     const next = [...reminders];

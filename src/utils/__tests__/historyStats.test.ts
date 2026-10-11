@@ -1,4 +1,4 @@
-import { computeStats, isTrackedInRange } from '../historyStats';
+import { computeStats, isTrackedInRange, judgeDay } from '../historyStats';
 import { Mitzvah } from '@/types/mitzvah';
 import { CITIES } from '@/data/cities';
 import { dateKey } from '@/stores/useCompletionsStore';
@@ -21,6 +21,27 @@ function fixtureMitzvah(id: string, skipOn: Mitzvah['skipOn'] = []): Mitzvah {
 const settings = { nusach: 'ashkenaz' as const, halachicOpinions: { ksSofZman: 'GRA' as const }, inIsrael: true };
 
 describe('historyStats', () => {
+  it('keeps an item open past midnight while its window still runs', () => {
+    const night: Mitzvah = {
+      ...fixtureMitzvah('night'),
+      computeWindow: () => ({ start: new Date(2026, 4, 6, 20), end: new Date(2026, 4, 7, 3) }),
+    };
+    const input = { mitzvot: [night], completions: {}, location: CITIES[0], settings };
+    const day = new Date(2026, 4, 6);
+    expect(judgeDay(day, input, new Date(2026, 4, 7, 1))).toEqual({
+      key: '2026-05-06',
+      done: [],
+      missed: [],
+      pending: ['night'],
+    });
+    expect(judgeDay(day, input, new Date(2026, 4, 7, 4))).toEqual({
+      key: '2026-05-06',
+      done: [],
+      missed: ['night'],
+      pending: [],
+    });
+  });
+
   it('computes a three-day streak when the fourth day back has a gap', () => {
     const today = new Date(2026, 4, 7);
     const stats = computeStats(

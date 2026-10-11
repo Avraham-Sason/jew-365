@@ -32,7 +32,7 @@
 - Route-level user-facing copy should use [../i18n/AGENTS.md](../i18n/AGENTS.md) unless it is narrow, static, and intentionally local.
 - Screens should compose services, stores, and reusable components rather than duplicating domain logic.
 - A row of selectable pills is [ChipRow](../components/ChipRow.tsx), a settings card is [SettingsSection](../components/SettingsSection.tsx), a ticking clock is [useNow](../hooks/useNow.ts), and the stage line that home and the taharah dashboard show is `renderHint(stageHint(…))` from [summary.ts](../utils/taharah/summary.ts): a screen never keeps its own copy of any of them.
-- A screen never keeps its own copy of the mitzvah list, the user settings or the check-in input ([useDayModel](../hooks/useDayModel.ts)), the mitzvah display name (`mitzvahName()` in [mitzvahName.ts](../utils/mitzvahName.ts)), or the remaining-time and clock formatting (`formatRemaining()` and `clockOf()` in [clock.ts](../utils/clock.ts)).
+- A screen never keeps its own copy of the mitzvah list, the user settings or the check-in input ([useDayModel](../hooks/useDayModel.ts)), the mitzvah display name (`mitzvahName()` in [mitzvahName.ts](../utils/mitzvahName.ts)), or the remaining-time and clock formatting (`formatRemaining()`, `clockOf()` and `clockRange()` in [clock.ts](../utils/clock.ts)).
 
 ## Work Guidance
 

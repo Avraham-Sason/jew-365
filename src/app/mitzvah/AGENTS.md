@@ -16,6 +16,7 @@
 - Content block rendering must support text, blessing, link and siddur blocks without breaking Hebrew-first layout. `ContentBlockView` draws a siddur block as a link-style row captioned `detail.openSiddur` that pushes the reader at `/siddur/<textId>` with no date, so the reader resolves the text for the day in effect. A siddur block whose `textId` is no longer in `SIDDUR_TEXT_IDS` (a retired text) renders nothing.
 - The "next reminder" preview applies `reminderFires()`, the scheduler's own rule, so it never promises a reminder inside a Shabbat / Yom Tov block.
 - The window shown and the "פתח נוסח" button come from `currentOrNextWindow()`, so a night window still open after midnight wins over tonight's; the button shows only when `hasSiddurText()` is true for it and passes its civil date as `date`.
+- The header subtitle is the cycle and the window as `clockRange()` from [clock.ts](../../utils/clock.ts): an end on a later device calendar day than the start reads `detail.timeRangeNextDay` ("05:27 עד 05:28 למחרת" for Chok LeYisrael, the Omer, a summer maariv). It says "the next day", not "tomorrow", because after midnight the window shown can be yesterday's. The two clocks beside the time ribbon stay bare.
 
 ## Work Guidance
 

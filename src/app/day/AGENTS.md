@@ -13,6 +13,7 @@
 - Validate route dates before computing day content.
 - Past-day views are read-only and must not write completion state. A mitzvah waiting in an open check-in shows as waiting, not missed, with an `accent` Banner into `/checkin`, where past days are marked; any other past or future day shows an `info` Banner saying it is read-only.
 - Day content should be built through [../../utils/buildDayTimeline.ts](../../utils/buildDayTimeline.ts), not duplicated in the route.
+- A future day's card prints its window through `clockRange()` in [../../utils/clock.ts](../../utils/clock.ts), the mitzvah screen's format, so a window that ends on the next day says so.
 
 ## Work Guidance
 

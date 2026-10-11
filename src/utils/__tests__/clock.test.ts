@@ -1,4 +1,4 @@
-import { TIME_PATTERN, clockOf, formatRemaining, timeToMinutes } from '../clock';
+import { TIME_PATTERN, clockOf, clockRange, formatRemaining, timeToMinutes } from '../clock';
 import { translate } from '@/i18n';
 
 const he = (scope: string) => translate(scope, undefined, 'he');
@@ -71,5 +71,26 @@ describe('clockOf', () => {
 
   it('pads single digits on both parts', () => {
     expect(clockOf(new Date('2026-05-06T00:05:00Z'), 'UTC')).toBe('00:05');
+  });
+});
+
+describe('clockRange', () => {
+  const heWith = (scope: string, options?: Record<string, unknown>) => translate(scope, options, 'he');
+  const enWith = (scope: string, options?: Record<string, unknown>) => translate(scope, options, 'en');
+
+  it('prints a window within one calendar day as two clocks', () => {
+    const start = new Date(2026, 9, 12, 5, 27);
+    const end = new Date(2026, 9, 12, 18, 5);
+    expect(clockRange(start, end, heWith)).toBe('05:27 עד 18:05');
+    expect(clockRange(start, end, enWith)).toBe('05:27 to 18:05');
+    expect(clockRange(new Date(2026, 9, 12, 20, 15), new Date(2026, 9, 12, 23, 59), heWith)).toBe('20:15 עד 23:59');
+  });
+
+  it('says the end falls on the next day when it does, as the Chok LeYisrael day and a night window do', () => {
+    const start = new Date(2026, 9, 12, 5, 27);
+    const end = new Date(2026, 9, 13, 5, 28);
+    expect(clockRange(start, end, heWith)).toBe('05:27 עד 05:28 למחרת');
+    expect(clockRange(start, end, enWith)).toBe('05:27 to 05:28 the next day');
+    expect(clockRange(new Date(2026, 9, 12, 20, 15), new Date(2026, 9, 13), heWith)).toBe('20:15 עד 00:00 למחרת');
   });
 });

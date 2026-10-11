@@ -259,13 +259,12 @@ describe('weekSummary', () => {
     const exit = blockAround('2026-11-14T12:00').end;
     const afterExit = new Date(exit.getTime() + 60_000);
     const beforeExit = new Date(exit.getTime() - 60_000);
-    const saturdayStillOpen = afterExit.getTime() < addDays(SHABBAT_NOACH, 1).getTime();
     const waiting = { mitzvot: SHACHARIT_AND_MAARIV, completions: { '2026-11-13': { maariv: 1 } } };
 
     it('counts only what the open check-in waits for, while every open window counts as pending', () => {
       const open = weekSummary(input(waiting), WEEK_START, SHABBAT_NOACH, afterExit);
       expect(open.checkInPending).toBe(1);
-      expect(open.pending).toBe(saturdayStillOpen ? 2 : 1);
+      expect(open.pending).toBe(2);
     });
 
     it('drops to zero once the check-in is finished, though tonight is still open', () => {
@@ -276,7 +275,7 @@ describe('weekSummary', () => {
         afterExit,
       );
       expect(finished.checkInPending).toBe(0);
-      expect(finished.pending).toBe(saturdayStillOpen ? 1 : 0);
+      expect(finished.pending).toBe(1);
     });
 
     it('is zero when everything in the check-in is marked, and before the block has ended', () => {

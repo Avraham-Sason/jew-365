@@ -257,6 +257,20 @@ describe('notificationResponseHandler', () => {
     expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
   });
 
+  it('opens the Chok LeYisrael reader on the reminder date from the body tap and from open text', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+    const data = { mitzvahId: 'chok_leyisrael', dateKey: '2026-12-17', hasText: true };
+
+    listener(response(DEFAULT_NOTIFICATION_ACTION, data, 'chok_leyisrael__2026-12-17__1'));
+    listener(response(OPEN_TEXT_ACTION, data, 'chok_leyisrael__2026-12-17__1'));
+
+    const reader = { pathname: '/siddur/[id]', params: { id: 'chok_leyisrael', date: '2026-12-17' } };
+    expect(mockRouterPush).toHaveBeenNthCalledWith(1, reader);
+    expect(mockRouterPush).toHaveBeenNthCalledWith(2, reader);
+    expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
+  });
+
   it('takes the date from the notification identifier when the payload lacks it', () => {
     initNotificationResponseHandler();
     const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];

@@ -50,6 +50,7 @@ import { HDate } from '@hebcal/core';
 import { loadChokParasha, loadSiddurText } from '@/services/SiddurService';
 import { HebcalService } from '@/services/HebcalService';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
+import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import {
   PrayerMode,
   SIDDUR_FONT_SIZES,
@@ -84,13 +85,19 @@ import {
 import {
   CHOK_SECTION_KINDS,
   CHOK_SLOTS,
+  ChokMakeUpFold,
   HAFTARAH_VARIANT,
+  chokDoneDay,
+  chokOpenMakeUps,
   chokParashaName,
   chokReaderPortion,
+  chokSlotDay,
   chokSlotsOf,
   chokText,
+  chokToday,
   chokWeekName,
 } from '@/utils/chok';
+import { calendarDay } from '@/utils/checkIn';
 import { translate, useI18n } from '@/i18n';
 
 const KEEP_AWAKE_TAG = 'siddur-reader';
@@ -330,6 +337,30 @@ export default function SiddurScreen() {
       : Boolean(mitzvah && hasSiddurText(mitzvah, nusach, windowDate, place));
   const done = useCompletionsStore((s) => Boolean(mitzvah && s.completions[dateKey(windowDate)]?.[mitzvah.id]));
   const markDone = useCompletionsStore((s) => s.markDone);
+  const chokActive = useMitzvotStore(selectActive(CHOK_TEXT_ID));
+  const chokMarks = useCompletionsStore((s) => (chok ? s.completions : null));
+  const chokTodayKey = useMemo(
+    () => (chok ? dateKey(chokToday(now, location, inIsrael)) : ''),
+    [chok, now, location, inIsrael],
+  );
+  const chokTodayDate = useMemo(() => (chokTodayKey ? calendarDay(chokTodayKey) : null), [chokTodayKey]);
+  const chokDoneDate =
+    chokPortion && chokTodayDate && chokActive.enabled ? chokDoneDay(chokPortion, chokTodayDate) : null;
+  const showMakeUps = chokActive.enabled && chokPortion !== null && dateKey(chokSlotDay(chokPortion)) === chokTodayKey;
+  const makeUpFolds = useMemo(
+    (): ChokMakeUpFold[] =>
+      showMakeUps && chokTodayDate && chokMarks
+        ? chokOpenMakeUps(chokTodayDate, location, inIsrael, chokMarks, chokActive.enabledAt).map((makeUp) => ({
+            dateKey: makeUp.dateKey,
+            slot: makeUp.slot,
+            label: {
+              he: translate('chok.makeUp', { day: translate(`chok.slot.${makeUp.slot}`, undefined, 'he') }, 'he'),
+              en: translate('chok.makeUp', { day: translate(`chok.slot.${makeUp.slot}`, undefined, 'en') }, 'en'),
+            },
+          }))
+        : [],
+    [showMakeUps, chokTodayDate, chokMarks, location, inIsrael, chokActive.enabledAt],
+  );
   const [attempt, setAttempt] = useState(0);
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   const listRef = useAnimatedRef<FlatList<SiddurSection>>();
@@ -433,8 +464,9 @@ export default function SiddurScreen() {
       choice: doubleChoice ?? 'first',
       variant: HAFTARAH_VARIANT[nusach],
       kindNames: CHOK_KIND_NAMES,
+      makeUps: makeUpFolds,
     });
-  }, [load, shownSlot, doubleChoice, nusach]);
+  }, [load, shownSlot, doubleChoice, nusach, makeUpFolds]);
 
   const sections = useMemo(() => (readyText ? resolveSiddurText(readyText, features) : []), [readyText, features]);
 
@@ -453,9 +485,9 @@ export default function SiddurScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
   // Done ends the session with the text: mark it, then land on home whatever opened the reader (a
   // home card, the mitzvah screen, a notification on a cold start).
-  const finish = (mitzvahId: string) => {
+  const finish = (mitzvahId: string, date: Date = windowDate) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    markDone(mitzvahId, windowDate);
+    markDone(mitzvahId, date);
     if (router.canDismiss()) {
       router.dismissAll();
       router.navigate('/(tabs)/home');
@@ -463,6 +495,15 @@ export default function SiddurScreen() {
       router.replace('/(tabs)/home');
     }
   };
+  const finishMakeUp = (makeUp: ChokMakeUpFold) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    markDone(CHOK_TEXT_ID, calendarDay(makeUp.dateKey));
+  };
+  const doneTarget = mitzvah
+    ? { id: mitzvah.id, date: windowDate, done }
+    : chokDoneDate
+      ? { id: CHOK_TEXT_ID, date: chokDoneDate, done: Boolean(chokMarks?.[dateKey(chokDoneDate)]?.[CHOK_TEXT_ID]) }
+      : null;
   const nameOf = (entry: { he: string; en?: string }) => (language === 'en' && entry.en ? entry.en : entry.he);
   const name = chok
     ? t('chok.title')
@@ -566,7 +607,27 @@ export default function SiddurScreen() {
         </View>,
       ];
     });
-  const optionalSection = (section: SiddurSection, optional: PassageLabel, folds: SectionFolds) => {
+  const makeUpDone = (section: SiddurSection) => {
+    const makeUp = makeUpFolds.find((fold) => fold.label.he === section.title.he);
+    if (!makeUp) return null;
+    return (
+      <Pressable
+        onPress={() => finishMakeUp(makeUp)}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.doneBtn, { backgroundColor: colors.gold, opacity: pressed ? 0.85 : 1 }]}
+      >
+        <Text style={[typography.heading, { color: colors.onGold }]}>
+          {t('chok.makeUpDone', { day: t(`chok.slot.${makeUp.slot}`) })}
+        </Text>
+      </Pressable>
+    );
+  };
+  const optionalSection = (
+    section: SiddurSection,
+    optional: PassageLabel,
+    folds: SectionFolds,
+    footer: React.ReactNode = null,
+  ) => {
     const expanded = isOpen(section.title.he, folds.optionalOpen);
     return (
       <>
@@ -579,6 +640,7 @@ export default function SiddurScreen() {
         {expanded ? (
           <View style={[styles.labeledBody, labeledEdge, { borderColor: colors.optional }]}>
             {sectionBody(section, folds, colors.optional)}
+            {footer}
           </View>
         ) : null}
       </>
@@ -609,7 +671,7 @@ export default function SiddurScreen() {
         </>
       );
     }
-    if (section.optional) return optionalSection(section, section.optional, folds);
+    if (section.optional) return optionalSection(section, section.optional, folds, makeUpDone(section));
     return (
       <>
         <Text style={[typography.heading, { color: colors.goldText, marginBottom: spacing.sm }]}>
@@ -787,14 +849,14 @@ export default function SiddurScreen() {
           )}
           ListFooterComponent={
             <>
-              {mitzvah ? (
-                done ? (
+              {doneTarget ? (
+                doneTarget.done ? (
                   <Text style={[typography.bodyBold, styles.doneText, { color: colors.safe }]}>
                     {t('siddur.doneAlready')}
                   </Text>
                 ) : (
                   <Pressable
-                    onPress={() => finish(mitzvah.id)}
+                    onPress={() => finish(doneTarget.id, doneTarget.date)}
                     accessibilityRole="button"
                     style={({ pressed }) => [
                       styles.doneBtn,

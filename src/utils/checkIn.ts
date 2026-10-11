@@ -51,9 +51,10 @@ export function checkInId(block: HolyBlock): string {
 }
 
 // Inside a block nothing can be marked, so a mitzvah whose window reaches into it waits for the
-// check-in: the block's own days, and the erev's mincha or candle lighting that run past lighting.
+// check-in: the block's own days, and the erev's windows that run up to lighting or past it (mincha,
+// candle lighting, and Chok LeYisrael, which ends at lighting and cannot be marked after it).
 export function overlapsBlock(window: { start: Date; end: Date }, block: HolyBlock): boolean {
-  return window.end.getTime() > block.start.getTime() && window.start.getTime() < block.end.getTime();
+  return window.end.getTime() >= block.start.getTime() && window.start.getTime() < block.end.getTime();
 }
 
 // Midnight that ends the first weekday after the block, on the device's clock: a block that ends
