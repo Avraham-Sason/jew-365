@@ -33,6 +33,20 @@ const SOURCES = {
     title: 'Siddur Ashkenaz',
     lang: 'en',
     version: 'Translation based on the Metsudah linear siddur, by Avrohom Davis, 1981',
+    patches: [
+      {
+        from: 'Rabbi Eliezer said on behalf of Rabbi Chanina',
+        to: 'Rabbi Elazar said on behalf of Rabbi Chanina',
+        count: 2,
+      },
+      {
+        from: '<i>Fundamentals of </i>Kuzari,<i> (Metsudah Publications, 1979) pages 269, 271, 273.<br>',
+        to: '<i>',
+        count: 3,
+      },
+      { from: ' (page 133)', to: '', count: 3 },
+      { from: ' (page 140)', to: '', count: 3 },
+    ],
     credit: METSUDAH_ASHKENAZ,
   },
   metsudahSefardHe: {
@@ -46,6 +60,23 @@ const SOURCES = {
     title: 'Siddur Sefard',
     lang: 'en',
     version: 'Translation based on the Metsudah linear siddur, by Avrohom Davis, 1981',
+    patches: [
+      { from: 'hasten the coming if His Messiah', to: 'hasten the coming of His Messiah', count: 11 },
+      { from: 'pay need to their prayer', to: 'pay heed to their prayer', count: 2 },
+      { from: 'humble and any modest', to: 'humble and modest', count: 6 },
+      {
+        from: 'Rabbi Eliezer said on behalf of Rabbi Chanina',
+        to: 'Rabbi Elazar said on behalf of Rabbi Chanina',
+        count: 2,
+      },
+      {
+        from: 'Fundamentals of <i>Kuzari,</i> (Metsudah Publications, 1979) pages 269, 271, 273.<br>',
+        to: '',
+        count: 1,
+      },
+      { from: ' (page 133)', to: '', count: 1 },
+      { from: ' (page 140)', to: '', count: 1 },
+    ],
     credit: METSUDAH_SEFARD,
   },
   metsudahShabbatHe: {
@@ -122,6 +153,10 @@ const SOURCES = {
     title: 'Siddur Edot HaMizrach',
     lang: 'en',
     version: 'Sefaria Community Translation',
+    patches: [
+      { from: 'yolk of Your Kingship', to: 'yoke of Your Kingship', count: 3 },
+      { from: 'bless you and guard them', to: 'bless you and guard you', count: 1 },
+    ],
     credit: {
       title: 'Siddur Edot HaMizrach — Sefaria Community Translation',
       license: 'CC0',
@@ -142,6 +177,13 @@ const SOURCES = {
     title: 'Weekday Siddur Chabad',
     lang: 'en',
     version: 'Sefaria Community Translation',
+    patches: [
+      { from: 'beofre', to: 'before', count: 1 },
+      { from: 'Withouth', to: 'Without', count: 1 },
+      { from: 'beggining', to: 'beginning', count: 1 },
+      { from: 'without an enf,', to: 'without an end,', count: 1 },
+      { from: 'a potion of my cup', to: 'a portion of my cup', count: 1 },
+    ],
     credit: {
       title: 'Weekday Siddur Chabad — Sefaria Community Translation',
       license: 'CC0',
@@ -663,6 +705,15 @@ const WHEN_SAID = {
 const NO_KOHANIM_IN_ISRAEL = { ...WHEN_SAID.noKohanim, when: IN_ISRAEL };
 const SEFARD_SHOMEA_TEFILLAH_CLOSING =
   'כִּי אַתָּה שׁוֹמֵֽעַ תְּפִלַּת כָּל פֶּה עַמְּ֒ךָ יִשְׂרָאֵל בְּרַחֲמִים: בָּרוּךְ אַתָּה יְהֹוָה שׁוֹמֵֽעַ תְּפִלָּה:';
+const MIGDOL_NOTE_EN =
+  '(<i>On Shabbos and Yom Tov say:</i> He who is a tower of deliverance to His king,<sup class="footnote-marker">22</sup><i class="footnote">During weekdays when we feel the darkness of exile we say: “God gives deliverance to His king,” thus acknowledging His preparation for the time of redemption. On Shabbos and Yom Tov which are reminiscent of the time of the Messiah, when God will be a tower of deliverance, we state it as a fact.</i>) ';
+const SEFARD_MAARIV_KADDISH_NOTE_CUT_EN =
+  ' If a Festival occurs on a weekday of the new week, the Chazzan instead says Whole-Kaddish and וִיהִי נֹֽעַם/וְאַתָּה קָדוֹשׁ are omitted. On <small><b>PURIM</b></small>, the Megillah is read here, followed by (וִיהִי נֹֽעַם and) וְאַתָּה קָדוֹשׁ below. On <small><b>TISHA B’AV</b></small>, Eichah and Kinos are said, followed by וְאַתָּה קָדוֹשׁ.';
+const SEFARD_HAGBAHA_HALF_KADDISH_EN =
+  'When the reading of the Torah is concluded, the Half Kaddish is recited by the Reader. ';
+const SEFARD_SHOMEA_TEFILLAH_CLOSING_EN =
+  'for You hear the prayers of every mouth of Your people, Israel, with compassion. Blessed are You, Adonoy, Who hears prayers.';
+const SEFARD_SHOMEA_TEFILLAH_STAR_EN = { from: 'our prayer*', to: 'our prayer' };
 const SEFARD_PARNASSA_BEFORE_SHOMEA_TEFILLAH = [
   { seg: 78, from: `* ${SEFARD_SHOMEA_TEFILLAH_CLOSING}`, to: '' },
   { seg: 79, from: '* ', to: '' },
@@ -716,6 +767,11 @@ const SOME_SAY = {
 };
 
 const SEFARD_OMER_NIGHT_NOTE = { seg: 64, from: '(השייכת לאותו הלילה)', to: '(<small>השייכת לאותו הלילה</small>)' };
+const OMER_HINENI_BLESSING_EN = {
+  seg: 2,
+  from: ' Blessed are You, Adonoy, our God, King of the universe, Who sanctified us with His commandments and commanded us to count the Omer.',
+  to: '',
+};
 const EDOT_THREE_FASTS_ANEINU = { any: ['tzomGedaliah', 'asaraBTevet', 'tzomTammuz'] };
 const EDOT_SANSAN_LEYAIR = { from: 'סנסן ליעיר', to: 'סנסן ליאיר' };
 const METSUDAH_BETZELEM_DAGESH = {
@@ -1180,6 +1236,18 @@ function yaalehVeyavoDay(roshChodesh, pesach, sukkot) {
 
 const ASHKENAZ = { he: 'metsudahAshkenazHe', en: 'metsudahAshkenazEn' };
 const ashkenazPrep = (node) => `Weekday > Shacharit > Preparatory Prayers > ${node}`;
+const ASHKENAZ_SHOMEA_TEFILLAH_CLOSING_EN = [
+  {
+    seg: 0,
+    from: ' for You hear the prayers of Your people, Israel, with compassion. Blessed are You, Adonoy, Who hears prayers.',
+    to: '',
+  },
+  {
+    seg: 0,
+    from: 'our King,<sup class="footnote-marker">43</sup>',
+    to: 'our King.<sup class="footnote-marker">43</sup>',
+  },
+];
 const SEFARD = { he: 'metsudahSefardHe', en: 'metsudahSefardEn' };
 const EDOT = { he: 'edotHe', en: 'edotEn' };
 // The community English of Edot's Asher Yatzar timing note translates a different instruction (wash
@@ -1189,6 +1257,17 @@ const EDOT_ASHER_YATZAR_NOTE_EN = {
   from: 'Every time a person goes to the bathroom, they should afterwards [wash hands] and say the Asher Yatzar blessing:',
   to: '',
 };
+const EDOT_ALEINU_TORAH_MOVE = {
+  seg: 2,
+  text: 'And in Your Torah, L·rd, Our G·d, it is written saying “Hear Oh Israel, the L·rd is our G·d the L·rd is One.”',
+  to: 3,
+};
+const EDOT_SHEMA_CONGREGATION_EN = { seg: 15, from: '[And the Congregation Answers:] [This is] Truth: ', to: '' };
+const edotNetzorMove = (seg) => ({
+  seg,
+  text: 'For the sake of refraining Your beloved (Israel, from sufferance), Your right (mercy) Deliver [us], &amp; answer us.',
+  to: seg + 1,
+});
 const CHABAD = { he: 'chabadHe', en: 'chabadEn' };
 
 const TALLIT_GADOL = {
@@ -1372,6 +1451,7 @@ const TEXTS = {
         title: T.shema,
         from: 9,
         to: 15,
+        enEdits: [EDOT_SHEMA_CONGREGATION_EN],
         minyanParts: [{ from: 15, label: SAID_BY.chazzan }],
       },
     ],
@@ -1457,6 +1537,7 @@ const TEXTS = {
         from: 1,
         omer: { first: 5, stride: 1 },
         transform: withoutOmerNumber,
+        enEdits: [OMER_HINENI_BLESSING_EN],
       },
     ],
     sefard: [
@@ -1468,6 +1549,7 @@ const TEXTS = {
         omer: { first: 4, stride: 1 },
         transform: withoutOmerNumber,
         edits: [SEFARD_OMER_NIGHT_NOTE],
+        enEdits: [OMER_HINENI_BLESSING_EN],
       },
     ],
     edot_hamizrach: [edotOmer()],
@@ -1532,7 +1614,20 @@ const TEXTS = {
   },
   tefilat_haderech: {
     ashkenaz: [
-      { ...DAAT, title: T.tefilatHaderech, path: 'Berachot > Tefillat HaDerech', to: 0 },
+      {
+        ...DAAT,
+        title: T.tefilatHaderech,
+        path: 'Berachot > Tefillat HaDerech',
+        to: 0,
+        enEdits: [
+          { seg: 0, from: 'May You send blessing in our every handiwork, and grant us', to: 'May You grant us' },
+          {
+            seg: 0,
+            from: 'all who see us. May You hear the sound of our supplication, because',
+            to: 'all who see us, because',
+          },
+        ],
+      },
       { ...DAAT, title: T.derechVerses, path: 'Berachot > Tefillat HaDerech', from: 1, groups: [[3, 5]] },
     ],
     sefard: [
@@ -1577,6 +1672,13 @@ const TEXTS = {
         from: 1,
         drop: [3],
         reviewed: [2, 4, 5, 6, 7, 8],
+        enEdits: [
+          {
+            seg: 2,
+            from: ', or any bad situation or encounter. And allow us to arrive to our desired destination in peace',
+            to: '',
+          },
+        ],
         optionalParts: [{ from: 4, to: 8, label: SOME_SAY.derechVerses }],
       },
     ],
@@ -1717,6 +1819,13 @@ function chabadMincha() {
         41: IN_AYT,
       },
       reviewed: [9, 32],
+      enEdits: [
+        {
+          seg: 2,
+          from: 'Remember us for kindness, King who desires kindness, write us in the Book of Kindness',
+          to: 'Remember us for life, King who desires life, write us in the Book of Life',
+        },
+      ],
       insert: [{ at: 44, ...NOTES.erevYomKippurVidui }],
       optionalParts: [{ from: 39, label: NO_KOHANIM_IN_ISRAEL }],
       minyanParts: [
@@ -2098,6 +2207,7 @@ function ashkenazVidui(base) {
     title: T.vidui,
     path: 'Weekday > Shacharit > Post Amidah > Vidui and 13 Middot',
     edits: [{ seg: 4, from: 'וַַיִּתְיַצֵּב', to: 'וַיִּתְיַצֵּב' }],
+    enDrop: [0],
     optionalParts: [{ from: 0, to: 8, label: SOME_SAY.vidui }],
     minyanParts: [{ from: 5, to: 8, label: SAID_BY.withMinyan }],
   };
@@ -2186,7 +2296,7 @@ function ashkenazShacharit() {
     pesukei('Hodu'),
     pesukei('Mizmor Letoda', { when: MIZMOR_LETODA }),
     pesukei('Yehi Chevod'),
-    pesukei('Ashrei'),
+    pesukei('Ashrei', { enDrop: [0] }),
     ...[146, 147, 148, 149, 150].map((psalm) => pesukei(`Psalm ${psalm}`)),
     pesukei('Closing Verses'),
     pesukei('Vayevarech David'),
@@ -2276,6 +2386,7 @@ function ashkenazShacharit() {
     chapter(T.uvaLetzion, concluding(T.uvaLetzion, 'Ashrei')),
     concluding(T.uvaLetzion, "Lamenatze'ach", {
       at: each(0, 1, LAMNATZEACH),
+      enDrop: [0],
       insert: [{ at: 0, ...NOTES.lamnatzeachCholHamoed }],
     }),
     concluding(T.uvaLetzion, 'Uva Letzion', { transform: compose(ASHKENAZ_VARIANTS, UVA_LETZION_COVENANT) }),
@@ -2570,6 +2681,7 @@ function sefardShacharit() {
       title: T.pesukeiDezimra,
       path: at('Hodu'),
       from: 11,
+      enDrop: [17],
       at: each(13, 14, MIZMOR_LETODA),
     }),
     {
@@ -2595,6 +2707,11 @@ function sefardShacharit() {
       title: T.amidah,
       path: at('Amidah'),
       edits: SEFARD_PARNASSA_BEFORE_SHOMEA_TEFILLAH,
+      enMoves: [{ seg: 78, text: SEFARD_SHOMEA_TEFILLAH_CLOSING_EN, to: 80 }],
+      enEdits: [
+        { seg: 78, ...SEFARD_SHOMEA_TEFILLAH_STAR_EN },
+        { seg: 79, from: '*One may add', to: 'One may add' },
+      ],
       at: {
         ...each(3, 5, IN_AYT),
         ...each(9, 10, SUMMER),
@@ -2650,6 +2767,7 @@ function sefardShacharit() {
       from: 1,
       to: 9,
       when: TACHANUN_SHACHARIT,
+      enDrop: [1],
       insert: [
         { at: 1, ...NOTES.fastSelichot },
         { at: 1, ...NOTES.tachanunDisputedShacharit },
@@ -2692,6 +2810,7 @@ function sefardShacharit() {
       path: at('Torah Reading'),
       when: TORAH_READING,
       drop: [28],
+      enEdits: [{ seg: 31, from: SEFARD_HAGBAHA_HALF_KADDISH_EN, to: '' }],
       at: { ...each(0, 1, KEL_ERECH_APAYIM), ...each(34, 39, LONG_TACHANUN) },
       optionalParts: [
         { from: 24, to: 27, label: WHEN_SAID.gomel },
@@ -2714,6 +2833,7 @@ function sefardShacharit() {
       ashrei(T.uvaLetzion, {
         to: 15,
         transform: compose(SEFARD_VARIANTS, UVA_LETZION_COVENANT),
+        enDrop: [1, 2],
         at: each(1, 3, LAMNATZEACH),
         insert: [{ at: 3, ...NOTES.lamnatzeachCholHamoed }],
       }),
@@ -2791,7 +2911,10 @@ function edotBirchot() {
       from: 1,
       at: each(15, 16, NOT_FASTING_BAREFOOT),
       reviewed: [6],
-      enEdits: [EDOT_ASHER_YATZAR_NOTE_EN],
+      enEdits: [
+        EDOT_ASHER_YATZAR_NOTE_EN,
+        { seg: 15, from: ' But for those who have the custom to say it then, they have whom to rely on.', to: '' },
+      ],
     },
     { ...EDOT, title: T.torahBlessings, path: 'Preparatory Prayers > Torah Blessings', from: 1 },
   ];
@@ -2997,6 +3120,7 @@ function edotShacharit() {
       title: T.shemaBlessings,
       path: at('The Shema'),
       from: 1,
+      enEdits: [EDOT_SHEMA_CONGREGATION_EN],
       minyanParts: [{ from: 15, label: SAID_BY.chazzan }],
     },
     chapter(T.amidah, {
@@ -3025,6 +3149,7 @@ function edotShacharit() {
         { seg: 69, from: RAVS_PRAYER_NOTE, to: '' },
       ],
       drop: [6, 7, 14, 42, 43, 50, 58],
+      enMoves: [edotNetzorMove(67)],
       optionalParts: [
         { from: 30, label: SOME_SAY.threeFastsAneinu },
         { from: 59, to: 62, label: WHEN_SAID.noKohanim },
@@ -3266,7 +3391,15 @@ function edotShacharit() {
         { from: 16, to: 18, label: SAID_BY.chazzanAndCongregation },
       ],
     },
-    { ...base, title: T.aleinu, path: at('Alenu'), from: 1, to: 4, reviewed: [3] },
+    {
+      ...base,
+      title: T.aleinu,
+      path: at('Alenu'),
+      from: 1,
+      to: 4,
+      reviewed: [3],
+      enMoves: [EDOT_ALEINU_TORAH_MOVE],
+    },
     { ...heOnly, title: T.ledavid, path: at('Alenu'), from: 5, optional: SOME_SAY.ledavid },
   ];
 }
@@ -3297,7 +3430,15 @@ function edotMincha() {
   const amidah = 'Weekday Mincha > Amida';
   const vidui = 'Weekday Mincha > Vidui';
   return [
-    { ...base, title: T.korbanot, path: offerings, from: 1, to: 10, reviewed: [1] },
+    {
+      ...base,
+      title: T.korbanot,
+      path: offerings,
+      from: 1,
+      to: 10,
+      reviewed: [1],
+      enEdits: [{ seg: 1, from: ' (Tehillim / Psalm 84)', to: '' }],
+    },
     {
       ...base,
       title: T.ashrei,
@@ -3339,6 +3480,20 @@ function edotMincha() {
         { seg: 69, from: 'ביום תענית יאמר <br>', to: '' },
       ],
       drop: [6, 13, 50, 58],
+      enMoves: [
+        edotNetzorMove(65),
+        { seg: 55, text: '[May the] L·rd bless you &amp; protect you. [Cong. Answers : Amen]', to: 56, before: true },
+        {
+          seg: 57,
+          text: '[May the] L·rd lift His countenance upon you &amp; place peace upon you.  [Cong. Answers : Amen]',
+          to: 56,
+        },
+        {
+          seg: 69,
+          text: 'May they find favor [from You] - the saying of my mouth &amp; the reflections of my heart  before You, my L·rd, my Rock &amp; my Redeemer.',
+          to: 67,
+        },
+      ],
       optionalParts: [
         { from: 32, label: SOME_SAY.threeFastsAneinu },
         { from: 59, to: 62, label: WHEN_SAID.noKohanim },
@@ -3373,7 +3528,15 @@ function edotMincha() {
       insert: [{ at: 1, ...NOTES.tachanunDisputed }],
       minyanParts: [{ from: 3, label: SAID_BY.withMinyan }],
     },
-    { ...base, title: T.kaddish, path: vidui, from: 10, to: 14, minyan: SAID_BY.chazzan },
+    {
+      ...base,
+      title: T.kaddish,
+      path: vidui,
+      from: 10,
+      to: 14,
+      enEdits: [{ seg: 11, from: ' (For', to: '' }],
+      minyan: SAID_BY.chazzan,
+    },
     {
       ...base,
       title: T.psalm,
@@ -3383,7 +3546,14 @@ function edotMincha() {
       at: { ...each(15, 16, { none: ['friday'] }), ...each(17, 18, { all: ['friday'] }), ...each(19, 20, FAST) },
     },
     { ...base, title: T.mournersKaddish, path: vidui, from: 21, to: 23, minyan: SAID_BY.mourners },
-    { ...base, title: T.aleinu, path: 'Weekday Mincha > Alenu', from: 1, reviewed: [3] },
+    {
+      ...base,
+      title: T.aleinu,
+      path: 'Weekday Mincha > Alenu',
+      from: 1,
+      reviewed: [3],
+      enMoves: [EDOT_ALEINU_TORAH_MOVE],
+    },
   ];
 }
 
@@ -3416,8 +3586,18 @@ function edotMaariv() {
       title: T.shemaBlessings,
       path: 'Weekday Arvit > The Shema',
       from: 1,
+      enEdits: [
+        { seg: 10, from: '...Lay us down', to: 'Lay us down' },
+        {
+          seg: 10,
+          from: ' [upon saying "and spread upon us" stand and concentrate upon receiving the additional Neshama / soul] and spread upon us and upon Jerusalem your city your shelter of peace. Blessed is the One spreads the shelter of peace upon us and upon His entire people Israel and upon Jerusalem. Amen.',
+          to: '',
+        },
+        { seg: 10, from: 'And guard us,', to: 'And guard us.' },
+      ],
+      enDrop: [11],
       minyanParts: [
-        { from: 8, paragraph: 1, label: SAID_BY.chazzan },
+        { from: 8, paragraph: 1, label: SAID_BY.chazzan, en: '(Repeat & Say) The L-rd, Your G-d is True.' },
         { from: 11, to: 12, label: SAID_BY.chazzan },
       ],
     },
@@ -3441,6 +3621,7 @@ function edotMaariv() {
         42: PURIM,
       },
       drop: [27],
+      enMoves: [edotNetzorMove(46)],
       reviewed: [46, 48, 50],
       edits: [
         { seg: 26, from: 'בתשעה באב יש אומרים<br>', to: '<br>' },
@@ -3482,7 +3663,14 @@ function edotMaariv() {
       minyanParts: [{ from: 67, to: 69, label: SAID_BY.mourners }],
     },
     { ...base, title: T.closingBarchu, path: amidah, from: 70, to: 72, minyan: SAID_BY.chazzanAndCongregation },
-    { ...base, title: T.aleinu, path: 'Weekday Arvit > Alenu', from: 1, reviewed: [3] },
+    {
+      ...base,
+      title: T.aleinu,
+      path: 'Weekday Arvit > Alenu',
+      from: 1,
+      reviewed: [3],
+      enMoves: [EDOT_ALEINU_TORAH_MOVE],
+    },
   ];
 }
 
@@ -3531,6 +3719,7 @@ function sefardMincha() {
         ...each(119, 121, IN_AYT),
       },
       reviewed: [65, 97],
+      enDrop: [107],
       insert: [{ at: 123, ...NOTES.erevYomKippurVidui }],
       drop: [19, 20, 47, 109, 110],
       optionalParts: [
@@ -3550,6 +3739,7 @@ function sefardMincha() {
       path: tachanun,
       to: 11,
       when: MINCHA_TACHANUN,
+      enDrop: [0],
       insert: [{ at: 0, ...NOTES.tachanunDisputed }],
       minyanParts: [{ from: 5, to: 7, label: SAID_BY.withMinyan }],
     },
@@ -3609,6 +3799,7 @@ function sefardMaariv() {
       path: amidah,
       to: 95,
       edits: [{ seg: 62, from: 'תְּפִלָתֵֽנוּ*', to: 'תְּפִלָתֵֽנוּ' }],
+      enEdits: [{ seg: 62, ...SEFARD_SHOMEA_TEFILLAH_STAR_EN }],
       at: {
         ...each(3, 5, IN_AYT),
         ...each(9, 10, SUMMER),
@@ -3640,6 +3831,7 @@ function sefardMaariv() {
       path: amidah,
       from: 96,
       to: 102,
+      enEdits: [{ seg: 96, from: SEFARD_MAARIV_KADDISH_NOTE_CUT_EN, to: '' }],
       at: { 96: VI_HI_NOAM, ...each(100, 102, { none: ['viHiNoam'] }) },
       minyan: SAID_BY.chazzan,
     },
@@ -3674,6 +3866,7 @@ function sefardMaariv() {
       omer: { first: 4, stride: 1 },
       transform: compose(SEFARD_VARIANTS, withoutOmerNumber),
       edits: [SEFARD_OMER_NIGHT_NOTE],
+      enEdits: [OMER_HINENI_BLESSING_EN],
     },
     {
       ...base,
@@ -3745,12 +3938,21 @@ function ashkenazAmidah(service, { musaf } = {}) {
       ...(mincha ? { at: { 1: TISHA_BAV, 2: TISHA_BAV, 3: { none: ['tishaBav'] } } } : {}),
     },
     { ...base, path: at('Kingdom of David') },
-    { ...base, path: at('Response to Prayer'), ...(mincha ? { at: { 1: FAST, 2: FAST } } : {}) },
+    {
+      ...base,
+      path: at('Response to Prayer'),
+      ...(mincha ? { at: { 1: FAST, 2: FAST }, enEdits: ASHKENAZ_SHOMEA_TEFILLAH_CLOSING_EN } : {}),
+    },
   ];
   return [
     musaf
       ? { ...base, path: 'Weekday > Minchah > Amida > Patriarchs', at: each(4, 5, IN_AYT) }
-      : { ...base, path: at('Patriarchs'), at: each(mincha ? 4 : 3, mincha ? 5 : 4, IN_AYT) },
+      : {
+          ...base,
+          path: at('Patriarchs'),
+          at: each(mincha ? 4 : 3, mincha ? 5 : 4, IN_AYT),
+          ...(maariv ? { enDrop: [4] } : {}),
+        },
     {
       ...base,
       path: at('Divine Might'),
@@ -3892,6 +4094,7 @@ function ashkenazMaariv() {
       when: OMER,
       omer: { first: 5, stride: 1 },
       transform: compose(ASHKENAZ_VARIANTS, withoutOmerNumber),
+      enEdits: [OMER_HINENI_BLESSING_EN],
     },
     { ...base, title: T.aleinu, path: at('Alenu') },
     { ...base, title: T.mournersKaddish, path: at("Mourner's Kaddish"), minyan: SAID_BY.mourners },
@@ -4021,6 +4224,7 @@ function ashkenazBirkatHamazon() {
       drop: [64, 65, 68, 69, 70, 71],
       at: { ...each(66, 67, ROSH_CHODESH_OR_YESTERDAY), ...each(72, 73, CHOL_HAMOED_SUKKOT_OR_YESTERDAY) },
       edits: [{ seg: 74, from: ` ${MIGDOL_NOTE}`, to: '' }],
+      enEdits: [{ seg: 74, from: MIGDOL_NOTE_EN, to: '' }],
       optionalParts: [
         { from: 61, to: 62, label: WHEN_SAID.guest },
         { from: 66, to: 67, label: WHEN_SAID.mealBeganYaalehVeyavo },
@@ -4129,6 +4333,7 @@ function sefardBirkatHamazon() {
       ],
       at: { ...each(81, 82, ROSH_CHODESH_OR_YESTERDAY), ...each(87, 88, CHOL_HAMOED_SUKKOT_OR_YESTERDAY) },
       edits: [{ seg: 89, from: ` ${MIGDOL_NOTE}`, to: '' }],
+      enEdits: [{ seg: 89, from: MIGDOL_NOTE_EN, to: '' }],
       optionalParts: [
         { from: 77, label: WHEN_SAID.guest },
         { from: 81, to: 82, label: WHEN_SAID.mealBeganYaalehVeyavo },
@@ -4218,6 +4423,23 @@ function edotBirkatHamazon() {
       to: 58,
       drop: [43, 44, 47, 48, 53, 54],
       reviewed: [56],
+      enMoves: [
+        {
+          seg: 57,
+          text: 'At a Seduat Chatan: The merciful one, bless the groom and bridge, with male children for his blessed service:',
+          to: 56,
+        },
+        {
+          seg: 56,
+          text: 'The Merciful One, He will give us life &amp; merit &amp; approach us to the days of the Messiah &amp; the building of the Holy Temple &amp; life of the World to Come.',
+          to: 57,
+        },
+      ],
+      enEdits: [
+        { seg: 56, from: 'A guest says: ', to: '' },
+        { seg: 56, from: 'At a Seduat Chatan: ', to: '' },
+        { seg: 56, from: 'groom and bridge', to: 'groom and bride' },
+      ],
       at: {
         ...each(45, 46, ROSH_CHODESH_OR_YESTERDAY),
         ...each(49, 50, CHOL_HAMOED_SUKKOT_OR_YESTERDAY),
@@ -4236,7 +4458,13 @@ function edotBirkatHamazon() {
       optionalParts: [
         { from: 45, to: 52, label: WHEN_SAID.mealBeganYaalehVeyavo },
         { from: 56, until: 1, label: WHEN_SAID.guest },
-        { from: 56, paragraph: 1, until: 2, label: WHEN_SAID.shevaBerachotMeal },
+        {
+          from: 56,
+          paragraph: 1,
+          until: 2,
+          label: WHEN_SAID.shevaBerachotMeal,
+          en: 'The merciful one, bless the groom and bride, with male children for his blessed service:',
+        },
         { from: 56, paragraph: 2, label: WHEN_SAID.britMilahMeal },
       ],
     },
@@ -4591,7 +4819,20 @@ function edotBedtimeShema() {
   const base = { ...EDOT, path: 'Bedtime Shema' };
   const hebrewOnly = { he: 'edotHe', path: 'Bedtime Shema' };
   return [
-    { ...base, title: T.leshemYichud, from: 1, to: 2, reviewed: [2] },
+    {
+      ...base,
+      title: T.leshemYichud,
+      from: 1,
+      to: 2,
+      reviewed: [2],
+      enEdits: [
+        {
+          seg: 2,
+          from: ' to lift the Divine Presence from the dust &amp; to raise the Divine Presence – our Force.',
+          to: '.',
+        },
+      ],
+    },
     { ...base, title: T.ribbonoShelOlam, from: 4, to: 4 },
     { ...hebrewOnly, title: T.hamapil, from: 5, to: 5 },
     { ...base, title: T.hamapil, from: 6, to: 6, reviewed: [6] },

@@ -46,7 +46,34 @@ async function loadSource(key) {
     fs.writeFileSync(cached, await response.text());
   }
   const data = JSON.parse(fs.readFileSync(cached, 'utf8'));
-  return source.wikisource ? wikitextOf(data, source, key) : data.text;
+  if (source.wikisource) {
+    if (source.patches) throw new Error(`${key}: patches apply only to a Sefaria source`);
+    return wikitextOf(data, source, key);
+  }
+  return source.patches ? patchedTree(data.text, source.patches, key) : data.text;
+}
+
+function patchedTree(tree, patches, key) {
+  const seen = patches.map(() => 0);
+  const walk = (node) => {
+    if (typeof node === 'string') {
+      return patches.reduce((text, patch, n) => {
+        const pieces = text.split(patch.from);
+        seen[n] += pieces.length - 1;
+        return pieces.join(patch.to);
+      }, node);
+    }
+    if (Array.isArray(node)) return node.map(walk);
+    if (node && typeof node === 'object')
+      return Object.fromEntries(Object.entries(node).map(([name, child]) => [name, walk(child)]));
+    return node;
+  };
+  const patched = walk(tree);
+  patches.forEach((patch, n) => {
+    if (seen[n] !== patch.count)
+      throw new Error(`${key}: patch "${patch.from}" matched ${seen[n]}x, expected ${patch.count}`);
+  });
+  return patched;
 }
 
 function segmentsAt(tree, nodePath, sourceKey) {
@@ -540,6 +567,21 @@ function applyEdits(html, edits, label) {
   return out;
 }
 
+function applyEnMoves(enAll, moves, label) {
+  if (!moves?.length) return enAll;
+  const out = [...enAll];
+  for (const move of moves) {
+    const text = move.text.normalize('NFC');
+    const current = (out[move.seg] ?? '').normalize('NFC');
+    const count = current.split(text).length - 1;
+    if (count !== 1) throw new Error(`${label} #${move.seg} (en): move "${text}" matched ${count}x, expected 1`);
+    out[move.seg] = current.split(text).join(' ').replace(/ {2,}/g, ' ');
+    const target = (out[move.to] ?? '').normalize('NFC');
+    out[move.to] = (move.before ? [text, target] : [target, text]).filter(Boolean).join(' ');
+  }
+  return out;
+}
+
 function tagOmerDays(spec, label) {
   const { first, stride } = spec.omer;
   const days = {};
@@ -620,6 +662,8 @@ function labeledPartsOf(spec, label) {
     for (const part of spec[key] ?? []) {
       const to = part.to ?? part.from;
       checkLabel(part.label, `${label} ${field} part #${part.from}`);
+      if (part.en !== undefined && part.englishInPart)
+        throw new Error(`${label}: a part carries both "en" and "englishInPart"`);
       if (part.paragraph !== undefined && part.paragraph < 1)
         throw new Error(`${label} #${part.from}: starts at paragraph ${part.paragraph}`);
       if (part.until !== undefined && part.until < 1)
@@ -647,6 +691,17 @@ function partCovers(part, index, first, last) {
   );
 }
 
+function englishLeftOver(draft, spoken, label) {
+  let left = draft.en;
+  for (const part of spoken) {
+    const count = draft.en.split(part.en).length - 1;
+    if (count !== 1)
+      throw new Error(`${label} #${draft.index}: part English "${part.en}" matched ${count}x, expected 1`);
+    left = left.split(part.en).join(' ');
+  }
+  return left.replace(/ {2,}/g, ' ').trim();
+}
+
 function withLabels(draft, parts, label) {
   const own = parts.filter((part) => draft.index >= part.from && draft.index <= part.to);
   const cuts = [
@@ -658,15 +713,23 @@ function withLabels(draft, parts, label) {
       throw new Error(`${label} #${draft.index}: cannot cut ${draft.he.length} paragraphs at ${cut}`);
   }
   const bounds = [...new Set([0, ...cuts, draft.he.length])].sort((a, b) => a - b);
+  const spoken = own.filter((part) => part.en !== undefined);
+  const leftOver = spoken.length ? englishLeftOver(draft, spoken, label) : draft.en;
   const pieces = bounds.slice(0, -1).map((first, n) => {
     const piece = { ...draft, he: draft.he.slice(first, bounds[n + 1]), en: '' };
     for (const part of own.filter((candidate) => partCovers(candidate, draft.index, first, bounds[n + 1] - 1))) {
       piece[part.field] = part.label;
-      if (part.englishInPart) piece.en = draft.en;
+      if (part.englishInPart) piece.en = leftOver;
     }
     return piece;
   });
-  if (!own.some((part) => part.englishInPart && pieces.some((piece) => piece.en))) pieces[0].en = draft.en;
+  if (!own.some((part) => part.englishInPart && pieces.some((piece) => piece.en))) pieces[0].en = leftOver;
+  for (const part of spoken) {
+    bounds.slice(0, -1).forEach((first, n) => {
+      if (partCovers(part, draft.index, first, bounds[n + 1] - 1))
+        pieces[n].en = [pieces[n].en, part.en].filter(Boolean).join(' ');
+    });
+  }
   return pieces;
 }
 
@@ -675,13 +738,17 @@ async function buildSection(spec, ctx) {
   const used = new Set();
   const heAll = await segmentsOf(spec.he, spec.path, used);
   for (const key of used) ctx.credits.add(key);
-  const enAll = spec.en ? await segmentsOf(spec.en, spec.enPath ?? spec.path) : [];
+  const enSource = spec.en ? await segmentsOf(spec.en, spec.enPath ?? spec.path) : [];
   const from = spec.from ?? 0;
   const to = spec.to ?? heAll.length - 1;
   if (to >= heAll.length) throw new Error(`${label}: range ends at ${to} but source has ${heAll.length} segments`);
   const omerOf = spec.omer ? tagOmerDays(spec, label) : () => undefined;
   const editsBySeg = bySegment(spec.edits);
   const enEditsBySeg = bySegment(spec.enEdits);
+  const enDropped = new Set(spec.enDrop);
+  for (const i of enEditsBySeg.keys()) {
+    if (enDropped.has(i)) throw new Error(`${label} #${i}: enEdits on a segment in enDrop`);
+  }
   const parts = labeledPartsOf(spec, label);
   const matchedParts = new Set();
   if (spec.optional) checkLabel(spec.optional, label);
@@ -691,6 +758,8 @@ async function buildSection(spec, ctx) {
   const targets = [
     ...editsBySeg.keys(),
     ...enEditsBySeg.keys(),
+    ...(spec.enMoves ?? []).flatMap((move) => [move.seg, move.to]),
+    ...enDropped,
     ...Object.keys(spec.at ?? {}).map(Number),
     ...(spec.groups ?? []).flat(),
     ...(spec.reviewed ?? []),
@@ -698,6 +767,10 @@ async function buildSection(spec, ctx) {
   ];
   const stray = targets.filter((i) => !selected(i));
   if (stray.length) throw new Error(`${label}: edits, conditions or groups target unselected segments ${stray}`);
+  const enAll = applyEnMoves(enSource, spec.enMoves, label);
+  const vacated = new Set(
+    (spec.enMoves ?? []).map((move) => move.seg).filter((seg) => !parseEnglish(enAll[seg] ?? '')),
+  );
   const groups = spec.groups ?? [];
   const groupOf = new Map();
   groups.forEach(([start, end], gi) => {
@@ -723,14 +796,19 @@ async function buildSection(spec, ctx) {
     const classified = classifySmall(html);
     const he = parseHebrew(classified.html);
     if (!he.length) continue;
-    let enHtml = enAll[i] ?? '';
+    let enHtml = enDropped.has(i) ? '' : (enAll[i] ?? '');
     if (enEditsBySeg.has(i)) enHtml = applyEdits(enHtml, enEditsBySeg.get(i), `${label} #${i} (en)`);
     const en = spec.en ? parseEnglish(enHtml) : '';
     if (en) ctx.credits.add(spec.en);
     const when = mergeConditions(spec.when, spec.at?.[i], omerOf(i));
     for (const part of parts.filter((candidate) => i >= candidate.from && i <= candidate.to)) matchedParts.add(part);
+    const enGone = enDropped.has(i) || vacated.has(i);
     drafts.push(
-      ...withLabels({ index: i, he, en, when, group: groupOf.get(i), promoted: classified.promoted }, parts, label),
+      ...withLabels(
+        { index: i, he, en, enDropped: enGone, when, group: groupOf.get(i), promoted: classified.promoted },
+        parts,
+        label,
+      ),
     );
   }
   const unmatched = parts.filter((part) => !matchedParts.has(part));
@@ -760,6 +838,7 @@ async function buildSection(spec, ctx) {
       const merged = previous.he[previous.he.length - 1];
       merged.push({ t: ' ' }, ...draft.he.flat());
       previous.en = [previous.en, draft.en].filter(Boolean).join(' ');
+      previous.enDropped ||= draft.enDropped;
       continue;
     }
     segments.push({ ...draft, he: draft.he.map((runs) => runs.map((run) => ({ ...run }))) });
@@ -808,9 +887,10 @@ async function buildSection(spec, ctx) {
     ...(spec.chapter ? { chapter: spec.chapter } : {}),
     ...(spec.optional ? { optional: spec.optional } : {}),
     ...(minyanOnly ? { minyanOnly } : {}),
-    segments: segments.map(({ he, en, when, optional, minyan }) => ({
+    segments: segments.map(({ he, en, enDropped, when, optional, minyan }) => ({
       he,
       ...(en ? { en } : {}),
+      ...(enDropped ? { enDropped } : {}),
       ...(when ? { when } : {}),
       ...(optional ? { optional } : {}),
       ...(minyan ? { minyan } : {}),
@@ -849,7 +929,7 @@ function fillTranslations(sections, memory, credits) {
   let filled = 0;
   for (const section of sections) {
     for (const segment of section.segments) {
-      if (segment.en) continue;
+      if (segment.en || segment.enDropped) continue;
       const hit = memory.get(normalizeHebrew(plain(segment.he)));
       if (!hit) continue;
       segment.en = hit.en;
@@ -892,6 +972,7 @@ async function main() {
       const sections = mergeSameTitledSections(parts);
       const filled = HEBREW_ONLY_TEXTS.includes(textId) ? 0 : fillTranslations(sections, memory, credits);
       const segments = sections.flatMap((s) => s.segments);
+      for (const segment of segments) delete segment.enDropped;
       const translated = segments.filter((s) => s.en).length;
       report.push(
         `${nusach}/${textId}: ${segments.length} segments, ${translated} translated (${filled} via exact match)`,

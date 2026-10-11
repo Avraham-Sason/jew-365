@@ -30,6 +30,7 @@ import {
   MitzvahTextId,
   Run,
   SiddurSection,
+  SiddurSegment,
   SiddurText,
   SiddurTextId,
   StandaloneTextId,
@@ -1938,6 +1939,29 @@ describe('standalone texts', () => {
       expect(regular).not.toMatch(/החתן|הסנדק|אבי הבן|בעל הסעודה|את השלחן הזה/);
       expect(regular).toMatch(/יטע תורתו ואהבתו בלבנו/);
       expect(regular).toMatch(/יחינו ויזכנו ויקרבנו לימות המשיח/);
+    });
+
+    it('aligns the Edot HaMizrach English with its fold', () => {
+      const harachaman = section('edot_hamizrach', 'הרחמן');
+      const folds = segmentBlocks(harachaman.segments, 'optional').filter((block) => block.label);
+      const [guest, wedding, brit] = folds.map((fold) => fold.segments[0]);
+      expect(guest.en).toMatch(/^The Merciful One, He will bless this table/);
+      expect(guest.en).not.toMatch(/give us life|Seduat|groom/);
+      expect(wedding.en).toBe(
+        'The merciful one, bless the groom and bride, with male children for his blessed service:',
+      );
+      expect(brit.en).toBeUndefined();
+      const messiah = harachaman.segments.find(
+        (segment) =>
+          !segment.optional &&
+          letters(
+            segment.he
+              .flat()
+              .map((run) => run.t)
+              .join(' '),
+          ).startsWith('הרחמן הוא יחינו'),
+      )!;
+      expect(messiah.en).toMatch(/^The Merciful One, He will give us life/);
     });
 
     it('leaves the regular Harachaman lines of every nusach unlabeled, with the Messiah line and the closing verses open', () => {
@@ -4053,6 +4077,148 @@ describe('shacharit chapters', () => {
       for (const id of TEXT_IDS.filter((candidate) => candidate !== 'shacharit')) {
         expect(load(nusach, id).sections.some((section) => section.chapter)).toBe(false);
       }
+    }
+  });
+});
+
+describe('English stays aligned with its Hebrew', () => {
+  const EDOT: Nusach = 'edot_hamizrach';
+  const SOURCE_DEFECTS = [
+    /page 000/,
+    /Fundamentals of Kuzari/,
+    /\(page \d+\)/,
+    /\(For$/,
+    /coming if His/,
+    /pay need to/,
+    /and any modest/,
+    /Rabbi Eliezer said on behalf/,
+    /yolk of/,
+    /bless you and guard them/,
+    /S\.R\. Hirsch/,
+    /tower of deliverance to His king,\)/,
+    /potion of my cup/,
+    /groom and bridge/,
+    /Seduat/,
+    /whom to rely on/,
+    /Tehillim \/ Psalm 84\)/,
+    /\[And the Congregation Answers:\] \[This is\] Truth/,
+    /desired destination in peace/,
+    /in our every handiwork/,
+    /sound of our supplication/,
+    /Remember us for kindness/,
+  ];
+  const MAARIV_DEFECTS = [/in this case, the Pesukei Dezimrah/];
+  const HEBREW_ONLY_NOTES: [Nusach, SiddurTextId, string][] = [
+    ['sefard', 'shacharit', 'אלו ימים שאין אומרים'],
+    ['sefard', 'shacharit', 'מה שתקנו לאומרו'],
+    ['ashkenaz', 'shacharit', 'מה שתקנו לאומרו'],
+    ['sefard', 'shacharit', 'טעם נכון למה נתקן הוידוי'],
+    ['ashkenaz', 'shacharit', 'טעם נכון למה נתקן הוידוי'],
+    ['ashkenaz', 'mincha', 'טעם נכון למה נתקן הוידוי'],
+    ['sefard', 'mincha', 'אין נופלין על פניהם'],
+  ];
+  const segmentsOf = (nusach: Nusach, id: SiddurTextId) =>
+    load(nusach, id).sections.flatMap((section) => section.segments);
+  const hebrewOf = (segment: SiddurSegment, keep: (run: Run) => boolean = () => true) =>
+    letters(
+      segment.he
+        .map((paragraph) =>
+          paragraph
+            .filter(keep)
+            .map((run) => run.t)
+            .join(''),
+        )
+        .join(' '),
+    ).trim();
+  const startingWith = (segments: SiddurSegment[], prefix: string) => {
+    const found = segments.filter((segment) =>
+      [hebrewOf(segment), hebrewOf(segment, (run) => run.s !== 'n')].some((text) => text.startsWith(prefix)),
+    );
+    if (!found.length) throw new Error(`no segment starts with "${prefix}"`);
+    return found;
+  };
+
+  it('carries none of the source defects the alignment audit found', () => {
+    const found: string[] = [];
+    for (const nusach of NUSCHAOT) {
+      for (const id of TEXT_IDS) {
+        const defects = id === 'maariv' ? [...SOURCE_DEFECTS, ...MAARIV_DEFECTS] : SOURCE_DEFECTS;
+        for (const segment of segmentsOf(nusach, id)) {
+          for (const defect of defects) {
+            if (segment.en && defect.test(segment.en)) found.push(`${nusach}/${id} ${defect}`);
+          }
+        }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  it('moves each Edot HaMizrach sentence to the segment that holds its Hebrew', () => {
+    for (const id of ['shacharit', 'mincha', 'maariv'] as const) {
+      const segments = segmentsOf(EDOT, id);
+      expect(startingWith(segments, 'ובתורתך')[0].en).toMatch(/^And in Your Torah/);
+      expect(startingWith(segments, 'על כן נקוה')[0].en).not.toMatch(/Hear Oh Israel/);
+      expect(startingWith(segments, 'למען יחלצון')[0].en).toMatch(/answer us\.?$/);
+      for (const elohaiNetzor of startingWith(segments, 'אלהי נצר')) {
+        expect(elohaiNetzor.en ?? '').not.toMatch(/answer us/);
+      }
+    }
+
+    const mincha = segmentsOf(EDOT, 'mincha');
+    expect(startingWith(mincha, 'יברכך יהוה וישמרך ועונים אמן')[0].en).toMatch(/bless you.*shine.*lift/s);
+    expect(startingWith(mincha, 'ואומר החזן והכהנים')[0].en).toBeUndefined();
+    expect(startingWith(mincha, 'רבון העולמים עשינו')[0].en).toBeUndefined();
+    expect(startingWith(mincha, 'רבון העולמים גלוי לפניך')[0].en).toBeUndefined();
+    const afterYechaltzun = mincha[mincha.indexOf(startingWith(mincha, 'למען יחלצון')[0]) + 1];
+    expect(hebrewOf(afterYechaltzun)).toMatch(/^יהיו לרצון/);
+    expect(afterYechaltzun.en).toMatch(/my Rock/);
+
+    const maariv = segmentsOf(EDOT, 'maariv');
+    const hashkiveinu = startingWith(maariv, 'השכיבנו')[0];
+    expect(hashkiveinu.en).toMatch(/And guard us\.$/);
+    expect(hashkiveinu.en).not.toMatch(/Jerusalem/);
+    expect(startingWith(maariv, 'וחוזר החזן יהוה אלהיכם אמת')[0].en).toMatch(/The L-rd, Your G-d is True/);
+    expect(startingWith(maariv, 'ויאמר')[0].en).not.toMatch(/Repeat/);
+  });
+
+  it('keeps Metsudah editorial notes Hebrew-only where their English is a different note', () => {
+    const withEnglish = HEBREW_ONLY_NOTES.filter(([nusach, id, note]) =>
+      startingWith(segmentsOf(nusach, id), note).some((segment) => segment.en !== undefined),
+    ).map(([nusach, id, note]) => `${nusach}/${id} ${note}`);
+    expect(withEnglish).toEqual([]);
+  });
+
+  it('puts the Shema Koleinu chatimah and the Omer blessing on their own segments', () => {
+    const sefardAmidah = segmentsOf('sefard', 'shacharit');
+    const shemaKoleinu = startingWith(sefardAmidah, 'אב הרחמן שמע קולנו')[0];
+    expect(shemaKoleinu.en).not.toMatch(/Blessed are You/);
+    const chatimah = sefardAmidah
+      .slice(sefardAmidah.indexOf(shemaKoleinu) + 1)
+      .find((segment) => hebrewOf(segment).endsWith('שומע תפלה'));
+    expect(chatimah?.en).toMatch(/^for You hear the prayers of every mouth/);
+
+    expect(startingWith(segmentsOf('ashkenaz', 'mincha'), 'שמע קולנו')[0].en).not.toMatch(/Blessed are You/);
+
+    for (const nusach of ['ashkenaz', 'sefard'] as const) {
+      for (const id of ['maariv', 'sefirat_haomer'] as const) {
+        const segments = segmentsOf(nusach, id);
+        expect(startingWith(segments, 'הנני מוכן ומזמן')[0].en).not.toMatch(/Blessed are You/);
+        expect(segments.filter((segment) => /commanded us to count the Omer/.test(segment.en ?? ''))).toHaveLength(1);
+      }
+    }
+  });
+
+  it("fixes the pinned translations' typos once per source", () => {
+    expect(startingWith(segmentsOf('chabad', 'mincha'), 'זכרנו לחיים')[0].en).toMatch(/Remember us for life/);
+    expect(startingWith(segmentsOf('chabad', 'shacharit'), 'אדון עולם')[0].en).toMatch(/portion of my cup/);
+
+    const kaddishEnglish = startingWith(segmentsOf('sefard', 'shacharit'), 'יתגדל ויתקדש').flatMap((segment) =>
+      segment.en ? [segment.en] : [],
+    );
+    expect(kaddishEnglish.join('\n')).toMatch(/coming of His Messiah/);
+
+    for (const nusach of ['ashkenaz', 'sefard', 'chabad'] as const) {
+      expect(startingWith(segmentsOf(nusach, 'shacharit'), 'אמר רבי אלעזר')[0].en).toMatch(/Rabbi Elazar said/);
     }
   });
 });
