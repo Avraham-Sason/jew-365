@@ -132,9 +132,9 @@ export default function SiddurScreen() {
       />
       <ScrollView contentContainerStyle={styles.list}>
         <CatalogSection title={t('siddur.group.today')}>{today.map(mitzvahRow)}</CatalogSection>
+        <CatalogSection title={t('siddur.group.prayers')}>{prayers.map(mitzvahRow)}</CatalogSection>
         {groups.map(({ group, ids }) => (
           <CatalogSection key={group} title={t(`siddur.group.${group}`)}>
-            {group === 'prayers' ? prayers.map(mitzvahRow) : null}
             {ids.map((id) => row(id, group))}
           </CatalogSection>
         ))}

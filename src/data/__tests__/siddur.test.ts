@@ -1689,10 +1689,23 @@ describe('standalone texts', () => {
     expect(SIDDUR_GROUPS.flatMap((group) => standaloneTextsIn(group)).sort()).toEqual([...STANDALONE_IDS].sort());
   });
 
-  it('files the traveler’s prayer last among the blessings, with no travel group', () => {
-    expect(SIDDUR_GROUPS).toEqual(['prayers', 'meals', 'blessings', 'night', 'occasions']);
-    expect(STANDALONE_TEXTS.tefilat_haderech.group).toBe('blessings');
-    expect(standaloneTextsIn('blessings').slice(-1)).toEqual(['tefilat_haderech']);
+  it('files the blessings, the night texts and Tikkun HaKlali in one general group, in the catalog order', () => {
+    expect(SIDDUR_GROUPS).toEqual(['meals', 'general', 'occasions']);
+    for (const id of ['tefilat_haderech', 'kriat_shema_al_hamita', 'kiddush_levana', 'tikkun_haklali'] as const) {
+      expect(STANDALONE_TEXTS[id].group).toBe('general');
+    }
+    expect(standaloneTextsIn('general')).toEqual([
+      'asher_yatzar',
+      'birchot_hanehenin',
+      'birchot_hareiya',
+      'mezuzah',
+      'tefilat_haderech',
+      'kriat_shema_al_hamita',
+      'kiddush_levana',
+      'tikkun_haklali',
+    ]);
+    expect(standaloneTextsIn('meals')).toEqual(['birkat_hamazon', 'al_hamichya', 'borei_nefashot']);
+    expect(standaloneTextsIn('occasions')).toEqual(['sheva_berachot', 'chanukah_candles']);
   });
 
   it('offers every standalone text in every nusach on the days its condition allows', () => {
@@ -1787,7 +1800,6 @@ describe('standalone texts', () => {
     const GUEST = 'אורח אומר';
     const SHEVA_BERACHOT = 'בסעודת שבע ברכות';
     const BRIT_MILAH = 'בסעודת ברית מילה';
-    const SPECIAL_MEALS = 'לאורח, בסעודת חתן ובסעודת מילה';
     const foldedSections = (nusach: Nusach) =>
       sections(nusach, 'birkat_hamazon', weekday)
         .filter((section) => section.optional)
@@ -1853,7 +1865,7 @@ describe('standalone texts', () => {
       }
     });
 
-    it('folds what a guest says on its own: Ashkenaz keeps its instruction line inside the fold, Sefard replaces it with the label', () => {
+    it('folds what a guest says on its own: Ashkenaz keeps its instruction line inside the fold, Sefard replaces it with the label, Edot HaMizrach cuts it from the shared segment', () => {
       const ashkenaz = guestSegments('ashkenaz');
       expect(ashkenaz).toHaveLength(2);
       expect(ashkenaz[0].he.flat().every((run) => run.s === 'n')).toBe(true);
@@ -1884,7 +1896,9 @@ describe('standalone texts', () => {
       expect(shownOn('sefard', 'birkat_hamazon', weekday)).not.toMatch(/אורח אומר/);
 
       expect(guestSegments('chabad')).toHaveLength(0);
-      expect(guestSegments('edot_hamizrach')).toHaveLength(0);
+      const edot = guestSegments('edot_hamizrach');
+      expect(edot).toHaveLength(1);
+      expect(saidIn(edot)).toMatch(/^הרחמן הוא יברך את השלחן הזה.*בעל הבית הזה ובעל הסעודה הזאת/);
       for (const nusach of ['ashkenaz', 'sefard'] as Nusach[]) {
         const regular = openText(nusach, 'birkat_hamazon', weekday);
         expect(regular).not.toMatch(/יבוש/);
@@ -1892,18 +1906,36 @@ describe('standalone texts', () => {
       }
     });
 
-    it('folds the Edot HaMizrach guest, wedding and brit milah blessings as one passage under one label', () => {
-      const folded = sections('edot_hamizrach', 'birkat_hamazon', weekday)
+    it('folds the Edot HaMizrach guest, wedding and brit milah blessings as three separate folds in a row, each opening on its Harachaman with no bracketed heading', () => {
+      const harachaman = section('edot_hamizrach', 'הרחמן');
+      const folds = segmentBlocks(harachaman.segments, 'optional').filter((block) => block.label);
+      expect(folds.map((fold) => fold.label!.he)).toEqual([GUEST, SHEVA_BERACHOT, BRIT_MILAH]);
+      expect(folds.map((fold) => fold.segments.length)).toEqual([1, 1, 1]);
+      expect(folds.map((fold) => fold.start)).toEqual([folds[0].start, folds[0].start + 1, folds[0].start + 2]);
+      expect(harachaman.segments.filter((segment) => !segment.optional)).toHaveLength(harachaman.segments.length - 3);
+
+      const [guest, wedding, brit] = folds.map((fold) => saidIn(fold.segments));
+      expect(guest).toMatch(/את השלחן הזה.*בעל הבית הזה ובעל הסעודה הזאת/);
+      expect(guest).not.toMatch(/החתן|הסנדק|אבי הבן/);
+      expect(wedding).toMatch(/^הרחמן הוא יברך את החתן והכלה/);
+      expect(wedding).not.toMatch(/בעל הסעודה|הסנדק|אבי הבן/);
+      expect(brit).toMatch(/אבי הבן.*הסנדק/);
+      expect(brit).not.toMatch(/בעל הסעודה|החתן/);
+
+      for (const fold of folds) {
+        expect(fold.segments[0].he).toHaveLength(1);
+        expect(fold.segments[0].he.flat().every((run) => run.s !== 'n')).toBe(true);
+        expect(letters(fold.segments[0].he[0][0].t)).toMatch(/^הרחמן הוא יברך/);
+      }
+      const shownRuns = sections('edot_hamizrach', 'birkat_hamazon', weekday)
         .flatMap((candidate) => candidate.segments)
-        .filter((segment) => segment.optional?.he === SPECIAL_MEALS);
-      expect(folded).toHaveLength(1);
-      const said = saidIn(folded);
-      expect(said).toMatch(/את השלחן הזה/);
-      expect(said).toMatch(/את החתן והכלה/);
-      expect(said).toMatch(/אבי הבן/);
-      expect(shownOn('edot_hamizrach', 'birkat_hamazon', weekday)).toMatch(/אורח אומר/);
+        .flatMap((segment) => segment.he.flat())
+        .map((run) => run.t.trim());
+      expect(shownRuns.filter((text) => ['אורח אומר', 'בסעודת חתן', 'בסעודת מילה'].includes(text))).toEqual([]);
+      expect(shownOn('edot_hamizrach', 'birkat_hamazon', weekday)).not.toMatch(/אורח אומר|בסעודת חתן/);
+
       const regular = openText('edot_hamizrach', 'birkat_hamazon', weekday);
-      expect(regular).not.toMatch(/החתן|הסנדק|את השלחן הזה/);
+      expect(regular).not.toMatch(/החתן|הסנדק|אבי הבן|בעל הסעודה|את השלחן הזה/);
       expect(regular).toMatch(/יטע תורתו ואהבתו בלבנו/);
       expect(regular).toMatch(/יחינו ויזכנו ויקרבנו לימות המשיח/);
     });
@@ -3720,12 +3752,11 @@ describe('tikkun_haklali', () => {
     for (const flag of ['shabbat', 'yomTov', 'yomKippur'] as const) expect(weekday.flags.has(flag)).toBe(false);
   });
 
-  it('is a prayer, offered in every nusach on every day', () => {
-    expect(STANDALONE_TEXTS[ID]).toMatchObject({ name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'prayers' });
+  it('is filed in the general group, last, and offered in every nusach on every day', () => {
+    expect(STANDALONE_TEXTS[ID]).toMatchObject({ name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'general' });
     expect(STANDALONE_TEXTS[ID].evening).toBeUndefined();
     expect(STANDALONE_TEXTS[ID].available).toBeUndefined();
-    expect(standaloneTextsIn('prayers')).toEqual([ID]);
-    expect(SIDDUR_GROUPS[0]).toBe('prayers');
+    expect(standaloneTextsIn('general').slice(-1)).toEqual([ID]);
     for (const nusach of NUSCHAOT) {
       for (const features of [weekday, shabbat]) expect(hasStandaloneText(ID, nusach, features)).toBe(true);
     }

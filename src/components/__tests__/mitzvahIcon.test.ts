@@ -42,17 +42,20 @@ describe('MitzvahIcon', () => {
     });
   });
 
-  describe('the prayers icon', () => {
-    const drawn = (name: IconName, variant: IconVariant) =>
-      render(createElement(MitzvahIcon, { name, color: '#111111', tint: '#eeeeee', variant }))
+  describe('the general icon', () => {
+    const fills = (variant: IconVariant) =>
+      render(createElement(MitzvahIcon, { name: 'general', color: '#111111', tint: '#eeeeee', variant }))
         .UNSAFE_getAllByType(Path)
-        .map((path) => [path.props.d, path.props.fill]);
+        .map((path) => path.props.fill);
 
-    it('draws the siddur book in both variants', () => {
-      for (const variant of ['outline', 'duotone'] as const) {
-        expect(drawn('prayers', variant)).toHaveLength(2);
-        expect(drawn('prayers', variant)).toEqual(drawn('siddur', variant));
-      }
+    it('draws three sparkles, unfilled in outline and tinted in duotone', () => {
+      expect(fills('outline')).toEqual(['none', 'none', 'none']);
+      expect(fills('duotone')).toEqual(['#eeeeee', '#eeeeee', '#eeeeee']);
+    });
+
+    it('replaces the retired prayers and blessings icon names', () => {
+      expect(ICON_NAMES).not.toContain('prayers');
+      expect(ICON_NAMES).not.toContain('blessings');
     });
   });
 });

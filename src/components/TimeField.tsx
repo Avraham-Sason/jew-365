@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { Keyboard, Pressable, StyleProp, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
+import {
+  I18nManager,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
 import { TIME_PATTERN } from '@/utils/clock';
 import { BottomSheet } from './BottomSheet';
-import { ChipRow } from './ChipRow';
+import { WheelPicker } from './WheelPicker';
 
 export const PICKER_HOURS: readonly number[] = Array.from({ length: 24 }, (_, hour) => hour);
-export const PICKER_MINUTES: readonly number[] = Array.from({ length: 12 }, (_, step) => step * 5);
+export const PICKER_MINUTES: readonly number[] = Array.from({ length: 60 }, (_, minute) => minute);
 
 const pad = (value: number) => String(value).padStart(2, '0');
 
@@ -29,17 +40,44 @@ type Props = {
 
 export function TimeField({ label, value, onChange, style }: Props) {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [picking, setPicking] = useState(false);
   const valid = TIME_PATTERN.test(value);
   const hour = valid ? Number(value.slice(0, 2)) : null;
   const minute = valid ? Number(value.slice(3)) : null;
-  const selectedMinute = minute !== null && minute % 5 === 0 ? minute : null;
-  const sectionLabel = [typography.captionBold, styles.sectionLabel, { color: colors.textSub }];
+  // react-native-web has no I18nManager.isRTL: its rows mirror through the document dir, which follows the language.
+  const rowMirrored = Platform.OS === 'web' ? language === 'he' : I18nManager.isRTL;
   const openPicker = () => {
     Keyboard.dismiss();
     setPicking(true);
   };
+  const hourWheel = (
+    <WheelPicker
+      key="hour"
+      values={PICKER_HOURS}
+      selected={hour ?? 0}
+      onChange={(picked) => onChange(`${pad(picked)}:${pad(minute ?? 0)}`)}
+      renderLabel={pad}
+      accessibilityLabel={t('custom.pickHour')}
+      style={styles.wheel}
+    />
+  );
+  const colon = (
+    <Text key="colon" style={[typography.heading, { color: colors.text }]}>
+      :
+    </Text>
+  );
+  const minuteWheel = (
+    <WheelPicker
+      key="minute"
+      values={PICKER_MINUTES}
+      selected={minute ?? 0}
+      onChange={(picked) => onChange(`${pad(hour ?? 0)}:${pad(picked)}`)}
+      renderLabel={pad}
+      accessibilityLabel={t('custom.pickMinute')}
+      style={styles.wheel}
+    />
+  );
 
   return (
     <View style={style}>
@@ -66,20 +104,9 @@ export function TimeField({ label, value, onChange, style }: Props) {
         </Pressable>
       </View>
       <BottomSheet visible={picking} title={label} onClose={() => setPicking(false)}>
-        <Text style={sectionLabel}>{t('custom.pickHour')}</Text>
-        <ChipRow
-          values={PICKER_HOURS}
-          selected={hour}
-          onSelect={(picked) => onChange(`${pad(picked)}:${pad(minute ?? 0)}`)}
-          renderLabel={pad}
-        />
-        <Text style={[sectionLabel, styles.minuteLabel]}>{t('custom.pickMinute')}</Text>
-        <ChipRow
-          values={PICKER_MINUTES}
-          selected={selectedMinute}
-          onSelect={(picked) => onChange(`${pad(hour ?? 0)}:${pad(picked)}`)}
-          renderLabel={pad}
-        />
+        <View style={styles.wheels}>
+          {rowMirrored ? [minuteWheel, colon, hourWheel] : [hourWheel, colon, minuteWheel]}
+        </View>
       </BottomSheet>
     </View>
   );
@@ -111,10 +138,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionLabel: {
-    marginBottom: spacing.sm,
+  wheels: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  minuteLabel: {
-    marginTop: spacing.lg,
+  wheel: {
+    width: 96,
   },
 });

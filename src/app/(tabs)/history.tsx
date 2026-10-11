@@ -12,14 +12,14 @@ import { enabledSinceOf, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies, typography } from '@/theme/typography';
-import { computeStats } from '@/utils/historyStats';
+import { computeStats, HistoryStats, isTrackedInRange } from '@/utils/historyStats';
 import { useI18n } from '@/i18n';
 
-const EMPTY_STATS = {
+const EMPTY_STATS: HistoryStats = {
   streak: 0,
-  daily: [] as { date: string; doneCount: number; totalCount: number; pendingCount: number }[],
-  perMitzvah: {} as Record<string, { done: number; eligible: number; percent: number }>,
-  missedYesterday: [] as string[],
+  daily: [],
+  perMitzvah: {},
+  missedYesterday: [],
 };
 
 function alphaFor(percent: number) {
@@ -66,10 +66,10 @@ export default function HistoryScreen() {
   const byMitzvah = useMemo(
     () =>
       enabled
-        .map((mitzvah) => ({
-          mitzvah,
-          stat: stats.perMitzvah[mitzvah.id] ?? { done: 0, eligible: 0, percent: 0 },
-        }))
+        .flatMap((mitzvah) => {
+          const stat = stats.perMitzvah[mitzvah.id];
+          return stat && isTrackedInRange(stat) ? [{ mitzvah, stat }] : [];
+        })
         .sort((a, b) => a.stat.percent - b.stat.percent),
     [enabled, stats.perMitzvah],
   );
@@ -149,7 +149,7 @@ export default function HistoryScreen() {
               </Text>
             </Pressable>
           ))}
-          {!byMitzvah.length ? (
+          {statsReady && !byMitzvah.length ? (
             <Text style={[typography.body, styles.emptyText, { color: colors.textMuted }]}>{t('history.empty')}</Text>
           ) : null}
         </View>

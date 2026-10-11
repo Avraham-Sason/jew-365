@@ -616,7 +616,7 @@ function labeledPartsOf(spec, label) {
   if (spec.minyan && spec.minyanParts) throw new Error(`${label}: both "minyan" and "minyanParts"`);
   const parts = [];
   for (const [field, key] of Object.entries(LABELED_PARTS)) {
-    const covered = new Set();
+    const covered = new Map();
     for (const part of spec[key] ?? []) {
       const to = part.to ?? part.from;
       checkLabel(part.label, `${label} ${field} part #${part.from}`);
@@ -625,8 +625,12 @@ function labeledPartsOf(spec, label) {
       if (part.until !== undefined && part.until < 1)
         throw new Error(`${label} #${to}: ends at paragraph ${part.until}`);
       for (let i = part.from; i <= to; i++) {
-        if (covered.has(i)) throw new Error(`${label} #${i}: two ${field} parts overlap`);
-        covered.add(i);
+        const start = i === part.from ? (part.paragraph ?? 0) : 0;
+        const end = i === to ? (part.until ?? Infinity) : Infinity;
+        const taken = covered.get(i) ?? [];
+        if (taken.some((other) => start < other.end && other.start < end))
+          throw new Error(`${label} #${i}: two ${field} parts overlap`);
+        covered.set(i, [...taken, { start, end }]);
       }
       parts.push({ ...part, to, field, source: part });
     }

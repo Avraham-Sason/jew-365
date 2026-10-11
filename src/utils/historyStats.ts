@@ -9,9 +9,13 @@ import { ArchivedDays, CheckIns, Completions, dateKey, isArchivedDay } from '@/s
 export type HistoryStats = {
   streak: number;
   daily: { date: string; doneCount: number; totalCount: number; pendingCount: number }[];
-  perMitzvah: Record<string, { done: number; eligible: number; percent: number }>;
+  perMitzvah: Record<string, { done: number; eligible: number; pending: number; percent: number }>;
   missedYesterday: string[];
 };
+
+export function isTrackedInRange(stat: { eligible: number; pending: number }): boolean {
+  return stat.eligible > 0 || stat.pending > 0;
+}
 
 export type HistoryInput = {
   mitzvot: Mitzvah[];
@@ -118,7 +122,7 @@ export function computeStats(
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterdayKey = dateKey(addDays(today, -1));
   const perMitzvah: HistoryStats['perMitzvah'] = Object.fromEntries(
-    mitzvot.map((mitzvah) => [mitzvah.id, { done: 0, eligible: 0, percent: 0 }]),
+    mitzvot.map((mitzvah) => [mitzvah.id, { done: 0, eligible: 0, pending: 0, percent: 0 }]),
   );
   const daily: HistoryStats['daily'] = [];
   const verdicts = new Map<string, DayVerdict>();
@@ -135,6 +139,7 @@ export function computeStats(
       perMitzvah[id].eligible += 1;
     }
     for (const id of verdict.missed) perMitzvah[id].eligible += 1;
+    for (const id of verdict.pending) perMitzvah[id].pending += 1;
     daily.push({
       date: verdict.key,
       doneCount: verdict.done.length,

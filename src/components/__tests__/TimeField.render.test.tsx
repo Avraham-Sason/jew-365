@@ -1,12 +1,14 @@
-import { Keyboard } from 'react-native';
+import { I18nManager, Keyboard, Platform } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { PICKER_HOURS, PICKER_MINUTES, TimeField, normalizeTimeInput } from '../TimeField';
+import { WHEEL_ITEM_HEIGHT } from '../WheelPicker';
 import { renderWithTheme } from '@/testing/render';
 import { t } from '@/i18n';
 import { useUserStore } from '@/stores/useUserStore';
 
 const LABEL = 'Start time';
-const CHIP_NAME = /^\d\d$/;
+const ROW_NAME = /^\d\d$/;
+const ROW_OR_COLON = /^(\d\d|:)$/;
 
 function renderField(value: string, onChange = jest.fn()) {
   renderWithTheme(<TimeField label={LABEL} value={value} onChange={onChange} />);
@@ -17,8 +19,11 @@ function openPicker() {
   fireEvent.press(screen.getByRole('button', { name: t('custom.pickTime') }));
 }
 
-function selectedChips() {
-  return screen.getAllByRole('button', { name: CHIP_NAME }).filter((chip) => chip.props.accessibilityState?.selected);
+const hourWheel = () => screen.getByLabelText(t('custom.pickHour'));
+const minuteWheel = () => screen.getByLabelText(t('custom.pickMinute'));
+
+function scrollWheelTo(wheel: ReturnType<typeof hourWheel>, index: number) {
+  fireEvent(wheel, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: 0, y: index * WHEEL_ITEM_HEIGHT } } });
 }
 
 describe('normalizeTimeInput', () => {
@@ -39,9 +44,71 @@ describe('normalizeTimeInput', () => {
 });
 
 describe('picker values', () => {
-  it('offers every hour of the day and every fifth minute', () => {
+  it('offers every hour of the day and every minute of the hour', () => {
     expect(PICKER_HOURS).toEqual(Array.from({ length: 24 }, (_, hour) => hour));
-    expect(PICKER_MINUTES).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
+    expect(PICKER_MINUTES).toEqual(Array.from({ length: 60 }, (_, minute) => minute));
+  });
+});
+
+describe('wheel order', () => {
+  beforeEach(() => {
+    useUserStore.getState().reset();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const wheelNames = () => screen.getAllByRole('adjustable').map((wheel) => wheel.props.accessibilityLabel);
+  const colonPosition = () => screen.getAllByText(ROW_OR_COLON).findIndex((node) => node.props.children === ':');
+  const HOURS_FIRST = () => [t('custom.pickHour'), t('custom.pickMinute')];
+  const MINUTES_FIRST = () => [t('custom.pickMinute'), t('custom.pickHour')];
+
+  it('puts the hour wheel first, then the colon, then the minutes when the layout is not mirrored', () => {
+    jest.replaceProperty(I18nManager, 'isRTL', false);
+    renderField('08:30');
+    openPicker();
+    expect(wheelNames()).toEqual(HOURS_FIRST());
+    expect(colonPosition()).toBe(PICKER_HOURS.length);
+  });
+
+  it('puts the minute wheel first, then the colon, then the hours when native RTL mirrors the row', () => {
+    jest.replaceProperty(I18nManager, 'isRTL', true);
+    renderField('08:30');
+    openPicker();
+    expect(wheelNames()).toEqual(MINUTES_FIRST());
+    expect(colonPosition()).toBe(PICKER_MINUTES.length);
+  });
+
+  it('still writes the hour and the minute to the right place when the wheels are reversed', () => {
+    jest.replaceProperty(I18nManager, 'isRTL', true);
+    const onChange = renderField('08:30');
+    openPicker();
+    scrollWheelTo(hourWheel(), 9);
+    scrollWheelTo(minuteWheel(), 45);
+    expect(onChange).toHaveBeenNthCalledWith(1, '09:30');
+    expect(onChange).toHaveBeenNthCalledWith(2, '08:45');
+  });
+
+  it.each([
+    ['he', MINUTES_FIRST],
+    ['en', HOURS_FIRST],
+  ] as const)('on web the %s document direction decides the order, not I18nManager.isRTL', (language, expected) => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    jest.replaceProperty(I18nManager, 'isRTL', false);
+    useUserStore.setState({ language });
+    renderField('08:30');
+    openPicker();
+    expect(wheelNames()).toEqual(expected());
+  });
+
+  it('on web ignores a stale native isRTL when the language is English', () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    jest.replaceProperty(I18nManager, 'isRTL', true);
+    useUserStore.setState({ language: 'en' });
+    renderField('08:30');
+    openPicker();
+    expect(wheelNames()).toEqual(HOURS_FIRST());
   });
 });
 
@@ -82,7 +149,7 @@ describe('TimeField', () => {
       expect(dismiss).not.toHaveBeenCalled();
       openPicker();
       expect(dismiss).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole('button', { name: '09' })).toBeOnTheScreen();
+      expect(hourWheel()).toBeOnTheScreen();
     } finally {
       dismiss.mockRestore();
     }
@@ -90,40 +157,52 @@ describe('TimeField', () => {
 
   it('keeps the picker closed until the pick button is pressed', () => {
     renderField('08:30');
-    expect(screen.queryByRole('button', { name: '09' })).toBeNull();
+    expect(screen.queryByLabelText(t('custom.pickHour'))).toBeNull();
+    expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
     openPicker();
-    expect(screen.getByRole('button', { name: '09' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: '45' })).toBeOnTheScreen();
+    expect(hourWheel()).toBeOnTheScreen();
+    expect(minuteWheel()).toBeOnTheScreen();
   });
 
-  it('draws one chip per hour and one per minute step', () => {
+  it('draws one row per hour and one per minute', () => {
     renderField('');
     openPicker();
-    expect(screen.getAllByRole('button', { name: CHIP_NAME })).toHaveLength(
-      PICKER_HOURS.length + PICKER_MINUTES.length,
-    );
+    expect(screen.getAllByText(ROW_NAME)).toHaveLength(PICKER_HOURS.length + PICKER_MINUTES.length);
   });
 
-  it('writes the chosen hour and keeps the current minute', () => {
+  it('draws the colon between the two wheels', () => {
+    renderField('08:30');
+    openPicker();
+    expect(screen.getByText(':')).toBeOnTheScreen();
+  });
+
+  it('writes the hour the hour wheel settles on and keeps the current minute', () => {
     const onChange = renderField('08:30');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '09' }));
+    scrollWheelTo(hourWheel(), 9);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith('09:30');
   });
 
-  it('writes the chosen minute and keeps the current hour', () => {
+  it('writes the minute the minute wheel settles on and keeps the current hour', () => {
     const onChange = renderField('08:30');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '45' }));
+    scrollWheelTo(minuteWheel(), 45);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith('08:45');
+  });
+
+  it('writes a minute that is not a multiple of five', () => {
+    const onChange = renderField('08:30');
+    openPicker();
+    scrollWheelTo(minuteWheel(), 59);
+    expect(onChange).toHaveBeenCalledWith('08:59');
   });
 
   it('starts the minute at 00 when it picks an hour for an empty value', () => {
     const onChange = renderField('');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '07' }));
+    scrollWheelTo(hourWheel(), 7);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith('07:00');
   });
@@ -131,48 +210,54 @@ describe('TimeField', () => {
   it('starts the hour at 00 when it picks a minute for an empty value', () => {
     const onChange = renderField('');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '45' }));
+    scrollWheelTo(minuteWheel(), 45);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith('00:45');
   });
 
-  it('keeps a minute that is not a multiple of five when it picks an hour', () => {
+  it('keeps the minute of a value that is not a multiple of five when it picks an hour', () => {
     const onChange = renderField('08:33');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '09' }));
+    scrollWheelTo(hourWheel(), 9);
     expect(onChange).toHaveBeenCalledWith('09:33');
   });
 
-  it('selects the hour and the minute chip of the current value', () => {
+  it('writes the hour of a tapped row', () => {
+    const onChange = renderField('08:30');
+    openPicker();
+    fireEvent.press(screen.getAllByText('21')[0]);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('21:30');
+  });
+
+  it('centres the hour and the minute of the current value', () => {
     renderField('08:30');
     openPicker();
-    expect(screen.getByRole('button', { name: '08' })).toBeSelected();
-    expect(screen.getByRole('button', { name: '30' })).toBeSelected();
-    expect(screen.getByRole('button', { name: '09' })).not.toBeSelected();
-    expect(screen.getByRole('button', { name: '45' })).not.toBeSelected();
-    expect(selectedChips()).toHaveLength(2);
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '30' });
   });
 
-  it('selects no minute chip when the minute is not a multiple of five', () => {
+  it('centres a minute that is not a multiple of five', () => {
     renderField('08:33');
     openPicker();
-    expect(screen.getByRole('button', { name: '08' })).toBeSelected();
-    expect(selectedChips()).toHaveLength(1);
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '33' });
   });
 
-  it.each(['', '8:3', '25:00', '08:61'])('selects no chip for the invalid value %j', (value) => {
+  it.each(['', '8:3', '25:00', '08:61'])('centres 00 on both wheels for the invalid value %j', (value) => {
     renderField(value);
     openPicker();
-    expect(selectedChips()).toHaveLength(0);
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '00' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '00' });
   });
 
   it('stays open after a pick and closes with the sheet Close button', () => {
     renderField('08:30');
     openPicker();
-    fireEvent.press(screen.getByRole('button', { name: '09' }));
-    expect(screen.getByRole('button', { name: '45' })).toBeOnTheScreen();
+    scrollWheelTo(hourWheel(), 9);
+    expect(minuteWheel()).toBeOnTheScreen();
     fireEvent.press(screen.getByRole('button', { name: t('common.close') }));
-    expect(screen.queryByRole('button', { name: '45' })).toBeNull();
+    expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
   });
 
   it('titles the sheet with the field label', () => {

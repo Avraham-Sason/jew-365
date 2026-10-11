@@ -630,10 +630,6 @@ const WHEN_SAID = {
   shevaBerachotMeal: { he: 'בסעודת שבע ברכות', en: 'At a sheva berachot meal' },
   britMilahMeal: { he: 'בסעודת ברית מילה', en: 'At a brit milah meal' },
   guest: { he: 'אורח אומר', en: 'A guest says' },
-  specialMeals: {
-    he: 'לאורח, בסעודת חתן ובסעודת מילה',
-    en: 'For a guest, at a wedding meal and at a brit milah meal',
-  },
   enteringCity: { he: 'בכניסה לעיר וביציאה ממנה', en: 'When entering and leaving a city' },
   seaTravel: { he: 'לעוברי ימים ונהרות', en: 'For travel by sea or river' },
   airTravel: { he: 'לטסים במטוס', en: 'For air travel' },
@@ -4228,6 +4224,9 @@ function edotBirkatHamazon() {
         ...each(51, 52, CHOL_HAMOED_OR_YESTERDAY),
       },
       edits: [
+        { seg: 56, from: '<small>אורח אומר</small><br>', to: '' },
+        { seg: 56, from: '<small>בסעודת חתן</small><br>', to: '' },
+        { seg: 56, from: '<small>בסעודת מילה</small><br>', to: '' },
         {
           seg: 58,
           from: 'מַגְדִּיל (<small>ביום שמתפללים מוסף, במוצ"ש, בסעודת פורים ובסעודת מילה יאמר:</small> מִגְדּ֖וֹל)',
@@ -4236,7 +4235,9 @@ function edotBirkatHamazon() {
       ],
       optionalParts: [
         { from: 45, to: 52, label: WHEN_SAID.mealBeganYaalehVeyavo },
-        { from: 56, label: WHEN_SAID.specialMeals },
+        { from: 56, until: 1, label: WHEN_SAID.guest },
+        { from: 56, paragraph: 1, until: 2, label: WHEN_SAID.shevaBerachotMeal },
+        { from: 56, paragraph: 2, label: WHEN_SAID.britMilahMeal },
       ],
     },
     {

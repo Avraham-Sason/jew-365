@@ -145,4 +145,4 @@ export type StandaloneTextId =
 
 export type SiddurTextId = MitzvahTextId | StandaloneTextId;
 
-export type SiddurGroup = 'prayers' | 'meals' | 'blessings' | 'night' | 'occasions';
+export type SiddurGroup = 'meals' | 'general' | 'occasions';

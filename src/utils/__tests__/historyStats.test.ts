@@ -1,6 +1,7 @@
-import { computeStats } from '../historyStats';
+import { computeStats, isTrackedInRange } from '../historyStats';
 import { Mitzvah } from '@/types/mitzvah';
 import { CITIES } from '@/data/cities';
+import { dateKey } from '@/stores/useCompletionsStore';
 
 function fixtureMitzvah(id: string, skipOn: Mitzvah['skipOn'] = []): Mitzvah {
   return {
@@ -87,6 +88,55 @@ describe('historyStats', () => {
 
     expect(stats.daily[0]).toMatchObject({ date: '2026-05-02', doneCount: 0, totalCount: 0 });
     expect(stats.perMitzvah.weekday).toMatchObject({ done: 0, eligible: 0, percent: 0 });
+  });
+});
+
+describe('historyStats tracking range', () => {
+  const location = CITIES[0];
+  const now = new Date(2026, 4, 7, 8);
+
+  function windowOn(id: string, ...keys: string[]): Mitzvah {
+    const base = fixtureMitzvah(id);
+    return { ...base, computeWindow: (ctx) => (keys.includes(dateKey(ctx.date)) ? base.computeWindow(ctx) : null) };
+  }
+
+  it('a mitzvah with no window on any day of the range is not tracked', () => {
+    const stats = computeStats([windowOn('omer')], {}, location, settings, 7, now);
+    expect(stats.perMitzvah.omer).toEqual({ done: 0, eligible: 0, pending: 0, percent: 0 });
+    expect(isTrackedInRange(stats.perMitzvah.omer)).toBe(false);
+  });
+
+  it('a mitzvah whose window is open only today is tracked while still pending', () => {
+    const stats = computeStats([windowOn('today', '2026-05-07')], {}, location, settings, 7, now);
+    expect(stats.perMitzvah.today).toEqual({ done: 0, eligible: 0, pending: 1, percent: 0 });
+    expect(isTrackedInRange(stats.perMitzvah.today)).toBe(true);
+  });
+
+  it('a decided mitzvah is tracked, missed or done', () => {
+    const stats = computeStats(
+      [windowOn('missed', '2026-05-06'), windowOn('kept', '2026-05-06')],
+      { '2026-05-06': { kept: Date.now() } },
+      location,
+      settings,
+      7,
+      now,
+    );
+    expect(stats.perMitzvah.missed).toMatchObject({ done: 0, eligible: 1, pending: 0, percent: 0 });
+    expect(stats.perMitzvah.kept).toMatchObject({ done: 1, eligible: 1, pending: 0, percent: 100 });
+    expect(isTrackedInRange(stats.perMitzvah.missed)).toBe(true);
+    expect(isTrackedInRange(stats.perMitzvah.kept)).toBe(true);
+  });
+
+  it('a mitzvah skipped on every day of the range is not tracked', () => {
+    const stats = computeStats(
+      [fixtureMitzvah('weekday', ['shabbat'])],
+      {},
+      location,
+      settings,
+      1,
+      new Date(2026, 4, 2),
+    );
+    expect(isTrackedInRange(stats.perMitzvah.weekday)).toBe(false);
   });
 });
 

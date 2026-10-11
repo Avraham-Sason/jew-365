@@ -60,6 +60,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
 import { HEADER_PILL_BG, ScreenHeader } from '@/components/ScreenHeader';
 import { ScrollSpeedStepper } from '@/components/ScrollSpeedStepper';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { useQuietBlock } from '@/components/ShabbatScreen';
 import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
@@ -94,9 +95,7 @@ const PIXEL_RATIO = PixelRatio.get();
 const PILL_BORDER = 'rgba(255,255,255,0.18)';
 const PLAY_PATH = 'M8 5v14l11-7z';
 const PAUSE_PATH = 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z';
-const ALONE_PATH = 'M12 4a4 4 0 100 8 4 4 0 000-8zM5 21c0-4 3-7 7-7s7 3 7 7z';
-const MINYAN_PATH =
-  'M7 5a3 3 0 100 6 3 3 0 000-6zM17 5a3 3 0 100 6 3 3 0 000-6zM2.5 20c0-3 2-5.5 4.5-5.5S11.5 17 11.5 20zM12.5 20c0-3 2-5.5 4.5-5.5s4.5 2.5 4.5 5.5z';
+const PRAYER_MODES = ['minyan', 'alone'] as const;
 // iOS reports every non-animated scrollTo as the end of a fling, and the JS ScrollView then counts
 // itself as animating and swallows the next tap. Moving the contentOffset prop scrolls without that.
 const SCROLLS_BY_PROP = Platform.OS === 'ios';
@@ -603,7 +602,7 @@ export default function SiddurScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenHeader title={name} subtitle={subtitle} onBack={goBack}>
-        <View style={styles.toolbar}>
+        <View style={styles.toolbarStack}>
           {picker.length > 1 && currentEntry ? (
             <Pressable
               onPress={() => setPickerOpen(true)}
@@ -628,36 +627,36 @@ export default function SiddurScreen() {
               </Svg>
             </Pressable>
           ) : null}
-          <ToolbarToggle
-            on={autoScrollOn}
-            onPress={toggleAutoScroll}
-            accessibilityLabel={t('siddur.autoScroll')}
-            iconSize={14}
-            path={autoScrollOn ? PAUSE_PATH : PLAY_PATH}
-          />
-          <ScrollSpeedStepper compact tone="header" level={scrollSpeed} onChange={setScrollSpeed} />
-          <SizeButton
-            label="A−"
-            accessibilityLabel={t('siddur.smaller')}
-            disabled={currentIndex === 0}
-            onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.max(0, currentIndex - 1)])}
-          />
-          <SizeButton
-            label="A+"
-            accessibilityLabel={t('siddur.larger')}
-            disabled={currentIndex === SIDDUR_FONT_SIZES.length - 1}
-            onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.min(SIDDUR_FONT_SIZES.length - 1, currentIndex + 1)])}
-          />
-          {hasMinyanPassages ? (
-            <ToolbarToggle
-              on={prayerMode === 'minyan'}
-              onPress={() => changePrayerMode(prayerMode === 'minyan' ? 'alone' : 'minyan')}
-              accessibilityLabel={t('settings.prayerMode')}
-              valueText={t(`prayerMode.${prayerMode}`)}
-              iconSize={18}
-              path={prayerMode === 'minyan' ? MINYAN_PATH : ALONE_PATH}
+          <View style={styles.toolbar}>
+            <PlayToggle on={autoScrollOn} onPress={toggleAutoScroll} accessibilityLabel={t('siddur.autoScroll')} />
+            <ScrollSpeedStepper compact tone="header" level={scrollSpeed} onChange={setScrollSpeed} />
+            <SizeButton
+              label="A−"
+              accessibilityLabel={t('siddur.smaller')}
+              disabled={currentIndex === 0}
+              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.max(0, currentIndex - 1)])}
             />
-          ) : null}
+            <SizeButton
+              label="A+"
+              accessibilityLabel={t('siddur.larger')}
+              disabled={currentIndex === SIDDUR_FONT_SIZES.length - 1}
+              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.min(SIDDUR_FONT_SIZES.length - 1, currentIndex + 1)])}
+            />
+            {hasMinyanPassages ? (
+              <View
+                accessibilityRole="radiogroup"
+                accessibilityLabel={t('settings.prayerMode')}
+                style={styles.prayerMode}
+              >
+                <SegmentedControl
+                  tone="header"
+                  options={PRAYER_MODES.map((mode) => ({ value: mode, label: t(`prayerMode.${mode}`) }))}
+                  value={prayerMode}
+                  onChange={changePrayerMode}
+                />
+              </View>
+            ) : null}
+          </View>
         </View>
       </ScreenHeader>
 
@@ -804,20 +803,14 @@ function SizeButton({
   );
 }
 
-function ToolbarToggle({
+function PlayToggle({
   on,
   onPress,
   accessibilityLabel,
-  valueText,
-  iconSize,
-  path,
 }: {
   on: boolean;
   onPress: () => void;
   accessibilityLabel: string;
-  valueText?: string;
-  iconSize: number;
-  path: string;
 }) {
   const { colors } = useTheme();
   return (
@@ -826,7 +819,6 @@ function ToolbarToggle({
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: on }}
-      accessibilityValue={valueText ? { text: valueText } : undefined}
       hitSlop={6}
       style={({ pressed }) => [
         styles.roundBtn,
@@ -836,8 +828,8 @@ function ToolbarToggle({
         { opacity: pressed ? 0.7 : 1 },
       ]}
     >
-      <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24">
-        <Path d={path} fill={on ? colors.onGold : colors.headerText} />
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path d={on ? PAUSE_PATH : PLAY_PATH} fill={on ? colors.onGold : colors.headerText} />
       </Svg>
     </Pressable>
   );
@@ -958,14 +950,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
   },
+  toolbarStack: {
+    gap: spacing.sm,
+  },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  picker: {
+  prayerMode: {
     flex: 1,
-    minWidth: 64,
+    minWidth: 104,
+  },
+  picker: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

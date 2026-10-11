@@ -14,9 +14,8 @@ export const ICON_NAMES = [
   'custom',
   'hilula',
   'siddur',
-  'prayers',
   'meals',
-  'blessings',
+  'general',
   'night',
   'moon',
   'occasions',
@@ -153,7 +152,6 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Path d="M12,6.5Q15.5,4.5 20.5,5.5V17.5Q15.5,16.5 12,19.5Z" fill={fill} />
     </>
   ),
-  prayers: (drawing) => DRAWINGS.siddur(drawing),
   meals: ({ fill }) => (
     <>
       <Circle cx={12.4} cy={12} r={4} fill={fill} />
@@ -163,7 +161,7 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Line x1={19.6} y1={11} x2={19.6} y2={20.5} />
     </>
   ),
-  blessings: ({ fill }) => (
+  general: ({ fill }) => (
     <>
       <Path d="M9.5,7.5Q10.7,12.3 15.5,13.5Q10.7,14.7 9.5,19.5Q8.3,14.7 3.5,13.5Q8.3,12.3 9.5,7.5Z" fill={fill} />
       <Path d="M18,3.3Q18.64,5.86 21.2,6.5Q18.64,7.14 18,9.7Q17.36,7.14 14.8,6.5Q17.36,5.86 18,3.3Z" fill={fill} />

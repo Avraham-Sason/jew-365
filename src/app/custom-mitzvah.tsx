@@ -334,6 +334,9 @@ export default function CustomMitzvahScreen() {
                   ]}
                   maxLength={3}
                 />
+                <Text style={[typography.caption, styles.offsetWord, { color: colors.textSub }]}>
+                  {t('custom.offsetMinutes')}
+                </Text>
                 <SegmentedControl
                   tone="surface"
                   options={anchorOptions}
@@ -341,14 +344,6 @@ export default function CustomMitzvahScreen() {
                   onChange={(v) => changeAnchor(idx, v)}
                   style={styles.anchor}
                 />
-                <Pressable
-                  onPress={() => removeReminder(idx)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('reminder.delete')}
-                  style={[styles.iconBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-                >
-                  <Text style={[typography.bodyBold, { color: colors.urgent }]}>×</Text>
-                </Pressable>
               </View>
               {clock ? (
                 <Text style={[typography.small, styles.reminderNote, { color: colors.goldText }]}>
@@ -360,6 +355,13 @@ export default function CustomMitzvahScreen() {
                 </Text>
               ) : null}
               <Hint text={t('custom.hint.reminderAnchor')} style={styles.tightHint} />
+              <Pressable
+                onPress={() => removeReminder(idx)}
+                accessibilityRole="button"
+                style={[styles.deleteItemBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
+              >
+                <Text style={[typography.captionBold, { color: colors.urgent }]}>{t('custom.deleteReminder')}</Text>
+              </Pressable>
             </View>
           );
         })}
@@ -448,7 +450,8 @@ export default function CustomMitzvahScreen() {
               )}
               <Pressable
                 onPress={() => removeContentBlock(idx)}
-                style={[styles.deleteBlockBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
+                accessibilityRole="button"
+                style={[styles.deleteItemBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
               >
                 <Text style={[typography.captionBold, { color: colors.urgent }]}>{t('custom.deleteContentBlock')}</Text>
               </Pressable>
@@ -565,15 +568,8 @@ const styles = StyleSheet.create({
   },
   reminderRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   offsetInput: { width: 72, textAlign: 'center' },
+  offsetWord: { flexShrink: 0 },
   reminderNote: { marginTop: spacing.sm },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   addBtn: {
     borderRadius: radius.md,
     borderWidth: 1,
@@ -592,7 +588,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
   },
-  deleteBlockBtn: {
+  deleteItemBtn: {
     borderRadius: radius.md,
     borderWidth: 1,
     paddingVertical: spacing.md,

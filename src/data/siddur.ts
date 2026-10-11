@@ -44,19 +44,20 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
   birkat_hamazon: { name: { he: 'ברכת המזון', en: 'Grace After Meals' }, group: 'meals' },
   al_hamichya: { name: { he: 'ברכה מעין שלוש', en: "Me'ein Shalosh" }, group: 'meals' },
   borei_nefashot: { name: { he: 'בורא נפשות', en: 'Borei Nefashot' }, group: 'meals' },
-  asher_yatzar: { name: { he: 'אשר יצר', en: 'Asher Yatzar' }, group: 'blessings' },
-  birchot_hanehenin: { name: { he: 'ברכות הנהנין', en: 'Blessings on Food and Fragrance' }, group: 'blessings' },
-  kriat_shema_al_hamita: { name: { he: 'קריאת שמע על המיטה', en: 'Bedtime Shema' }, group: 'night', evening: true },
-  birchot_hareiya: { name: { he: 'ברכות הראייה', en: 'Blessings on Sights and Sounds' }, group: 'blessings' },
+  asher_yatzar: { name: { he: 'אשר יצר', en: 'Asher Yatzar' }, group: 'general' },
+  birchot_hanehenin: { name: { he: 'ברכות הנהנין', en: 'Blessings on Food and Fragrance' }, group: 'general' },
+  birchot_hareiya: { name: { he: 'ברכות הראייה', en: 'Blessings on Sights and Sounds' }, group: 'general' },
+  mezuzah: { name: { he: 'קביעת מזוזה', en: 'Affixing a Mezuzah' }, group: 'general' },
+  tefilat_haderech: { name: { he: 'תפילת הדרך', en: "The Traveler's Prayer" }, group: 'general' },
+  kriat_shema_al_hamita: { name: { he: 'קריאת שמע על המיטה', en: 'Bedtime Shema' }, group: 'general', evening: true },
   kiddush_levana: {
     name: { he: 'קידוש לבנה', en: 'Kiddush Levana' },
-    group: 'night',
+    group: 'general',
     evening: true,
     available: { all: ['kiddushLevana'], none: ['shabbat', 'yomTov', 'yomKippur'] },
     availableLabel: { he: 'מג׳ עד ט״ו בחודש', en: 'From the 3rd to the 15th of the month' },
   },
-  mezuzah: { name: { he: 'קביעת מזוזה', en: 'Affixing a Mezuzah' }, group: 'blessings' },
-  tefilat_haderech: { name: { he: 'תפילת הדרך', en: "The Traveler's Prayer" }, group: 'blessings' },
+  tikkun_haklali: { name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'general' },
   sheva_berachot: { name: { he: 'שבע ברכות', en: 'Sheva Berachot' }, group: 'occasions' },
   chanukah_candles: {
     name: { he: 'הדלקת נרות חנוכה', en: 'Chanukah Candle Lighting' },
@@ -65,10 +66,9 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
     available: { all: ['chanukah'] },
     availableLabel: { he: 'בחנוכה', en: 'On Chanukah' },
   },
-  tikkun_haklali: { name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'prayers' },
 };
 
-export const SIDDUR_GROUPS: readonly SiddurGroup[] = ['prayers', 'meals', 'blessings', 'night', 'occasions'];
+export const SIDDUR_GROUPS: readonly SiddurGroup[] = ['meals', 'general', 'occasions'];
 
 export const SIDDUR_TEXT_IDS: readonly SiddurTextId[] = [
   ...(Object.keys(SIDDUR_TEXTS) as MitzvahTextId[]),
