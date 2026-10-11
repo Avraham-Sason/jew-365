@@ -96,6 +96,11 @@ Hard rule until the permission arrives in writing: the repository is public, so 
   **What it solves:** English readers see which haftarah they are reading.
   **Expected result:** "Haftarah (Sephardi)" / "Haftarah (Ashkenazi)" where the source prints both, pinned in `chokText.test.ts`.
 
+- [ ] Move the CI workflow off Node 20 actions before the runner change
+  **What it is:** The CI run of 2026-10-11 (run 38171334809) warned that `actions/checkout@v4`, `actions/setup-node@v4` and `pnpm/action-setup@v4` target Node.js 20 and are being forced onto Node.js 24, and that `ubuntu-latest` moves to Ubuntu 26 from 2026-10-19. Raise the three actions in `.github/workflows/ci.yml` to their Node 24 majors and pin the runner image, or confirm the run still passes on the new image.
+  **What it solves:** Keeps `typecheck`, `lint`, `check:dox` and `test:tz` running on every push to `main` after the runner and action deprecations land.
+  **Expected result:** A CI run with no deprecation annotations, green on the new runner image.
+
 - [ ] Clear the schedule screen's leftover style literals
   **What it is:** `src/app/schedule.tsx` still tints cells with alpha-suffixed colours (`${colors.gold}09`, `${colors.gold}18`) and keeps literal sizes (time column, dots, the done box). Move them onto theme tokens where one fits, or a named token where none does.
   **What it solves:** The design-system rule against literals where a token matches.
