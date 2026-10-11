@@ -151,6 +151,31 @@ describe('useUserStore auto-scroll', () => {
     expect(useUserStore.getState().hilulotEnabled).toBe(false);
   });
 
+  it('keeps Rosh Chodesh notices off until switched on, and reset turns them off', () => {
+    expect(useUserStore.getState().roshChodeshEnabled).toBe(false);
+    useUserStore.getState().setRoshChodeshEnabled(true);
+    expect(useUserStore.getState().roshChodeshEnabled).toBe(true);
+    expect(useUserStore.getState().hilulotEnabled).toBe(false);
+    useUserStore.getState().reset();
+    expect(useUserStore.getState().roshChodeshEnabled).toBe(false);
+  });
+
+  it('keeps the weekly report on until switched off, and reset turns it back on', () => {
+    expect(useUserStore.getState().weeklyReportEnabled).toBe(true);
+    useUserStore.getState().setWeeklyReportEnabled(false);
+    expect(useUserStore.getState().weeklyReportEnabled).toBe(false);
+    expect(useUserStore.getState().roshChodeshEnabled).toBe(false);
+    useUserStore.getState().reset();
+    expect(useUserStore.getState().weeklyReportEnabled).toBe(true);
+  });
+
+  it('merge turns the weekly report on for an install saved before it existed, and keeps a saved off', () => {
+    const { merge } = useUserStore.persist.getOptions();
+    const current = useUserStore.getState();
+    expect(merge!({ nusach: 'sefard' }, current).weeklyReportEnabled).toBe(true);
+    expect(merge!({ weeklyReportEnabled: false }, current).weeklyReportEnabled).toBe(false);
+  });
+
   it('offers speeds that rise from level to level', () => {
     SIDDUR_SCROLL_SPEEDS.forEach((pace, index) => {
       if (index > 0) expect(pace).toBeGreaterThan(SIDDUR_SCROLL_SPEEDS[index - 1]);
@@ -187,6 +212,39 @@ describe('useUserStore prayer mode', () => {
     const current = useUserStore.getState();
     expect(merge!({ nusach: 'sefard' }, current).prayerMode).toBe('minyan');
     expect(merge!({ prayerMode: 'alone' }, current).prayerMode).toBe('alone');
+  });
+});
+
+describe('useMitzvotStore merge', () => {
+  it('prunes a retired mitzvah from a persisted map and keeps every other entry, custom ones included', () => {
+    const { merge } = useMitzvotStore.persist.getOptions();
+    const current = useMitzvotStore.getState();
+    const saved = {
+      activeMitzvot: {
+        tzitzit: { enabled: true },
+        tefillin: { enabled: false },
+        custom_1_a: { enabled: true },
+      },
+    };
+
+    const merged = merge!(saved, current).activeMitzvot;
+
+    expect(merged).not.toHaveProperty('tzitzit');
+    expect(merged.tefillin).toEqual({ enabled: false });
+    expect(merged.custom_1_a).toEqual({ enabled: true });
+    expect(merged.shacharit).toEqual({ enabled: true });
+  });
+
+  it('starts a fresh install without tzitzit', () => {
+    useMitzvotStore.getState().reset();
+    expect(useMitzvotStore.getState().activeMitzvot).not.toHaveProperty('tzitzit');
+    expect(useMitzvotStore.getState().getEnabledIds().sort()).toEqual([
+      'krias_shma_shacharit',
+      'maariv',
+      'mincha',
+      'shacharit',
+      'tefillin',
+    ]);
   });
 });
 

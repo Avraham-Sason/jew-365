@@ -45,6 +45,8 @@ type UserState = {
   siddurScrollSpeed: number;
   prayerMode: PrayerMode;
   hilulotEnabled: boolean;
+  roshChodeshEnabled: boolean;
+  weeklyReportEnabled: boolean;
   gender: Gender | null;
   maritalStatus: MaritalStatus | null;
   taharahEnabled: boolean;
@@ -66,6 +68,8 @@ type UserState = {
   setSiddurScrollSpeed: (level: number) => void;
   setPrayerMode: (mode: PrayerMode) => void;
   setHilulotEnabled: (v: boolean) => void;
+  setRoshChodeshEnabled: (v: boolean) => void;
+  setWeeklyReportEnabled: (v: boolean) => void;
   setGender: (g: Gender | null) => void;
   setMaritalStatus: (m: MaritalStatus | null) => void;
   setTaharahEnabled: (v: boolean) => void;
@@ -112,6 +116,8 @@ export const useUserStore = create<UserState>()(
       siddurScrollSpeed: DEFAULT_SIDDUR_SCROLL_SPEED,
       prayerMode: 'minyan',
       hilulotEnabled: false,
+      roshChodeshEnabled: false,
+      weeklyReportEnabled: true,
       gender: null,
       maritalStatus: null,
       taharahEnabled: false,
@@ -135,6 +141,8 @@ export const useUserStore = create<UserState>()(
       setSiddurScrollSpeed: (level) => set({ siddurScrollSpeed: scrollSpeedLevel(level) }),
       setPrayerMode: (mode) => set({ prayerMode: mode }),
       setHilulotEnabled: (v) => set({ hilulotEnabled: v }),
+      setRoshChodeshEnabled: (v) => set({ roshChodeshEnabled: v }),
+      setWeeklyReportEnabled: (v) => set({ weeklyReportEnabled: v }),
       setGender: (g) => set({ gender: g }),
       setMaritalStatus: (m) => set({ maritalStatus: m }),
       setTaharahEnabled: (v) => set({ taharahEnabled: v }),
@@ -158,6 +166,8 @@ export const useUserStore = create<UserState>()(
           siddurScrollSpeed: DEFAULT_SIDDUR_SCROLL_SPEED,
           prayerMode: 'minyan',
           hilulotEnabled: false,
+          roshChodeshEnabled: false,
+          weeklyReportEnabled: true,
           gender: null,
           maritalStatus: null,
           taharahEnabled: false,

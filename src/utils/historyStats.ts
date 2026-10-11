@@ -26,7 +26,7 @@ export type HistoryInput = {
 
 export type DayVerdict = { key: string; done: string[]; missed: string[]; pending: string[] };
 
-function addDays(day: Date, days: number): Date {
+export function addDays(day: Date, days: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate() + days);
 }
 

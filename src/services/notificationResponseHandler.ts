@@ -102,6 +102,18 @@ export function handleNotificationResponse(response: Notifications.NotificationR
     return;
   }
 
+  if (data.kind === 'roshChodesh') {
+    if (response.actionIdentifier === DEFAULT_NOTIFICATION_ACTION) navigate(() => router.navigate('/rosh-chodesh'));
+    return;
+  }
+
+  if (data.kind === 'report') {
+    if (response.actionIdentifier === DEFAULT_NOTIFICATION_ACTION) {
+      navigate(() => router.navigate({ pathname: '/report', params: { week: data.report?.week } }));
+    }
+    return;
+  }
+
   if (data.kind === 'update') {
     if (response.actionIdentifier !== DEFAULT_NOTIFICATION_ACTION) return;
     if (isUpdateApplied(data)) navigate(() => router.navigate('/(tabs)/home'));

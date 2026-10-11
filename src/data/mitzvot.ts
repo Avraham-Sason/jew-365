@@ -103,24 +103,6 @@ export const MITZVOT: Mitzvah[] = [
     computeWindow: ({ zmanim }) => win(zmanim.misheyakir, zmanim.shkia),
   },
   {
-    id: 'tzitzit',
-    name: { he: 'ציצית', en: 'Tzitzit' },
-    icon: 'tzitzit',
-    timeType: 'all-day',
-    category: 'daily-allday',
-    skipOn: [],
-    nuschaotSupported: ALL_NUSCHAOT,
-    defaultReminders: [
-      {
-        anchor: 'start',
-        offsetMin: 0,
-        label: 'זמן לבישת ציצית',
-        bodyVariants: ['זמן לבישת ציצית', 'ציצית לפני שיוצאים', 'הבוקר מתחיל עם ציצית'],
-      },
-    ],
-    computeWindow: ({ zmanim }) => win(zmanim.misheyakir, zmanim.shkia),
-  },
-  {
     id: 'krias_shma_shacharit',
     name: { he: 'קריאת שמע שחרית', en: 'Krias Shema (morning)' },
     icon: 'shema',

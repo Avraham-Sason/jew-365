@@ -1,5 +1,17 @@
 import React, { useCallback, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appVersionLabel } from '@/services/appUpdates';
@@ -46,6 +58,8 @@ const MARITAL_STATUSES = ['married', 'single'] as const;
 const PRAYER_MODES: readonly PrayerMode[] = ['minyan', 'alone'];
 const CITY_INDEXES = CITIES.map((_, index) => index);
 
+type SectionKey = 'profile' | 'prayer' | 'device';
+
 // Returns a number, so the subscription re-renders only when the count itself changes.
 const selectEnabledCount = (state: { activeMitzvot: Record<string, ActiveMitzvahState> }): number =>
   Object.values(state.activeMitzvot).filter((active) => active.enabled).length;
@@ -64,12 +78,12 @@ export default function SettingsScreen() {
       maritalStatus: s.maritalStatus,
       notificationsEnabled: s.notificationsEnabled,
       notificationPermission: s.notificationPermission,
-      hilulotEnabled: s.hilulotEnabled,
       nusach: s.nusach,
       siddurAutoScroll: s.siddurAutoScroll,
       siddurScrollSpeed: s.siddurScrollSpeed,
       prayerMode: s.prayerMode,
       taharahEnabled: s.taharahEnabled,
+      weeklyReportEnabled: s.weeklyReportEnabled,
       location: s.location,
       locationStatus: s.locationStatus,
       theme: s.theme,
@@ -78,12 +92,12 @@ export default function SettingsScreen() {
       setLocationState: s.setLocationState,
       setLocationStatus: s.setLocationStatus,
       setNotificationsEnabled: s.setNotificationsEnabled,
-      setHilulotEnabled: s.setHilulotEnabled,
       setProfileName: s.setProfileName,
       setProfilePhone: s.setProfilePhone,
       setSiddurAutoScroll: s.setSiddurAutoScroll,
       setSiddurScrollSpeed: s.setSiddurScrollSpeed,
       setPrayerMode: s.setPrayerMode,
+      setWeeklyReportEnabled: s.setWeeklyReportEnabled,
       setTheme: s.setTheme,
       setLanguage: s.setLanguage,
       setKsOpinion: s.setKsOpinion,
@@ -97,12 +111,34 @@ export default function SettingsScreen() {
   const [statusText, setStatusText] = useState('');
   const [resetVisible, setResetVisible] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [open, setOpen] = useState<ReadonlySet<SectionKey>>(() => new Set());
 
   useFocusEffect(
     useCallback(() => {
+      setOpen(new Set());
       syncNotificationPermissionStatus().catch((error) => reportError('schedule', error));
     }, []),
   );
+
+  const commitProfileDrafts = () => {
+    user.setProfileName(nameDraft.trim());
+    user.setProfilePhone(phoneDraft.trim());
+  };
+
+  const toggle = (key: SectionKey) => {
+    if (key === 'profile' && open.has(key)) commitProfileDrafts();
+    setOpen((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  };
+
+  const collapsible = (key: SectionKey) => ({
+    collapsible: true,
+    expanded: open.has(key),
+    onToggle: () => toggle(key),
+  });
 
   const performReset = async () => {
     setResetting(true);
@@ -163,12 +199,25 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <NavBar title={t('settings.title')} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <SettingsSection title={t('settings.profile')}>
+        <View style={[styles.mitzvotCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <ListRow
+            icon="custom"
+            title={t('settings.mitzvot')}
+            caption={t('settings.mitzvotCaption', { count: enabledMitzvotCount })}
+            onPress={() => router.push('/mitzvot')}
+            trailing={
+              <Text style={[typography.bodyBold, { color: colors.textMuted }]}>{language === 'he' ? '‹' : '›'}</Text>
+            }
+            style={styles.mitzvotRow}
+          />
+        </View>
+
+        <SettingsSection title={t('settings.profile')} {...collapsible('profile')}>
           <SectionLabel text={t('settings.profileName')} style={styles.firstFieldLabel} />
           <TextInput
             value={nameDraft}
             onChangeText={setNameDraft}
-            onBlur={() => user.setProfileName(nameDraft.trim())}
+            onBlur={commitProfileDrafts}
             placeholder={t('settings.profileNamePlaceholder')}
             placeholderTextColor={colors.textMuted}
             style={[
@@ -186,7 +235,7 @@ export default function SettingsScreen() {
           <TextInput
             value={phoneDraft}
             onChangeText={setPhoneDraft}
-            onBlur={() => user.setProfilePhone(phoneDraft.trim())}
+            onBlur={commitProfileDrafts}
             placeholder={t('settings.profilePhonePlaceholder')}
             placeholderTextColor={colors.textMuted}
             keyboardType="phone-pad"
@@ -234,7 +283,7 @@ export default function SettingsScreen() {
           ) : null}
         </SettingsSection>
 
-        <SettingsSection title={t('settings.prayer')}>
+        <SettingsSection title={t('settings.prayer')} {...collapsible('prayer')}>
           <SectionLabel text={t('settings.nusach')} style={styles.firstFieldLabel} />
           <ChipRow
             values={NUSACHAOT}
@@ -265,27 +314,7 @@ export default function SettingsScreen() {
           </View>
         </SettingsSection>
 
-        <SettingsSection title={t('settings.mitzvot')}>
-          <ListRow
-            icon="custom"
-            title={t('settings.mitzvotRow')}
-            caption={t('settings.mitzvotCaption', { count: enabledMitzvotCount })}
-            onPress={() => router.push('/mitzvot')}
-            trailing={
-              <Text style={[typography.bodyBold, { color: colors.textMuted }]}>{language === 'he' ? '‹' : '›'}</Text>
-            }
-            style={styles.embeddedRow}
-          />
-          <SwitchRow
-            style={styles.groupGap}
-            label={t('hilulot.notifications')}
-            hint={t('hilulot.caption')}
-            value={user.hilulotEnabled}
-            onValueChange={user.setHilulotEnabled}
-          />
-        </SettingsSection>
-
-        <SettingsSection title={t('settings.device')}>
+        <SettingsSection title={t('settings.device')} {...collapsible('device')}>
           <SectionLabel
             text={t('settings.zmanim')}
             style={[styles.subHeading, styles.firstSubHeading, subHeadingTone]}
@@ -325,6 +354,13 @@ export default function SettingsScreen() {
             }
             value={user.notificationsEnabled}
             onValueChange={onToggleNotifications}
+          />
+          <SwitchRow
+            label={t('settings.weeklyReport')}
+            hint={t('settings.weeklyReportHint')}
+            value={user.weeklyReportEnabled}
+            onValueChange={user.setWeeklyReportEnabled}
+            style={styles.groupGap}
           />
           <Row
             label={t('settings.notificationsOsStatus')}
@@ -404,7 +440,7 @@ type SwitchRowProps = {
   hint: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
-  style?: React.ComponentProps<typeof View>['style'];
+  style?: StyleProp<ViewStyle>;
 };
 
 function SwitchRow({ label, hint, value, onValueChange, style }: SwitchRowProps) {
@@ -505,9 +541,13 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     borderTopWidth: 0,
   },
-  embeddedRow: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+  mitzvotCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  mitzvotRow: {
     borderBottomWidth: 0,
   },
   input: {

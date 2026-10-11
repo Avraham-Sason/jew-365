@@ -11,16 +11,24 @@ const UPDATE_NOTIFIED_KEY = 'notifications:update-notified';
 const TAHARAH_BEDIKA_CATEGORY = 'taharah_bedika';
 const MARK_DONE_ACTION = 'MARK_DONE';
 const OPEN_TEXT_ACTION = 'OPEN_TEXT';
-const ANDROID_CHANNELS = { mitzvot: 'default', hilulot: 'hilulot', taharah: 'taharah', system: 'system' } as const;
+const ANDROID_CHANNELS = {
+  mitzvot: 'default',
+  hilulot: 'hilulot',
+  roshChodesh: 'rosh-chodesh',
+  taharah: 'taharah',
+  system: 'system',
+} as const;
 const PENDING_LIMIT = 60;
 const IOS_MAX = 64;
 const LAST_REBUILD_KEY = 'notifications:last-rebuild-date';
 const SCHEDULE_FORMAT_KEY = 'notifications:schedule-format';
 
 export type PendingNotificationMeta = {
-  kind?: 'blockNotice' | 'checkin' | typeof TAHARAH_KIND | typeof UPDATE_KIND | 'hilula';
+  kind?: 'blockNotice' | 'checkin' | typeof TAHARAH_KIND | typeof UPDATE_KIND | 'hilula' | 'roshChodesh' | 'report';
   taharah?: { task: TaharahTaskKind | 'tevilaPrep' | 'postBlock' | 'preBlock'; day: number; onah?: OnahKind };
   hilula?: { day: number; when: 'before' | 'evening' };
+  roshChodesh?: { day: number; when: 'before' | 'evening' | 'day' };
+  report?: { week: string };
   blockId?: string;
   updateId?: string;
   updateCreatedAt?: string;

@@ -292,7 +292,7 @@ describe('NotificationScheduler', () => {
     const running = NotificationScheduler.rebuild();
     expect(StorageService.get(SCHEDULE_FORMAT_KEY)).toBeUndefined();
     await running;
-    expect(StorageService.get(SCHEDULE_FORMAT_KEY)).toBe(7);
+    expect(StorageService.get(SCHEDULE_FORMAT_KEY)).toBe(8);
   });
 
   it('6.3 cancelAll empties pending', async () => {
@@ -351,7 +351,7 @@ describe('NotificationScheduler', () => {
   });
 
   it('6.6 Shabbat is quiet: nothing fires between candle lighting and tzeit, and Sunday is covered', async () => {
-    setupEnabled(['tefillin', 'shacharit', 'mincha', 'maariv', 'tzitzit', 'candle_lighting', 'havdalah']);
+    setupEnabled(['tefillin', 'shacharit', 'mincha', 'maariv', 'candle_lighting', 'havdalah']);
     const saturday = nextWeekdayAt(6, 0); // upcoming Saturday 00:00, so all of Shabbat morning is ahead
     const block = HebcalService.holyBlockAt(saturday, CITIES[0])!;
 
@@ -909,7 +909,13 @@ describe('NotificationScheduler', () => {
   });
 
   it('6.14b every kind of notification is routed to its own Android channel', async () => {
-    expect(ANDROID_CHANNELS).toEqual({ mitzvot: 'default', hilulot: 'hilulot', taharah: 'taharah', system: 'system' });
+    expect(ANDROID_CHANNELS).toEqual({
+      mitzvot: 'default',
+      hilulot: 'hilulot',
+      roshChodesh: 'rosh-chodesh',
+      taharah: 'taharah',
+      system: 'system',
+    });
     setupEnabled(['shacharit', 'mincha', 'candle_lighting']);
     await scheduleAt(at(CITIES[0], '2026-11-13T06:00')); // Friday, so a block notice and check-in nudges exist
     const channelsOf = (match: (p: ScheduleInput) => boolean) => [
@@ -922,7 +928,7 @@ describe('NotificationScheduler', () => {
     expect(channelsOf((p) => p.content.data.kind === 'checkin')).toEqual(['system']);
   });
 
-  it('6.14c on Android all four channels exist, the mitzvot one under its original id', async () => {
+  it('6.14c on Android all five channels exist, the mitzvot one under its original id', async () => {
     const restore = jest.replaceProperty(Platform, 'OS', 'android');
     try {
       setupEnabled(['tefillin']);
@@ -931,7 +937,13 @@ describe('NotificationScheduler', () => {
       restore.restore();
     }
 
-    expect(mockSetChannel.mock.calls.map(([id]) => id)).toEqual(['default', 'hilulot', 'taharah', 'system']);
+    expect(mockSetChannel.mock.calls.map(([id]) => id)).toEqual([
+      'default',
+      'hilulot',
+      'rosh-chodesh',
+      'taharah',
+      'system',
+    ]);
     const channels = Object.fromEntries(mockSetChannel.mock.calls) as Record<string, Record<string, unknown>>;
     expect(channels.default).toMatchObject({
       name: 'מצוות',
@@ -945,6 +957,12 @@ describe('NotificationScheduler', () => {
       lockscreenVisibility: 'public',
     });
     expect(channels.hilulot).not.toHaveProperty('vibrationPattern');
+    expect(channels['rosh-chodesh']).toMatchObject({
+      name: 'ראש חודש',
+      importance: 'default',
+      lockscreenVisibility: 'public',
+    });
+    expect(channels['rosh-chodesh']).not.toHaveProperty('vibrationPattern');
     expect(channels.taharah).toMatchObject({ name: 'טהרה', importance: 'high', lockscreenVisibility: 'private' });
     expect(channels.taharah).not.toHaveProperty('lightColor');
     expect(channels.system).toMatchObject({ name: 'מערכת', importance: 'default' });

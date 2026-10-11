@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import { NavBar } from '@/components/NavBar';
+import { HeaderPill } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useDayModel } from '@/hooks/useDayModel';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
@@ -80,7 +81,17 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
-      <NavBar title={t('history.title')} subtitle={t('history.gridTitle')} />
+      <NavBar
+        title={t('history.title')}
+        subtitle={t('history.gridTitle')}
+        actions={
+          <HeaderPill
+            label={t('report.open')}
+            accessibilityLabel={t('report.open')}
+            onPress={() => router.push('/report')}
+          />
+        }
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.streakCard, { backgroundColor: colors.headerBg }]}>
           <Text style={[styles.streakNumber, { color: colors.headerAccent }]}>{stats.streak}</Text>

@@ -101,15 +101,7 @@ describe('registry body variants', () => {
 
   it('keeps variants on the opening reminder of every daily mitzvah and the Omer', () => {
     const ids = withVariants.map(({ mitzvah }) => mitzvah.id);
-    for (const id of [
-      'tefillin',
-      'tzitzit',
-      'krias_shma_shacharit',
-      'shacharit',
-      'mincha',
-      'maariv',
-      'sefirat_haomer',
-    ]) {
+    for (const id of ['tefillin', 'krias_shma_shacharit', 'shacharit', 'mincha', 'maariv', 'sefirat_haomer']) {
       expect(ids).toContain(id);
     }
   });

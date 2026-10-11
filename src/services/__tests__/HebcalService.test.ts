@@ -41,6 +41,42 @@ describe('HebcalService', () => {
     expect(holidays.length).toBeGreaterThan(0);
   });
 
+  it('2.3b names the parasha and the occasions in the locale asked for: Hebrew with vowels by default, without them, or English', () => {
+    const shabbatBereishit = new Date(2026, 9, 10);
+    expect(HebcalService.getParasha(shabbatBereishit, JERUSALEM, 'en')).toBe('Parashat Bereshit');
+    expect(HebcalService.getParasha(shabbatBereishit, JERUSALEM, 'he-x-NoNikud')).toBe('פרשת בראשית');
+    expect(HebcalService.getParasha(shabbatBereishit, JERUSALEM)).toMatch(/[\u05B0-\u05C7]/);
+
+    const roshChodesh = new Date(2026, 9, 11);
+    expect(HebcalService.getHolidays(roshChodesh, JERUSALEM, 'he-x-NoNikud')).toEqual(['ראש חודש חשון']);
+    expect(HebcalService.getHolidays(roshChodesh, JERUSALEM, 'en')).toEqual(['Rosh Chodesh Cheshvan']);
+    expect(HebcalService.getHolidays(roshChodesh, JERUSALEM)[0]).toMatch(/[\u05B0-\u05C7]/);
+  });
+
+  it('2.3c leaves chol hamoed and erev days out of the occasions unless asked, each on its own', () => {
+    const cholHamoed = new Date(2026, 8, 28);
+    expect(HebcalService.getHolidays(cholHamoed, JERUSALEM, 'he-x-NoNikud')).toEqual([]);
+    expect(HebcalService.getHolidays(cholHamoed, JERUSALEM, 'he-x-NoNikud', { erev: true })).toEqual([]);
+    expect(HebcalService.getHolidays(cholHamoed, JERUSALEM, 'he-x-NoNikud', { cholHamoed: true })).toEqual([
+      'סוכות ג׳ (חוה״מ)',
+    ]);
+    expect(HebcalService.getHolidays(cholHamoed, JERUSALEM, 'en', { cholHamoed: true })).toEqual([
+      'Sukkot III (CH’’M)',
+    ]);
+
+    const erevYomKippur = new Date(2026, 8, 20);
+    expect(HebcalService.getHolidays(erevYomKippur, JERUSALEM, 'he-x-NoNikud')).toEqual([]);
+    expect(HebcalService.getHolidays(erevYomKippur, JERUSALEM, 'he-x-NoNikud', { cholHamoed: true })).toEqual([]);
+    expect(HebcalService.getHolidays(erevYomKippur, JERUSALEM, 'he-x-NoNikud', { erev: true })).toEqual([
+      'ערב יום כפור',
+    ]);
+
+    const hoshanaRaba = new Date(2026, 9, 2);
+    expect(HebcalService.getHolidays(hoshanaRaba, JERUSALEM, 'he-x-NoNikud', { cholHamoed: true })).toEqual([
+      'סוכות ז׳ (הושענא רבה)',
+    ]);
+  });
+
   it('2.4 isShabbat true on Saturday', () => {
     // Without a location the fallback is the device's Gregorian Saturday.
     const sat = new Date(2026, 3, 25, 12);

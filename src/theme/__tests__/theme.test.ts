@@ -12,6 +12,7 @@ import {
   THEME_NAMES,
   DARK_THEMES,
   isDarkTheme,
+  paletteForGender,
   ThemeColors,
 } from '../colors';
 import { ribbonThresholds, durations, spacing, radius } from '../tokens';
@@ -83,6 +84,31 @@ describe('Theme', () => {
     expect(DARK_THEMES).toEqual(['dark', 'plum']);
     expect(THEME_NAMES.filter((name) => isDarkTheme(name))).toEqual([...DARK_THEMES]);
     for (const name of ['gold', 'pink', 'purple', 'blue'] as const) expect(isDarkTheme(name)).toBe(false);
+  });
+
+  it.each([
+    ['gold', 'male', 'gold'],
+    ['gold', 'female', 'pink'],
+    ['pink', 'male', 'gold'],
+    ['pink', 'female', 'pink'],
+    ['purple', 'male', 'gold'],
+    ['purple', 'female', 'pink'],
+    ['blue', 'male', 'gold'],
+    ['blue', 'female', 'pink'],
+    ['dark', 'male', 'dark'],
+    ['dark', 'female', 'plum'],
+    ['plum', 'male', 'dark'],
+    ['plum', 'female', 'plum'],
+  ] as const)('paletteForGender: %s palette with a %s answer gives %s', (current, gender, expected) => {
+    expect(paletteForGender(gender, current)).toBe(expected);
+  });
+
+  it('paletteForGender keeps the light or dark class of every palette', () => {
+    for (const name of THEME_NAMES) {
+      for (const gender of ['male', 'female'] as const) {
+        expect(isDarkTheme(paletteForGender(gender, name))).toBe(isDarkTheme(name));
+      }
+    }
   });
 
   it('the light palettes share white surfaces and the status colours', () => {

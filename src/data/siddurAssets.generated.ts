@@ -1,7 +1,6 @@
 export const SIDDUR_ASSETS = {
   ashkenaz: {
     tefillin: require('../../assets/siddur/ashkenaz/tefillin.siddur'),
-    tzitzit: require('../../assets/siddur/ashkenaz/tzitzit.siddur'),
     birchot_hashachar: require('../../assets/siddur/ashkenaz/birchot_hashachar.siddur'),
     krias_shma_shacharit: require('../../assets/siddur/ashkenaz/krias_shma_shacharit.siddur'),
     candle_lighting: require('../../assets/siddur/ashkenaz/candle_lighting.siddur'),
@@ -22,10 +21,10 @@ export const SIDDUR_ASSETS = {
     mezuzah: require('../../assets/siddur/ashkenaz/mezuzah.siddur'),
     sheva_berachot: require('../../assets/siddur/ashkenaz/sheva_berachot.siddur'),
     chanukah_candles: require('../../assets/siddur/ashkenaz/chanukah_candles.siddur'),
+    tikkun_haklali: require('../../assets/siddur/ashkenaz/tikkun_haklali.siddur'),
   },
   sefard: {
     tefillin: require('../../assets/siddur/sefard/tefillin.siddur'),
-    tzitzit: require('../../assets/siddur/sefard/tzitzit.siddur'),
     birchot_hashachar: require('../../assets/siddur/sefard/birchot_hashachar.siddur'),
     krias_shma_shacharit: require('../../assets/siddur/sefard/krias_shma_shacharit.siddur'),
     candle_lighting: require('../../assets/siddur/sefard/candle_lighting.siddur'),
@@ -46,10 +45,10 @@ export const SIDDUR_ASSETS = {
     mezuzah: require('../../assets/siddur/sefard/mezuzah.siddur'),
     sheva_berachot: require('../../assets/siddur/sefard/sheva_berachot.siddur'),
     chanukah_candles: require('../../assets/siddur/sefard/chanukah_candles.siddur'),
+    tikkun_haklali: require('../../assets/siddur/sefard/tikkun_haklali.siddur'),
   },
   edot_hamizrach: {
     tefillin: require('../../assets/siddur/edot_hamizrach/tefillin.siddur'),
-    tzitzit: require('../../assets/siddur/edot_hamizrach/tzitzit.siddur'),
     birchot_hashachar: require('../../assets/siddur/edot_hamizrach/birchot_hashachar.siddur'),
     krias_shma_shacharit: require('../../assets/siddur/edot_hamizrach/krias_shma_shacharit.siddur'),
     candle_lighting: require('../../assets/siddur/edot_hamizrach/candle_lighting.siddur'),
@@ -70,10 +69,10 @@ export const SIDDUR_ASSETS = {
     mezuzah: require('../../assets/siddur/edot_hamizrach/mezuzah.siddur'),
     sheva_berachot: require('../../assets/siddur/edot_hamizrach/sheva_berachot.siddur'),
     chanukah_candles: require('../../assets/siddur/edot_hamizrach/chanukah_candles.siddur'),
+    tikkun_haklali: require('../../assets/siddur/edot_hamizrach/tikkun_haklali.siddur'),
   },
   chabad: {
     tefillin: require('../../assets/siddur/chabad/tefillin.siddur'),
-    tzitzit: require('../../assets/siddur/chabad/tzitzit.siddur'),
     birchot_hashachar: require('../../assets/siddur/chabad/birchot_hashachar.siddur'),
     krias_shma_shacharit: require('../../assets/siddur/chabad/krias_shma_shacharit.siddur'),
     candle_lighting: require('../../assets/siddur/chabad/candle_lighting.siddur'),
@@ -94,5 +93,6 @@ export const SIDDUR_ASSETS = {
     mezuzah: require('../../assets/siddur/chabad/mezuzah.siddur'),
     sheva_berachot: require('../../assets/siddur/chabad/sheva_berachot.siddur'),
     chanukah_candles: require('../../assets/siddur/chabad/chanukah_candles.siddur'),
+    tikkun_haklali: require('../../assets/siddur/chabad/tikkun_haklali.siddur'),
   },
 } as const;

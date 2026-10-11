@@ -119,7 +119,6 @@ export type SiddurText = {
 
 export type MitzvahTextId =
   | 'tefillin'
-  | 'tzitzit'
   | 'birchot_hashachar'
   | 'krias_shma_shacharit'
   | 'candle_lighting'
@@ -141,8 +140,9 @@ export type StandaloneTextId =
   | 'kiddush_levana'
   | 'mezuzah'
   | 'sheva_berachot'
-  | 'chanukah_candles';
+  | 'chanukah_candles'
+  | 'tikkun_haklali';
 
 export type SiddurTextId = MitzvahTextId | StandaloneTextId;
 
-export type SiddurGroup = 'meals' | 'blessings' | 'travel' | 'night' | 'occasions';
+export type SiddurGroup = 'prayers' | 'meals' | 'blessings' | 'night' | 'occasions';

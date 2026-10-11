@@ -10,7 +10,7 @@ import { iconFor } from '@/components/MitzvahIcon';
 import { ReminderEditor } from '@/components/ReminderEditor';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
-import { hasSiddurText, siddurPlace } from '@/data/siddur';
+import { hasSiddurText, isSiddurTextId, siddurPlace } from '@/data/siddur';
 import { dateKey } from '@/stores/useCompletionsStore';
 import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -353,6 +353,7 @@ function ContentBlockView({ block, highlighted }: { block: ContentBlock; highlig
   const { language, t } = useI18n();
   const router = useRouter();
   const text = language === 'en' && block.en ? block.en : block.he;
+  if (block.type === 'siddur' && !isSiddurTextId(block.textId)) return null;
   if (block.type === 'link' || block.type === 'siddur') {
     const onPress =
       block.type === 'link'

@@ -15,6 +15,7 @@ export const OPEN_TEXT_ACTION = 'OPEN_TEXT';
 export const ANDROID_CHANNELS = {
   mitzvot: 'default',
   hilulot: 'hilulot',
+  roshChodesh: 'rosh-chodesh',
   taharah: 'taharah',
   system: 'system',
 } as const;
@@ -23,21 +24,32 @@ export const IOS_MAX = 64;
 export const IOS_HEADROOM = 4;
 export const LAST_REBUILD_KEY = 'notifications:last-rebuild-date';
 export const SCHEDULE_FORMAT_KEY = 'notifications:schedule-format';
-export const SCHEDULE_FORMAT = 7;
+export const SCHEDULE_FORMAT = 8;
 export const BLOCK_NOTICE_KIND = 'blockNotice';
 export const CHECK_IN_KIND = 'checkin';
 export const UPDATE_KIND = 'update';
 export const UPDATE_NOTIFIED_KEY = 'notifications:update-notified';
 export const TAHARAH_KIND = 'taharah';
 export const HILULA_KIND = 'hilula';
+export const ROSH_CHODESH_KIND = 'roshChodesh';
+export const REPORT_KIND = 'report';
 
 export type HilulaWhen = 'before' | 'evening';
+export type RoshChodeshWhen = 'before' | 'evening' | 'day';
 
 export type PendingNotificationMeta = {
   kind?:
-    typeof BLOCK_NOTICE_KIND | typeof CHECK_IN_KIND | typeof TAHARAH_KIND | typeof UPDATE_KIND | typeof HILULA_KIND;
+    | typeof BLOCK_NOTICE_KIND
+    | typeof CHECK_IN_KIND
+    | typeof TAHARAH_KIND
+    | typeof UPDATE_KIND
+    | typeof HILULA_KIND
+    | typeof ROSH_CHODESH_KIND
+    | typeof REPORT_KIND;
   taharah?: { task: TaharahTaskKind | 'tevilaPrep' | 'postBlock' | 'preBlock'; day: number; onah?: OnahKind };
   hilula?: { day: number; when: HilulaWhen };
+  roshChodesh?: { day: number; when: RoshChodeshWhen };
+  report?: { week: string };
   blockId?: string;
   updateId?: string;
   updateCreatedAt?: string;

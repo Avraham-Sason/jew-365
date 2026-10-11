@@ -18,10 +18,9 @@ function ctxFor(date: Date) {
 }
 
 describe('mitzvot windows', () => {
-  it('has all 10 MVP mitzvot', () => {
+  it('has all 9 MVP mitzvot and no tzitzit', () => {
     const ids = [
       'tefillin',
-      'tzitzit',
       'krias_shma_shacharit',
       'shacharit',
       'mincha',
@@ -34,7 +33,8 @@ describe('mitzvot windows', () => {
     for (const id of ids) {
       expect(findMitzvah(id)).toBeDefined();
     }
-    expect(MITZVOT.length).toBeGreaterThanOrEqual(10);
+    expect(MITZVOT.length).toBeGreaterThanOrEqual(9);
+    expect(findMitzvah('tzitzit')).toBeUndefined();
   });
 
   it.each(DATES)('computes valid windows for all mitzvot on %s', (date) => {

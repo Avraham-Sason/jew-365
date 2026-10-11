@@ -20,8 +20,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TimeField } from '@/components/TimeField';
 import { WeekdayPicker } from '@/components/WeekdayPicker';
-import { findMitzvah } from '@/data/mitzvot';
-import { SIDDUR_GROUPS, SIDDUR_TEXTS, STANDALONE_TEXTS, standaloneTextId, standaloneTextsIn } from '@/data/siddur';
+import { SIDDUR_GROUPS, SIDDUR_TEXTS, standaloneTextsIn } from '@/data/siddur';
 import { useCustomMitzvotStore, makeCustomMitzvahId } from '@/stores/useCustomMitzvotStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { BRAND } from '@/theme/colors';
@@ -30,12 +29,16 @@ import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
 import { TIME_PATTERN, timeToMinutes } from '@/utils/clock';
-import { WEEKDAYS, categoryForWindow, reminderClock } from '@/utils/customMitzvah';
-import { mitzvahName } from '@/utils/mitzvahName';
-import { ContentBlock, Reminder, ReminderAnchor, SkipContext, Weekday } from '@/types/mitzvah';
+import {
+  DraftBlock,
+  WEEKDAYS,
+  categoryForWindow,
+  cleanContentBlocks,
+  reminderClock,
+  siddurTextName,
+} from '@/utils/customMitzvah';
+import { Reminder, ReminderAnchor, SkipContext, Weekday } from '@/types/mitzvah';
 import { MitzvahTextId, SiddurTextId } from '@/types/siddur';
-
-type DraftBlock = ContentBlock | { type: 'siddur'; he: string; en?: string; textId: null };
 
 const CONTENT_TYPES: DraftBlock['type'][] = ['text', 'blessing', 'link', 'siddur'];
 const SIDDUR_CHOICES: readonly SiddurTextId[] = [
@@ -45,27 +48,6 @@ const SIDDUR_CHOICES: readonly SiddurTextId[] = [
 
 function emptyReminder(): Reminder {
   return { anchor: 'start', offsetMin: 0, label: '' };
-}
-
-function siddurTextName(id: SiddurTextId, language: 'he' | 'en'): string {
-  const standalone = standaloneTextId(id);
-  return standalone ? STANDALONE_TEXTS[standalone].name[language] : mitzvahName(findMitzvah(id)!, language);
-}
-
-function cleanContentBlock(block: DraftBlock): ContentBlock | null {
-  const he = block.he.trim();
-  if (!he) return null;
-  if (block.type === 'link') {
-    const url = block.url.trim();
-    return url ? { type: 'link', he, en: block.en, url } : null;
-  }
-  if (block.type === 'siddur') return block.textId ? { type: 'siddur', he, en: block.en, textId: block.textId } : null;
-  return { ...block, he };
-}
-
-function cleanContentBlocks(blocks: DraftBlock[]): ContentBlock[] | undefined {
-  const cleaned = blocks.map(cleanContentBlock).filter((block): block is ContentBlock => block !== null);
-  return cleaned.length ? cleaned : undefined;
 }
 
 function FieldLabel({ text }: { text: string }) {
@@ -225,8 +207,8 @@ export default function CustomMitzvahScreen() {
     if (pickingBlockIndex === null) return;
     updateContentBlock(pickingBlockIndex, {
       type: 'siddur',
-      he: siddurTextName(textId, 'he'),
-      en: siddurTextName(textId, 'en'),
+      he: siddurTextName(textId, 'he') ?? '',
+      en: siddurTextName(textId, 'en') ?? undefined,
       textId,
     });
     setPickingBlockIndex(null);
@@ -415,7 +397,10 @@ export default function CustomMitzvahScreen() {
                   ]}
                 >
                   <Text style={[typography.bodyBold, { color: block.textId ? colors.text : colors.textSub }]}>
-                    {block.textId ? siddurTextName(block.textId, language) : t('custom.pickSiddurText')}
+                    {block.textId
+                      ? (siddurTextName(block.textId, language) ??
+                        (language === 'en' && block.en ? block.en : block.he))
+                      : t('custom.pickSiddurText')}
                   </Text>
                 </Pressable>
               ) : (
@@ -508,7 +493,7 @@ export default function CustomMitzvahScreen() {
             return (
               <SheetAction
                 key={id}
-                label={siddurTextName(id, language)}
+                label={siddurTextName(id, language) ?? ''}
                 selected={selected}
                 onLayout={
                   selected

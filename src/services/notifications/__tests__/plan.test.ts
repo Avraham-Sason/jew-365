@@ -66,6 +66,8 @@ function planInput(overrides: Partial<PlanInput> = {}): PlanInput {
     checkIns: {},
     enabledSince: {},
     hilulotEnabled: false,
+    roshChodeshEnabled: false,
+    weeklyReportEnabled: false,
     taharahEnabled: false,
     taharah: {
       events: [],
@@ -152,6 +154,29 @@ describe('buildPlan', () => {
   it('leaves out the hilula notices while the setting is off', () => {
     const plan = buildPlan(planInput({ hilulotEnabled: false }));
     expect(plan.filter((candidate) => candidate.id.startsWith('hilula:'))).toEqual([]);
+  });
+
+  it('plans the Rosh Chodesh notices on their own channel and leaves them out while the setting is off', () => {
+    const sunday = at(JERUSALEM, '2026-10-11T06:00');
+    const noticesOf = (roshChodeshEnabled: boolean) =>
+      buildPlan(planInput({ now: sunday, mitzvot: [], roshChodeshEnabled })).filter((candidate) =>
+        candidate.id.startsWith('roshChodesh:'),
+      );
+
+    expect(noticesOf(false)).toEqual([]);
+    const notices = noticesOf(true);
+    expect(notices.map((candidate) => candidate.id)).toEqual([
+      `roshChodesh:${new HDate(30, months.TISHREI, 5787).abs()}:day`,
+      `roshChodesh:${new HDate(1, months.CHESHVAN, 5787).abs()}:day`,
+    ]);
+    expect(notices.map((candidate) => candidate.trigger.getTime())).toEqual([
+      at(JERUSALEM, '2026-10-11T07:00').getTime(),
+      at(JERUSALEM, '2026-10-12T07:00').getTime(),
+    ]);
+    for (const notice of notices) {
+      expect(notice.channel).toBe('roshChodesh');
+      expect(notice.categoryIdentifier).toBeUndefined();
+    }
   });
 
   it('plans nothing without notification permission', () => {
@@ -278,6 +303,29 @@ describe('buildPlan', () => {
         expect(nudge.categoryIdentifier).toBeUndefined();
         expect(nudge.data).toEqual({ kind: 'checkin', blockId: '2026-11-14' });
       }
+    });
+
+    it('sends the weekly report between the first and second check-in nudge, on the system channel', () => {
+      const withReport = () =>
+        buildPlan(planInput({ now: FRIDAY, mitzvot: [byId('shacharit'), byId('mincha')], weeklyReportEnabled: true }));
+      const sequence = withReport().filter((candidate) => /^(checkin|report):/.test(candidate.id));
+
+      expect(summary(sequence)).toEqual([
+        ['checkin:2026-11-14:0', shabbat().end.getTime()],
+        ['report:2026-11-14', minutes(shabbat().end, 45)],
+        ['checkin:2026-11-14:1', minutes(shabbat().end, 120)],
+        ['checkin:2026-11-14:2', new Date(2026, 10, 15, 20).getTime()],
+      ]);
+      const report = sequence[1];
+      expect(report.channel).toBe('system');
+      expect(report.categoryIdentifier).toBeUndefined();
+      expect(report.title).toBe(t('report.notice.title'));
+      expect(report.body).toBe(t('report.notice.body'));
+      expect(report.data).toEqual({ kind: 'report', report: { week: '2026-11-14' } });
+    });
+
+    it('leaves the weekly report out while its setting is off', () => {
+      expect(plan().filter((candidate) => candidate.id.startsWith('report:'))).toEqual([]);
     });
 
     it('plans nothing strictly inside the block', () => {

@@ -3,8 +3,10 @@ import type { PlanInput, ScheduleCandidate } from '@/services/notifications/type
 import { horizonFor } from '@/services/notifications/planners/horizon';
 import { planBlockNotices } from '@/services/notifications/planners/holyBlock';
 import { planCheckIns } from '@/services/notifications/planners/checkIn';
+import { planReport } from '@/services/notifications/planners/report';
 import { planTaharah } from '@/services/notifications/planners/taharah';
 import { planHilulot } from '@/services/notifications/planners/hilulot';
+import { planRoshChodesh } from '@/services/notifications/planners/roshChodesh';
 import { planMitzvot } from '@/services/notifications/planners/mitzvot';
 
 function guarded(label: string, plan: () => ScheduleCandidate[]): ScheduleCandidate[] {
@@ -25,8 +27,10 @@ export function buildPlan(input: PlanInput): ScheduleCandidate[] {
   const candidates = [
     ...planBlockNotices(input, horizon),
     ...planCheckIns(input, horizon),
+    ...guarded('weekly report', () => planReport(input, horizon)),
     ...guarded('taharah reminders', () => planTaharah(input, horizon)),
     ...guarded('hilula notices', () => planHilulot(input, horizon)),
+    ...guarded('rosh chodesh notices', () => planRoshChodesh(input, horizon)),
     ...planMitzvot(input, horizon),
   ];
 

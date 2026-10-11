@@ -3,7 +3,6 @@ import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 
 export const ICON_NAMES = [
   'tefillin',
-  'tzitzit',
   'shema',
   'shacharit',
   'mincha',
@@ -15,10 +14,11 @@ export const ICON_NAMES = [
   'custom',
   'hilula',
   'siddur',
+  'prayers',
   'meals',
   'blessings',
-  'travel',
   'night',
+  'moon',
   'occasions',
   'sparkle',
   'check',
@@ -46,15 +46,6 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Line x1={6} y1={13} x2={18} y2={13} />
       <Path d="M9,13C9,17 7,17 7,21" />
       <Path d="M15,13C15,17 17,17 17,21" />
-    </>
-  ),
-  tzitzit: ({ fill }) => (
-    <>
-      <Path d="M7.5,3.5H9.5Q12,8.5 14.5,3.5H16.5Q17.5,3.5 17.5,4.5V16H6.5V4.5Q6.5,3.5 7.5,3.5Z" fill={fill} />
-      <Line x1={7.5} y1={16} x2={7.5} y2={20.5} />
-      <Line x1={10.2} y1={16} x2={10.2} y2={19.5} />
-      <Line x1={13.8} y1={16} x2={13.8} y2={19.5} />
-      <Line x1={16.5} y1={16} x2={16.5} y2={20.5} />
     </>
   ),
   shema: ({ fill }) => (
@@ -162,6 +153,7 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Path d="M12,6.5Q15.5,4.5 20.5,5.5V17.5Q15.5,16.5 12,19.5Z" fill={fill} />
     </>
   ),
+  prayers: (drawing) => DRAWINGS.siddur(drawing),
   meals: ({ fill }) => (
     <>
       <Circle cx={12.4} cy={12} r={4} fill={fill} />
@@ -178,17 +170,8 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Path d="M18.5,15Q19,17 21,17.5Q19,18 18.5,20Q18,18 16,17.5Q18,17 18.5,15Z" fill={fill} />
     </>
   ),
-  travel: ({ fill }) => (
-    <>
-      <Line x1={4.5} y1={3.8} x2={19.5} y2={3.8} />
-      <Path
-        d="M17.7,6.5C11.2,6.5 9.2,10 13.7,12C18.2,14 16.2,17.5 9.7,17.5L6.3,17.5C12.8,17.5 14.8,14 10.3,12C5.8,10 7.8,6.5 14.3,6.5Z"
-        fill={fill}
-      />
-      <Line x1={4.5} y1={20.2} x2={19.5} y2={20.2} />
-    </>
-  ),
   night: ({ fill }) => <Path d="M21.6,12.39A9,9 0 1 1 11.81,2.6A7,7 0 0 0 21.6,12.39Z" fill={fill} />,
+  moon: ({ fill }) => <Path d="M7.5,3A9,9 0 0 1 7.5,21A12,12 0 0 0 7.5,3Z" fill={fill} />,
   occasions: ({ fill }) => (
     <>
       <Path d="M7,4H17V8.5Q17,13.5 12,13.5Q7,13.5 7,8.5Z" fill={fill} />

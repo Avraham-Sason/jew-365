@@ -355,6 +355,47 @@ describe('notificationResponseHandler', () => {
     expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
   });
 
+  it('opens the Rosh Chodesh screen from a Rosh Chodesh notice, never a mitzvah lookup', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+
+    listener(
+      response(
+        DEFAULT_NOTIFICATION_ACTION,
+        { kind: 'roshChodesh', roshChodesh: { day: 739901, when: 'day' } },
+        'roshChodesh:739901:day',
+      ),
+    );
+
+    expect(mockRouterNavigate).toHaveBeenCalledWith('/rosh-chodesh');
+    expect(mockRouterNavigate).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
+  });
+
+  it('opens the weekly report of the notice week, never a mitzvah lookup', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+
+    listener(
+      response(DEFAULT_NOTIFICATION_ACTION, { kind: 'report', report: { week: '2026-10-10' } }, 'report:2026-10-10'),
+    );
+
+    expect(mockRouterNavigate).toHaveBeenCalledWith({ pathname: '/report', params: { week: '2026-10-10' } });
+    expect(mockRouterNavigate).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
+  });
+
+  it('opens the latest report from a report notice that lost its week', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+
+    listener(response(DEFAULT_NOTIFICATION_ACTION, { kind: 'report' }, 'report:2026-10-10'));
+
+    expect(mockRouterNavigate).toHaveBeenCalledWith({ pathname: '/report', params: { week: undefined } });
+  });
+
   it('hands the mark-done button of a bedika reminder to the scheduler with its taharah payload', () => {
     initNotificationResponseHandler();
     const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
@@ -523,6 +564,16 @@ describe('notificationResponseHandler', () => {
           { kind: 'hilula', hilula: { day: 739900, when: 'before' } },
           'hilula:739900:before',
         ),
+      );
+      listener(
+        response(
+          DEFAULT_NOTIFICATION_ACTION,
+          { kind: 'roshChodesh', roshChodesh: { day: 739901, when: 'before' } },
+          'roshChodesh:739901:before',
+        ),
+      );
+      listener(
+        response(DEFAULT_NOTIFICATION_ACTION, { kind: 'report', report: { week: '2026-11-14' } }, 'report:2026-11-14'),
       );
       expect(mockRouterPush).not.toHaveBeenCalled();
       expect(mockRouterNavigate).not.toHaveBeenCalled();

@@ -37,6 +37,12 @@ export async function ensureChannels(): Promise<void> {
     sound: 'default',
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   });
+  await Notifications.setNotificationChannelAsync(ANDROID_CHANNELS.roshChodesh, {
+    name: t('roshChodesh.title'),
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: 'default',
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+  });
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNELS.taharah, {
     name: t('taharah.home.title'),
     importance: Notifications.AndroidImportance.HIGH,

@@ -49,31 +49,74 @@ describe('taharahOptIn', () => {
       expect(taharah().settings.role).toBe('husband');
     });
 
-    it('switches tefillin and tzitzit off for a woman and leaves the prayers on', () => {
-      expect(MENS_MITZVOT).toEqual(['tefillin', 'tzitzit']);
+    it('switches tefillin off for a woman and leaves the prayers on', () => {
+      expect(MENS_MITZVOT).toEqual(['tefillin']);
       chooseGender('female');
-      expect(MENS_MITZVOT.map(enabled)).toEqual([false, false]);
+      expect(MENS_MITZVOT.map(enabled)).toEqual([false]);
       expect(['shacharit', 'mincha', 'maariv', 'krias_shma_shacharit'].map(enabled)).toEqual([true, true, true, true]);
     });
 
     it('keeps the defaults for a man answering for the first time', () => {
-      useMitzvotStore.getState().setEnabled('tzitzit', false);
+      useMitzvotStore.getState().setEnabled('tefillin', false);
       chooseGender('male');
-      expect(enabled('tefillin')).toBe(true);
-      expect(enabled('tzitzit')).toBe(false);
+      expect(enabled('tefillin')).toBe(false);
+      expect(enabled('shacharit')).toBe(true);
     });
 
-    it('restores tefillin and tzitzit when the answer changes from woman to man', () => {
+    it('restores tefillin when the answer changes from woman to man', () => {
       chooseGender('female');
       chooseGender('male');
-      expect(MENS_MITZVOT.map(enabled)).toEqual([true, true]);
+      expect(MENS_MITZVOT.map(enabled)).toEqual([true]);
     });
 
     it('re-choosing the same gender never touches the library', () => {
       chooseGender('female');
-      useMitzvotStore.getState().setEnabled('tzitzit', true);
+      useMitzvotStore.getState().setEnabled('tefillin', true);
       chooseGender('female');
-      expect(enabled('tzitzit')).toBe(true);
+      expect(enabled('tefillin')).toBe(true);
+    });
+
+    it('keeps gold for a man answering for the first time', () => {
+      chooseGender('male');
+      expect(user().theme).toBe('gold');
+    });
+
+    it('switches gold to pink for a woman answering for the first time', () => {
+      chooseGender('female');
+      expect(user().theme).toBe('pink');
+    });
+
+    it('stays inside the dark class: a woman on dark gets plum and a man on plum gets dark', () => {
+      user().setTheme('dark');
+      chooseGender('female');
+      expect(user().theme).toBe('plum');
+
+      chooseGender('male');
+      expect(user().theme).toBe('dark');
+    });
+
+    it('moves a light palette that is not gold or pink to pink for a woman', () => {
+      user().setTheme('purple');
+      chooseGender('female');
+      expect(user().theme).toBe('pink');
+    });
+
+    it('lets the user pick any palette after the answer and re-choosing the same gender keeps it', () => {
+      chooseGender('female');
+      user().setTheme('blue');
+
+      chooseGender('female');
+
+      expect(user().theme).toBe('blue');
+    });
+
+    it('a later change of gender sets the palette again', () => {
+      chooseGender('female');
+      user().setTheme('blue');
+
+      chooseGender('male');
+
+      expect(user().theme).toBe('gold');
     });
   });
 

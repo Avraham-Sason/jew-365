@@ -40,6 +40,27 @@ describe('historyStats', () => {
     expect(stats.perMitzvah.daily).toMatchObject({ done: 4, eligible: 7, percent: 57 });
   });
 
+  it('counts a day whose only mark is a retired mitzvah id toward the streak and nowhere else', () => {
+    const today = new Date(2026, 4, 7);
+    const stats = computeStats(
+      [fixtureMitzvah('daily')],
+      {
+        '2026-05-07': { daily: Date.now() },
+        '2026-05-06': { tzitzit: Date.now() },
+        '2026-05-05': { daily: Date.now() },
+      },
+      CITIES[0],
+      settings,
+      7,
+      today,
+    );
+
+    expect(stats.streak).toBe(3);
+    expect(stats.perMitzvah).not.toHaveProperty('tzitzit');
+    expect(stats.perMitzvah.daily).toMatchObject({ done: 2, eligible: 7 });
+    expect(stats.daily.find((entry) => entry.date === '2026-05-06')).toMatchObject({ doneCount: 0, totalCount: 1 });
+  });
+
   it('keeps a 23:59 completion on that date key', () => {
     const ts = new Date(2026, 4, 6, 23, 59).getTime();
     const stats = computeStats(

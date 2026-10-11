@@ -7,6 +7,7 @@ import { BLOCK_NOTICE_KIND } from '@/services/notifications/ids';
 import type { PlanInput, ScheduleCandidate } from '@/services/notifications/types';
 import { formatClock, holyBlocksWithin, type Horizon } from '@/services/notifications/planners/horizon';
 import { hilulaLines } from '@/services/notifications/planners/hilulot';
+import { roshChodeshLines } from '@/services/notifications/planners/roshChodesh';
 
 const BLOCK_NOTICE_LEAD_MIN = 60;
 
@@ -48,6 +49,7 @@ function blockNoticeCandidate(block: HolyBlock, input: PlanInput, countsOmer: bo
   const omer = countsOmer ? omerLine(block, omerNightsWithin(block, input.location), input.language === 'en') : null;
   if (omer) lines.push(omer);
   if (input.hilulotEnabled) lines.push(...hilulaLines(block, input));
+  if (input.roshChodeshEnabled) lines.push(...roshChodeshLines(block, input));
   return {
     id: `${BLOCK_NOTICE_KIND}:${block.days[0]}`,
     trigger,

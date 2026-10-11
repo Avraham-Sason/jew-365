@@ -451,7 +451,9 @@ export function initNotificationHandlers(): () => void {
         state.halachicOpinions !== prev.halachicOpinions ||
         state.inIsrael !== prev.inIsrael ||
         state.taharahEnabled !== prev.taharahEnabled ||
-        state.hilulotEnabled !== prev.hilulotEnabled
+        state.hilulotEnabled !== prev.hilulotEnabled ||
+        state.roshChodeshEnabled !== prev.roshChodeshEnabled ||
+        state.weeklyReportEnabled !== prev.weeklyReportEnabled
       ) {
         NotificationScheduler.rebuild().catch(reportScheduleError);
       }

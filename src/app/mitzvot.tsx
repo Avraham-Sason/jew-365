@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, type Href } from 'expo-router';
 import { ChipRow } from '@/components/ChipRow';
 import { ListRow } from '@/components/ListRow';
-import { iconFor } from '@/components/MitzvahIcon';
+import { iconFor, type IconName } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useDayModel } from '@/hooks/useDayModel';
@@ -17,7 +17,17 @@ import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
 import { MitzvahCategory } from '@/types/mitzvah';
 
-const HILULOT_CATEGORY: MitzvahCategory = 'seasonal';
+const SETTING_ROWS_CATEGORY: MitzvahCategory = 'seasonal';
+
+type SettingRow = {
+  key: string;
+  icon: IconName;
+  title: string;
+  caption: string;
+  route: Href;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+};
 
 export default function MitzvotScreen() {
   const { colors } = useTheme();
@@ -28,6 +38,8 @@ export default function MitzvotScreen() {
   const setEnabled = useMitzvotStore((s) => s.setEnabled);
   const hilulotEnabled = useUserStore((s) => s.hilulotEnabled);
   const setHilulotEnabled = useUserStore((s) => s.setHilulotEnabled);
+  const roshChodeshEnabled = useUserStore((s) => s.roshChodeshEnabled);
+  const setRoshChodeshEnabled = useUserStore((s) => s.setRoshChodeshEnabled);
   const [visibility, setVisibility] = useState<'active' | 'available'>('active');
   const [category, setCategory] = useState<MitzvahCategory | 'all'>('all');
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
@@ -45,10 +57,31 @@ export default function MitzvotScreen() {
       return true;
     });
   }, [allMitzvot, active, category, visibility]);
-  // Hilulot are a notification setting, not a mitzvah: listed here as the user asked, but kept out
-  // of the registry so they never reach history, home or the check-in.
-  const showHilulot =
-    (visibility === 'active') === hilulotEnabled && (category === 'all' || category === HILULOT_CATEGORY);
+  // Hilulot and Rosh Chodesh are notification settings, not mitzvot: listed here as the user asked,
+  // but kept out of the registry so they never reach history, home or the check-in.
+  const settingRows: SettingRow[] = [
+    {
+      key: 'hilulot',
+      icon: 'hilula',
+      title: t('hilulot.title'),
+      caption: t('hilulot.caption'),
+      route: '/hilulot',
+      enabled: hilulotEnabled,
+      onToggle: setHilulotEnabled,
+    },
+    {
+      key: 'roshChodesh',
+      icon: 'moon',
+      title: t('roshChodesh.title'),
+      caption: t('roshChodesh.caption'),
+      route: '/rosh-chodesh',
+      enabled: roshChodeshEnabled,
+      onToggle: setRoshChodeshEnabled,
+    },
+  ];
+  const visibleSettingRows = settingRows.filter(
+    (row) => (visibility === 'active') === row.enabled && (category === 'all' || category === SETTING_ROWS_CATEGORY),
+  );
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -102,23 +135,20 @@ export default function MitzvotScreen() {
             />
           );
         })}
-        {showHilulot ? (
+        {visibleSettingRows.map((row) => (
           <ListRow
-            icon="hilula"
-            iconTone={hilulotEnabled ? 'accent' : 'muted'}
-            title={t('hilulot.title')}
-            caption={t('hilulot.caption')}
-            onPress={() => router.push('/hilulot')}
+            key={row.key}
+            icon={row.icon}
+            iconTone={row.enabled ? 'accent' : 'muted'}
+            title={row.title}
+            caption={row.caption}
+            onPress={() => router.push(row.route)}
             trailing={
-              <EnabledSwitch
-                value={hilulotEnabled}
-                onChange={() => setHilulotEnabled(!hilulotEnabled)}
-                label={t('hilulot.title')}
-              />
+              <EnabledSwitch value={row.enabled} onChange={() => row.onToggle(!row.enabled)} label={row.title} />
             }
           />
-        ) : null}
-        {!items.length && !showHilulot ? (
+        ))}
+        {!items.length && !visibleSettingRows.length ? (
           <Text style={[typography.body, styles.emptyText, { color: colors.textSub }]}>{t('library.empty')}</Text>
         ) : null}
       </ScrollView>

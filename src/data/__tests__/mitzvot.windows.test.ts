@@ -27,13 +27,6 @@ describe('mitzvot windows extra', () => {
     expect(w!.end.getTime()).toBe(c.zmanim.shkia.getTime());
   });
 
-  it('3.2 tzitzit: misheyakir → shkia', () => {
-    const c = ctx(WEEKDAY);
-    const w = findMitzvah('tzitzit')!.computeWindow(c);
-    expect(w!.start.getTime()).toBe(c.zmanim.misheyakir.getTime());
-    expect(w!.end.getTime()).toBe(c.zmanim.shkia.getTime());
-  });
-
   it('3.3 krias_shma_shacharit GRA: netz → sofZmanShmaGra', () => {
     const c = ctx(WEEKDAY, SETTINGS_GRA);
     const w = findMitzvah('krias_shma_shacharit')!.computeWindow(c);

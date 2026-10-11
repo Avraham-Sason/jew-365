@@ -41,7 +41,7 @@ const RECENT_DAYS = 3;
 export const CHECK_IN_PROMPTED_KEY = 'checkin:prompted';
 
 // A calendar day as every day-level surface holds it: the device-local midnight of that date.
-function calendarDay(iso: string, days = 0): Date {
+export function calendarDay(iso: string, days = 0): Date {
   const { year, month, day } = DateTime.fromISO(iso);
   return new Date(year, month - 1, day + days);
 }

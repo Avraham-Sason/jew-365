@@ -66,18 +66,34 @@ export function ScreenHeader({ title, subtitle, onBack, actions, leading, childr
   );
 }
 
-type HeaderPillProps = { label: string; onPress: () => void; accessibilityLabel?: string; selected?: boolean };
+type HeaderPillProps = {
+  label: string;
+  onPress: () => void;
+  accessibilityLabel?: string;
+  selected?: boolean;
+  disabled?: boolean;
+};
 
-export function HeaderPill({ label, onPress, accessibilityLabel, selected = false }: HeaderPillProps) {
+export function HeaderPill({
+  label,
+  onPress,
+  accessibilityLabel,
+  selected = false,
+  disabled = false,
+}: HeaderPillProps) {
   const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
       hitSlop={8}
-      style={[styles.pill, { backgroundColor: selected ? colors.headerAccent : HEADER_PILL_BG }]}
+      style={[
+        styles.pill,
+        { backgroundColor: selected ? colors.headerAccent : HEADER_PILL_BG, opacity: disabled ? 0.5 : 1 },
+      ]}
     >
       <Text style={[typography.captionBold, { color: selected ? colors.headerBg : colors.headerText }]}>{label}</Text>
     </Pressable>

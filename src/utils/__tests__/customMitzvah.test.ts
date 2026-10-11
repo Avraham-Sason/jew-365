@@ -1,4 +1,14 @@
-import { ALL_DAY_MIN, WEEKDAYS, categoryForWindow, isActiveOn, reminderClock } from '../customMitzvah';
+import {
+  ALL_DAY_MIN,
+  DraftBlock,
+  WEEKDAYS,
+  categoryForWindow,
+  cleanContentBlock,
+  cleanContentBlocks,
+  isActiveOn,
+  reminderClock,
+  siddurTextName,
+} from '../customMitzvah';
 
 describe('categoryForWindow', () => {
   it.each([
@@ -62,5 +72,93 @@ describe('reminderClock', () => {
 
   it('is null for an offset that is not a number', () => {
     expect(reminderClock('08:00', '12:00', { anchor: 'start', offsetMin: Number.NaN })).toBeNull();
+  });
+});
+
+const storedSiddurBlock = (he: string, textId: string) => ({ type: 'siddur', he, textId }) as unknown as DraftBlock;
+
+describe('cleanContentBlock', () => {
+  it('drops a siddur block whose text id was retired', () => {
+    expect(cleanContentBlock(storedSiddurBlock('ציצית', 'tzitzit'))).toBeNull();
+  });
+
+  it('keeps a siddur block for a standalone text', () => {
+    expect(cleanContentBlock(storedSiddurBlock('תיקון הכללי', 'tikkun_haklali'))).toEqual({
+      type: 'siddur',
+      he: 'תיקון הכללי',
+      textId: 'tikkun_haklali',
+    });
+  });
+
+  it('keeps a siddur block for a mitzvah text', () => {
+    expect(cleanContentBlock(storedSiddurBlock('הנחת תפילין', 'tefillin'))).toEqual({
+      type: 'siddur',
+      he: 'הנחת תפילין',
+      textId: 'tefillin',
+    });
+  });
+
+  it('drops a siddur block that has no text chosen yet', () => {
+    expect(cleanContentBlock({ type: 'siddur', he: 'x', textId: null })).toBeNull();
+  });
+
+  it('drops a text or blessing block whose Hebrew is only whitespace', () => {
+    expect(cleanContentBlock({ type: 'text', he: '   ' })).toBeNull();
+    expect(cleanContentBlock({ type: 'blessing', he: '\n\t ' })).toBeNull();
+  });
+
+  it('trims the Hebrew of a text block', () => {
+    expect(cleanContentBlock({ type: 'text', he: '  שלום  ', en: 'Hello' })).toEqual({
+      type: 'text',
+      he: 'שלום',
+      en: 'Hello',
+    });
+  });
+
+  it('keeps a link only with a url, trimmed', () => {
+    expect(cleanContentBlock({ type: 'link', he: 'אתר', url: '   ' })).toBeNull();
+    expect(cleanContentBlock({ type: 'link', he: 'אתר', url: ' https://example.com ' })).toEqual({
+      type: 'link',
+      he: 'אתר',
+      url: 'https://example.com',
+    });
+  });
+});
+
+describe('cleanContentBlocks', () => {
+  it('keeps the complete blocks in order and drops the rest', () => {
+    expect(
+      cleanContentBlocks([
+        { type: 'text', he: 'א' },
+        storedSiddurBlock('ציצית', 'tzitzit'),
+        { type: 'siddur', he: '', textId: null },
+        storedSiddurBlock('אשר יצר', 'asher_yatzar'),
+      ]),
+    ).toEqual([
+      { type: 'text', he: 'א' },
+      { type: 'siddur', he: 'אשר יצר', textId: 'asher_yatzar' },
+    ]);
+  });
+
+  it('is undefined when nothing is left', () => {
+    expect(cleanContentBlocks([])).toBeUndefined();
+    expect(cleanContentBlocks([storedSiddurBlock('ציצית', 'tzitzit'), { type: 'text', he: ' ' }])).toBeUndefined();
+  });
+});
+
+describe('siddurTextName', () => {
+  it('names a standalone text in each language', () => {
+    expect(siddurTextName('asher_yatzar', 'he')).toBe('אשר יצר');
+    expect(siddurTextName('asher_yatzar', 'en')).toBe('Asher Yatzar');
+  });
+
+  it('names a mitzvah text in each language', () => {
+    expect(siddurTextName('tefillin', 'he')).toBe('הנחת תפילין');
+    expect(siddurTextName('tefillin', 'en')).toBe('Tefillin');
+  });
+
+  it('is null for a retired text id', () => {
+    expect(siddurTextName('tzitzit', 'he')).toBeNull();
+    expect(siddurTextName('tzitzit', 'en')).toBeNull();
   });
 });

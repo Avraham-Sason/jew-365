@@ -253,3 +253,8 @@ export const BRAND = {
 } as const;
 
 export const isDarkTheme = (name: ThemeName): boolean => DARK_THEMES.includes(name);
+
+export function paletteForGender(gender: 'male' | 'female', current: ThemeName): ThemeName {
+  if (isDarkTheme(current)) return gender === 'female' ? 'plum' : 'dark';
+  return gender === 'female' ? 'pink' : 'gold';
+}

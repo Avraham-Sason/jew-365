@@ -10,9 +10,10 @@ type Props = {
   level: number;
   onChange: (level: number) => void;
   tone: 'header' | 'surface';
+  compact?: boolean;
 };
 
-export function ScrollSpeedStepper({ level, onChange, tone }: Props) {
+export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const current = scrollSpeedLevel(level);
@@ -29,7 +30,11 @@ export function ScrollSpeedStepper({ level, onChange, tone }: Props) {
         accessibilityLabel={accessibilityLabel}
         accessibilityState={{ disabled }}
         hitSlop={4}
-        style={({ pressed }) => [styles.step, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }]}
+        style={({ pressed }) => [
+          styles.step,
+          compact && styles.stepCompact,
+          { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 },
+        ]}
       >
         <Text style={[typography.bodyBold, { color: textColor }]}>{label}</Text>
       </Pressable>
@@ -46,7 +51,7 @@ export function ScrollSpeedStepper({ level, onChange, tone }: Props) {
     >
       {step('−', t('siddur.scrollSlower'), current - 1)}
       <Text
-        style={[typography.captionBold, styles.level, { color: textColor }]}
+        style={[typography.captionBold, styles.level, compact && styles.levelCompact, { color: textColor }]}
         accessibilityLabel={t('siddur.scrollSpeed', { level: current, max })}
       >
         {current}
@@ -68,8 +73,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     alignItems: 'center',
   },
+  stepCompact: {
+    minWidth: 26,
+  },
   level: {
     minWidth: 18,
     textAlign: 'center',
+  },
+  levelCompact: {
+    minWidth: 16,
   },
 });

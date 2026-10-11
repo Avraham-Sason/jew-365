@@ -12,13 +12,7 @@ export type UserSettings = {
 };
 
 export type TimeType =
-  | 'fixed-moment'
-  | 'range-within-day'
-  | 'all-day'
-  | 'sunset-trigger'
-  | 'date-range'
-  | 'monthly-window'
-  | 'annual-seasonal';
+  'fixed-moment' | 'range-within-day' | 'sunset-trigger' | 'date-range' | 'monthly-window' | 'annual-seasonal';
 
 export type MitzvahCategory =
   'daily-morning' | 'daily-afternoon' | 'daily-evening' | 'daily-allday' | 'weekly' | 'seasonal' | 'learning';

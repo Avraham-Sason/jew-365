@@ -108,6 +108,23 @@ describe('HeaderPill', () => {
     expect(screen.getByText('Today')).toHaveStyle({ color: THEMES.gold.headerText });
   });
 
+  it('is enabled by default', () => {
+    renderWithTheme(<HeaderPill label="Today" onPress={jest.fn()} />);
+    const pill = screen.getByRole('button', { name: 'Today' });
+    expect(pill).toBeEnabled();
+    expect(pill).toHaveStyle({ opacity: 1 });
+  });
+
+  it('disabled fades the pill, marks it disabled and swallows the press', () => {
+    const onPress = jest.fn();
+    renderWithTheme(<HeaderPill label="Next" disabled onPress={onPress} />);
+    const pill = screen.getByRole('button', { name: 'Next' });
+    expect(pill).toBeDisabled();
+    expect(pill).toHaveStyle({ opacity: 0.5 });
+    fireEvent.press(pill);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   it.each(THEME_NAMES)('%s: selected turns the pill headerAccent with headerBg text', (name) => {
     useUserStore.setState({ theme: name });
     renderWithTheme(<HeaderPill label="Today" selected onPress={jest.fn()} />);

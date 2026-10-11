@@ -46,10 +46,15 @@ type MitzvotState = {
 };
 
 const DEFAULT_ACTIVE: Record<string, ActiveMitzvahState> = Object.fromEntries(
-  MITZVOT.filter((m) =>
-    ['tefillin', 'tzitzit', 'krias_shma_shacharit', 'shacharit', 'mincha', 'maariv'].includes(m.id),
-  ).map((m) => [m.id, { enabled: true }]),
+  MITZVOT.filter((m) => ['tefillin', 'krias_shma_shacharit', 'shacharit', 'mincha', 'maariv'].includes(m.id)).map(
+    (m) => [m.id, { enabled: true }],
+  ),
 );
+
+const RETIRED_MITZVOT = ['tzitzit'];
+
+const withoutRetired = (active: Record<string, ActiveMitzvahState>) =>
+  Object.fromEntries(Object.entries(active).filter(([id]) => !RETIRED_MITZVOT.includes(id)));
 
 for (const m of MITZVOT) {
   if (!(m.id in DEFAULT_ACTIVE)) DEFAULT_ACTIVE[m.id] = { enabled: false };
@@ -111,7 +116,7 @@ export const useMitzvotStore = create<MitzvotState>()(
         return {
           ...current,
           ...saved,
-          activeMitzvot: { ...DEFAULT_ACTIVE, ...(saved?.activeMitzvot ?? {}) },
+          activeMitzvot: { ...DEFAULT_ACTIVE, ...withoutRetired(saved?.activeMitzvot ?? {}) },
         };
       },
     },

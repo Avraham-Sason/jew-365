@@ -40,6 +40,8 @@ export type PlanInput = {
   checkIns: CheckIns;
   enabledSince: Record<string, number>;
   hilulotEnabled: boolean;
+  roshChodeshEnabled: boolean;
+  weeklyReportEnabled: boolean;
   taharahEnabled: boolean;
   taharah: {
     events: TaharahEvent[];

@@ -1,4 +1,5 @@
 import type { Nusach } from '@/types/mitzvah';
+import { paletteForGender } from '@/theme/colors';
 import { useMitzvotStore } from './useMitzvotStore';
 import { useTaharahStore } from './useTaharahStore';
 import { Gender, MaritalStatus, useUserStore } from './useUserStore';
@@ -6,10 +7,10 @@ import { Gender, MaritalStatus, useUserStore } from './useUserStore';
 export const taharahOffered = (user: { gender: Gender | null; maritalStatus: MaritalStatus | null }): boolean =>
   user.gender !== null && user.maritalStatus === 'married';
 
-// The defaults switch on tefillin and tzitzit for everyone, so a woman used to finish onboarding
+// The defaults switch tefillin on for everyone, so a woman used to finish onboarding
 // with tefillin reminders. Applied only when the answer changes, so re-tapping the same chip never
 // undoes a choice made in the library.
-export const MENS_MITZVOT = ['tefillin', 'tzitzit'] as const;
+export const MENS_MITZVOT = ['tefillin'] as const;
 
 function applyGenderDefaults(next: Gender, previous: Gender | null): void {
   if (previous === next) return;
@@ -23,6 +24,7 @@ export function chooseGender(next: Gender): void {
   const previous = user.gender;
   user.setGender(next);
   applyGenderDefaults(next, previous);
+  if (previous !== next) user.setTheme(paletteForGender(next, user.theme));
   if (user.taharahEnabled) useTaharahStore.getState().setRoleForGender(next);
 }
 

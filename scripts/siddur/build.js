@@ -2,7 +2,15 @@
 const fs = require('fs');
 const path = require('path');
 const { HDate, OmerEvent } = require('@hebcal/core');
-const { SOURCES, TEXTS, CONDITIONAL_INSTRUCTION, ALWAYS_SAID, RULES, MINYAN_ONLY_TITLES } = require('./manifest');
+const {
+  SOURCES,
+  TEXTS,
+  CONDITIONAL_INSTRUCTION,
+  ALWAYS_SAID,
+  RULES,
+  MINYAN_ONLY_TITLES,
+  HEBREW_ONLY_TEXTS,
+} = require('./manifest');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const CACHE_DIR = path.join(__dirname, '.cache');
@@ -82,10 +90,80 @@ function textBetween(wikitext, after, before, key) {
   return rest.slice(0, start.index);
 }
 
+const TRANSPARENT_TEMPLATES = ['עם-ניקוד'];
+const HEADING_LINE = /^(={1,6})[ \t]*(.+?)[ \t]*\1[ \t]*$/;
+
+function withoutVowels(text) {
+  return text.replace(/[֑-ׇ]/g, '');
+}
+
+function withoutWrappers(wikitext, key) {
+  let out = wikitext;
+  for (const name of TRANSPARENT_TEMPLATES) {
+    const open = `{{${name}|`;
+    const start = out.indexOf(open);
+    if (start === -1) continue;
+    let depth = 0;
+    let end = -1;
+    for (let i = start; i < out.length - 1 && end === -1; i++) {
+      const pair = out.slice(i, i + 2);
+      if (pair === '{{') {
+        depth++;
+        i++;
+      } else if (pair === '}}') {
+        depth--;
+        if (depth === 0) end = i;
+        i++;
+      }
+    }
+    if (end === -1) throw new Error(`${key}: {{${name}}} never closes`);
+    out = out.slice(0, start) + out.slice(start + open.length, end) + out.slice(end + 2);
+  }
+  return out;
+}
+
+function headingKey(text) {
+  return withoutVowels(text.normalize('NFC')).replace(/\s+/g, ' ').trim();
+}
+
+function headingsOf(wikitext) {
+  const headings = [];
+  let offset = 0;
+  for (const line of wikitext.split('\n')) {
+    const found = HEADING_LINE.exec(line);
+    if (found)
+      headings.push({ level: found[1].length, key: headingKey(found[2]), start: offset, end: offset + line.length });
+    offset += line.length + 1;
+  }
+  return headings;
+}
+
+function headingNamed(headings, name, key) {
+  const wanted = headingKey(name.replace(/^#\s*/, ''));
+  const found = headings.filter((heading) => heading.key === wanted);
+  if (found.length !== 1) throw new Error(`${key}: ${found.length} headings named "${wanted}"`);
+  return found[0];
+}
+
+function headingText(wikitext, part, key) {
+  const headings = headingsOf(wikitext);
+  const [after, before] = part.split(' .. ');
+  const first = headingNamed(headings, after, key);
+  if (before !== undefined) {
+    const last = headingNamed(headings, before, key);
+    if (last.start < first.end) throw new Error(`${key}: heading "${before}" comes before "${after}"`);
+    return wikitext.slice(first.end, last.start);
+  }
+  const next = headings.find((heading) => heading.start > first.start && heading.level <= first.level);
+  return wikitext.slice(first.end, next?.start ?? wikitext.length);
+}
+
 const WIKI_TEMPLATES = {
   ש: () => '<br>',
   הור: ([note]) => `<small>${note}</small>`,
   הור2: ([note]) => `<small>${note}</small>`,
+  'הוראה למתפללים': ([note]) => `<small>${note}</small>`,
+  צת: () => '',
   הור1: ([condition, text]) => `<small>${condition}</small><opt>${text}</opt>`,
   נוא: ([text], named) => `(<small>${named['הוראה']}</small> ${text})`,
   צ: ([text]) => text,
@@ -107,20 +185,33 @@ function expandTemplate(body, key) {
   );
 }
 
-async function wikiToHtml(wikitext, key) {
+function pinnedPage(page, key) {
+  const sourceKey = Object.keys(SOURCES).find((candidate) => SOURCES[candidate].wikisource === page);
+  if (!sourceKey) throw new Error(`${key}: transcludes "${page}", which is not a pinned source`);
+  return sourceKey;
+}
+
+async function wikiToHtml(wikitext, key, used) {
   let html = wikitext
     .replace(/<noinclude>[\s\S]*?<\/noinclude>/g, '')
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<קטע (?:התחלה|סוף)=[^>]*\/>/g, '');
+    .replace(/<קטע (?:התחלה|סוף)=[^>]*\/>/g, '')
+    .replace(new RegExp(HEADING_LINE.source, 'gm'), (_, __, heading) => `<small>${withoutVowels(heading)}</small>`);
   for (
     let found = /\{\{#קטע:([^|{}]+)\|([^|{}]+)\}\}/.exec(html);
     found;
     found = /\{\{#קטע:([^|{}]+)\|([^|{}]+)\}\}/.exec(html)
   ) {
     const [page, label] = [found[1].trim(), found[2].trim()];
-    const sourceKey = Object.keys(SOURCES).find((candidate) => SOURCES[candidate].wikisource === page);
-    if (!sourceKey) throw new Error(`${key}: transcludes "${page}", which is not a pinned source`);
-    const included = await wikiToHtml(labeledText(await loadSource(sourceKey), label, sourceKey), sourceKey);
+    const sourceKey = pinnedPage(page, key);
+    used.add(sourceKey);
+    const included = await wikiToHtml(labeledText(await loadSource(sourceKey), label, sourceKey), sourceKey, used);
+    html = html.slice(0, found.index) + included + html.slice(found.index + found[0].length);
+  }
+  for (let found = /\{\{:([^|{}]+)\}\}/.exec(html); found; found = /\{\{:([^|{}]+)\}\}/.exec(html)) {
+    const sourceKey = pinnedPage(found[1].trim(), key);
+    used.add(sourceKey);
+    const included = await wikiToHtml(withoutWrappers(await loadSource(sourceKey), sourceKey), sourceKey, used);
     html = html.slice(0, found.index) + included + html.slice(found.index + found[0].length);
   }
   for (let previous = ''; previous !== html;) {
@@ -135,13 +226,16 @@ async function wikiToHtml(wikitext, key) {
   return html;
 }
 
-async function wikisourceSegments(key, nodePath) {
-  const wikitext = (await loadSource(key)).replace(/<noinclude>[\s\S]*?<\/noinclude>/g, '');
+async function wikisourceSegments(key, nodePath, used) {
+  const wikitext = withoutWrappers((await loadSource(key)).replace(/<noinclude>[\s\S]*?<\/noinclude>/g, ''), key);
   const segments = [];
+  used.add(key);
   for (const part of nodePath.split(' | ')) {
     const [after, before] = part.split(' .. ');
-    const raw = before === undefined ? labeledText(wikitext, part, key) : textBetween(wikitext, after, before, key);
-    const html = await wikiToHtml(raw, key);
+    let raw;
+    if (part.startsWith('#')) raw = headingText(wikitext, part, key);
+    else raw = before === undefined ? labeledText(wikitext, part, key) : textBetween(wikitext, after, before, key);
+    const html = await wikiToHtml(raw, key, used);
     segments.push(
       ...html
         .split(/\n[ \t]*\n/)
@@ -152,10 +246,11 @@ async function wikisourceSegments(key, nodePath) {
   return segments;
 }
 
-async function segmentsOf(sourceKey, nodePath) {
+async function segmentsOf(sourceKey, nodePath, used = new Set()) {
   const source = SOURCES[sourceKey];
   if (!source) throw new Error(`unknown source ${sourceKey}`);
-  if (source.wikisource) return wikisourceSegments(sourceKey, nodePath);
+  if (source.wikisource) return wikisourceSegments(sourceKey, nodePath, used);
+  used.add(sourceKey);
   return segmentsAt(await loadSource(sourceKey), nodePath, sourceKey);
 }
 
@@ -573,12 +668,13 @@ function withLabels(draft, parts, label) {
 
 async function buildSection(spec, ctx) {
   const label = `${ctx.nusach}/${ctx.textId}/${spec.title.he}`;
-  const heAll = await segmentsOf(spec.he, spec.path);
+  const used = new Set();
+  const heAll = await segmentsOf(spec.he, spec.path, used);
+  for (const key of used) ctx.credits.add(key);
   const enAll = spec.en ? await segmentsOf(spec.en, spec.enPath ?? spec.path) : [];
   const from = spec.from ?? 0;
   const to = spec.to ?? heAll.length - 1;
   if (to >= heAll.length) throw new Error(`${label}: range ends at ${to} but source has ${heAll.length} segments`);
-  ctx.credits.add(spec.he);
   const omerOf = spec.omer ? tagOmerDays(spec, label) : () => undefined;
   const editsBySeg = bySegment(spec.edits);
   const enEditsBySeg = bySegment(spec.enEdits);
@@ -790,7 +886,7 @@ async function main() {
       const parts = [];
       for (const spec of specs) parts.push(await buildSection(spec, ctx));
       const sections = mergeSameTitledSections(parts);
-      const filled = fillTranslations(sections, memory, credits);
+      const filled = HEBREW_ONLY_TEXTS.includes(textId) ? 0 : fillTranslations(sections, memory, credits);
       const segments = sections.flatMap((s) => s.segments);
       const translated = segments.filter((s) => s.en).length;
       report.push(

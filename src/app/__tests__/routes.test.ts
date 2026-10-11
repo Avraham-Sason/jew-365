@@ -28,6 +28,8 @@ describe('expo-router routes', () => {
     expect(routes).toContain('siddur/index');
     expect(routes).toContain('checkin');
     expect(routes).toContain('hilulot');
+    expect(routes).toContain('rosh-chodesh');
+    expect(routes).toContain('report');
     expect(routes).toContain('mitzvot');
   });
 

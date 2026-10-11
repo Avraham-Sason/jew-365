@@ -32,6 +32,17 @@ import { dayFeatures } from '@/utils/siddur';
 import { useI18n } from '@/i18n';
 
 const MITZVAH_TEXTS = MITZVOT.filter((mitzvah) => mitzvahTextId(mitzvah.id));
+const PRAYER_IDS = ['shacharit', 'mincha', 'maariv'];
+
+function CatalogSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.group}>
+      <SectionLabel text={title} />
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>{children}</View>
+    </View>
+  );
+}
 
 export default function SiddurScreen() {
   const { colors } = useTheme();
@@ -77,6 +88,24 @@ export default function SiddurScreen() {
   const chevron = (
     <Text style={[typography.bodyBold, { color: colors.textMuted }]}>{language === 'he' ? '‹' : '›'}</Text>
   );
+  const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
+
+  const mitzvahRow = ({ mitzvah, window, hasText, openNow }: (typeof today)[number]) => (
+    <ListRow
+      key={mitzvah.id}
+      icon={iconFor(mitzvah.icon)}
+      iconTone={hasText ? 'accent' : 'muted'}
+      title={nameFor(mitzvah)}
+      caption={
+        openNow ? t('siddur.today.open') : hasText && window ? laterCaption(window.start) : t('siddur.catalog.notToday')
+      }
+      trailing={hasText ? chevron : undefined}
+      onPress={() =>
+        window && router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
+      }
+      disabled={!hasText}
+    />
+  );
 
   const row = (id: StandaloneTextId, group: SiddurGroup) => {
     const { name, availableLabel } = STANDALONE_TEXTS[id];
@@ -102,39 +131,12 @@ export default function SiddurScreen() {
         subtitle={`${t('siddur.catalog.subtitle')} · ${t(`nusach.${nusach}`)}`}
       />
       <ScrollView contentContainerStyle={styles.list}>
-        <View style={styles.group}>
-          <SectionLabel text={t('siddur.group.today')} />
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {today.map(({ mitzvah, window, hasText, openNow }) => (
-              <ListRow
-                key={mitzvah.id}
-                icon={iconFor(mitzvah.icon)}
-                iconTone={hasText ? 'accent' : 'muted'}
-                title={nameFor(mitzvah)}
-                caption={
-                  openNow
-                    ? t('siddur.today.open')
-                    : hasText && window
-                      ? laterCaption(window.start)
-                      : t('siddur.catalog.notToday')
-                }
-                trailing={hasText ? chevron : undefined}
-                onPress={() =>
-                  window &&
-                  router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
-                }
-                disabled={!hasText}
-              />
-            ))}
-          </View>
-        </View>
+        <CatalogSection title={t('siddur.group.today')}>{today.map(mitzvahRow)}</CatalogSection>
         {groups.map(({ group, ids }) => (
-          <View key={group} style={styles.group}>
-            <SectionLabel text={t(`siddur.group.${group}`)} />
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              {ids.map((id) => row(id, group))}
-            </View>
-          </View>
+          <CatalogSection key={group} title={t(`siddur.group.${group}`)}>
+            {group === 'prayers' ? prayers.map(mitzvahRow) : null}
+            {ids.map((id) => row(id, group))}
+          </CatalogSection>
         ))}
       </ScrollView>
     </SafeAreaView>

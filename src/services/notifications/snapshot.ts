@@ -67,6 +67,8 @@ export function readPlanInput(now: Date, scope: PlanScope = currentScope(now)): 
     checkIns,
     enabledSince: enabledSinceOf(useMitzvotStore.getState().activeMitzvot),
     hilulotEnabled: user.hilulotEnabled,
+    roshChodeshEnabled: user.roshChodeshEnabled,
+    weeklyReportEnabled: user.weeklyReportEnabled,
     taharahEnabled: user.taharahEnabled,
     taharah: {
       events: taharah.events,

@@ -3,6 +3,13 @@ import { DateTime } from 'luxon';
 import { CalendarInfo, HebrewDate, HolyBlock, HolyBlockKind, Location, Zmanim } from '@/types/zmanim';
 import { ZmanimService, candleLightingMinutes, holyBlockExit } from '@/services/ZmanimService';
 
+export type CalendarLocale = 'he' | 'en' | 'he-x-NoNikud';
+
+export type HolidayExtras = { cholHamoed?: boolean; erev?: boolean };
+
+const HOLIDAY_FLAGS =
+  flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.ROSH_CHODESH | flags.MINOR_HOLIDAY | flags.MODERN_HOLIDAY;
+
 function toHDate(date: Date): HDate {
   return new HDate(date);
 }
@@ -152,7 +159,7 @@ export const HebcalService = {
     return beforeDawn ? civil : civil.next();
   },
 
-  getParasha(date: Date, loc: Location): string | undefined {
+  getParasha(date: Date, loc: Location, locale: CalendarLocale = 'he'): string | undefined {
     const events = HebrewCalendar.calendar({
       start: date,
       end: date,
@@ -161,29 +168,18 @@ export const HebcalService = {
       il: loc.inIsrael,
     });
     const parasha = events.find((e) => e.getFlags() & flags.PARSHA_HASHAVUA);
-    return parasha?.render('he');
+    return parasha?.render(locale);
   },
 
-  getHolidays(date: Date, loc: Location, locale: 'he' | 'en' = 'he'): string[] {
+  getHolidays(date: Date, loc: Location, locale: CalendarLocale = 'he', extras: HolidayExtras = {}): string[] {
     const events = HebrewCalendar.calendar({
       start: date,
       end: date,
       location: buildLocation(loc),
       il: loc.inIsrael,
     });
-    return events
-      .filter((e) => {
-        const f = e.getFlags();
-        return (
-          f & flags.CHAG ||
-          f & flags.MAJOR_FAST ||
-          f & flags.MINOR_FAST ||
-          f & flags.ROSH_CHODESH ||
-          f & flags.MINOR_HOLIDAY ||
-          f & flags.MODERN_HOLIDAY
-        );
-      })
-      .map((e) => e.render(locale));
+    const mask = HOLIDAY_FLAGS | (extras.cholHamoed ? flags.CHOL_HAMOED : 0) | (extras.erev ? flags.EREV : 0);
+    return events.filter((e) => e.getFlags() & mask).map((e) => e.render(locale));
   },
 
   isShabbat(date: Date, loc?: Location): boolean {
