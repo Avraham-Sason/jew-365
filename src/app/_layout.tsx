@@ -224,6 +224,7 @@ function RootInner() {
             <Stack.Screen name="hilulot" options={{ presentation: 'card' }} />
             <Stack.Screen name="rosh-chodesh" options={{ presentation: 'card' }} />
             <Stack.Screen name="report" options={{ presentation: 'card' }} />
+            <Stack.Screen name="schedule" options={{ presentation: 'card' }} />
             <Stack.Screen name="mitzvot" options={{ presentation: 'card' }} />
             <Stack.Screen name="taharah" options={{ presentation: 'card' }} />
           </Stack>

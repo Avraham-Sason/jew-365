@@ -1,4 +1,5 @@
 import { Text } from 'react-native';
+import { Path } from 'react-native-svg';
 import { screen, userEvent } from '@testing-library/react-native';
 import { ListRow } from '../ListRow';
 import { IconTile } from '../IconTile';
@@ -91,5 +92,37 @@ describe('ListRow', () => {
   it('renders the trailing node after the title', () => {
     renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" trailing={<Text>3 left</Text>} />);
     expect(screen.getByText('3 left')).toBeOnTheScreen();
+  });
+
+  describe('the forward chevron', () => {
+    const chevrons = () =>
+      screen
+        .UNSAFE_getAllByType(Path)
+        .map((path) => path.props.d)
+        .filter((d) => d === 'M15,6L9,12L15,18' || d === 'M9,6L15,12L9,18');
+
+    it('is drawn pointing left in Hebrew', () => {
+      useUserStore.setState({ language: 'he' });
+      renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" chevron />);
+      expect(chevrons()).toEqual(['M15,6L9,12L15,18']);
+      expect(screen.queryByText('‹')).toBeNull();
+      expect(screen.queryByText('›')).toBeNull();
+    });
+
+    it('is drawn pointing right in English', () => {
+      useUserStore.setState({ language: 'en' });
+      renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" chevron />);
+      expect(chevrons()).toEqual(['M9,6L15,12L9,18']);
+      expect(screen.queryByText('‹')).toBeNull();
+      expect(screen.queryByText('›')).toBeNull();
+    });
+
+    it('is left out when both trailing and chevron are given', () => {
+      renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" trailing={<Text>3 left</Text>} chevron />);
+      expect(screen.getByText('3 left')).toBeOnTheScreen();
+      expect(chevrons()).toEqual([]);
+      expect(screen.queryByText('‹')).toBeNull();
+      expect(screen.queryByText('›')).toBeNull();
+    });
   });
 });

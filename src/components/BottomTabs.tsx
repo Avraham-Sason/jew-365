@@ -20,11 +20,13 @@ function HomeIcon({ color }: { color: string }) {
   );
 }
 
-function CalIcon({ color }: { color: string }) {
+function MoreIcon({ color }: { color: string }) {
   return (
     <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-      <Rect x={3} y={4} width={18} height={18} rx={3} stroke={color} strokeWidth={2} />
-      <Path d="M8 2V6M16 2V6M3 10H21" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Rect x={3} y={3} width={7} height={7} rx={2} stroke={color} strokeWidth={2} />
+      <Rect x={14} y={3} width={7} height={7} rx={2} stroke={color} strokeWidth={2} />
+      <Rect x={3} y={14} width={7} height={7} rx={2} stroke={color} strokeWidth={2} />
+      <Rect x={14} y={14} width={7} height={7} rx={2} stroke={color} strokeWidth={2} />
     </Svg>
   );
 }
@@ -63,14 +65,14 @@ export function BottomTabs({ state, descriptors, navigation }: BottomTabBarProps
   );
   const labels: Record<string, string> = {
     home: t('nav.home'),
-    schedule: t('nav.schedule'),
+    more: t('nav.more'),
     history: t('nav.history'),
     siddur: t('nav.siddur'),
     settings: t('nav.settings'),
   };
   const icons: Record<string, (color: string) => React.ReactNode> = {
     home: (color) => <HomeIcon color={color} />,
-    schedule: (color) => <CalIcon color={color} />,
+    more: (color) => <MoreIcon color={color} />,
     history: (color) => <HistoryIcon color={color} />,
     siddur: (color) => <MitzvahIcon name="siddur" size={19} color={color} />,
     settings: (color) => <SettingsIcon color={color} />,

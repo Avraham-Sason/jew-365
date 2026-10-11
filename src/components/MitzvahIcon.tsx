@@ -19,6 +19,10 @@ export const ICON_NAMES = [
   'night',
   'moon',
   'occasions',
+  'calendar',
+  'chok',
+  'chevronLeft',
+  'chevronRight',
   'sparkle',
   'check',
 ] as const;
@@ -177,6 +181,26 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Line x1={8.5} y1={20.5} x2={15.5} y2={20.5} />
     </>
   ),
+  calendar: ({ fill }) => (
+    <>
+      <Rect x={3.5} y={5} width={17} height={15.5} rx={2.5} fill={fill} />
+      <Line x1={3.5} y1={10} x2={20.5} y2={10} />
+      <Line x1={8} y1={3} x2={8} y2={7} />
+      <Line x1={16} y1={3} x2={16} y2={7} />
+    </>
+  ),
+  chok: ({ fill }) => (
+    <>
+      <Path d="M12,7Q8.5,5 3,6V18Q8.5,17 12,19.5Z" fill={fill} />
+      <Path d="M12,7Q15.5,5 21,6V18Q15.5,17 12,19.5Z" fill={fill} />
+      <Line x1={5.5} y1={10} x2={9.5} y2={10} />
+      <Line x1={5.5} y1={13.5} x2={9.5} y2={13.5} />
+      <Line x1={14.5} y1={10} x2={18.5} y2={10} />
+      <Line x1={14.5} y1={13.5} x2={18.5} y2={13.5} />
+    </>
+  ),
+  chevronLeft: () => <Path d="M15,6L9,12L15,18" />,
+  chevronRight: () => <Path d="M9,6L15,12L9,18" />,
   sparkle: ({ fill }) => (
     <Path d="M12,2.8Q13.66,10.34 21.2,12Q13.66,13.66 12,21.2Q10.34,13.66 2.8,12Q10.34,10.34 12,2.8Z" fill={fill} />
   ),

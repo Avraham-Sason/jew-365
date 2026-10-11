@@ -205,9 +205,7 @@ export default function SettingsScreen() {
             title={t('settings.mitzvot')}
             caption={t('settings.mitzvotCaption', { count: enabledMitzvotCount })}
             onPress={() => router.push('/mitzvot')}
-            trailing={
-              <Text style={[typography.bodyBold, { color: colors.textMuted }]}>{language === 'he' ? '‹' : '›'}</Text>
-            }
+            chevron
             style={styles.mitzvotRow}
           />
         </View>

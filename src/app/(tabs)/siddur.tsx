@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { HDate } from '@hebcal/core';
@@ -24,7 +24,6 @@ import { useNow } from '@/hooks/useNow';
 import { dateKey } from '@/stores/useCompletionsStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
-import { typography } from '@/theme/typography';
 import { SiddurGroup, StandaloneTextId } from '@/types/siddur';
 import { currentOrNextWindow } from '@/utils/buildDayTimeline';
 import { clockOf } from '@/utils/clock';
@@ -85,9 +84,6 @@ export default function SiddurScreen() {
     const day = isTomorrow ? t('common.tomorrow') : DateTime.fromJSDate(start).setLocale(language).toFormat('cccc');
     return t('siddur.today.laterOn', { day, time: clockOf(start) });
   };
-  const chevron = (
-    <Text style={[typography.bodyBold, { color: colors.textMuted }]}>{language === 'he' ? '‹' : '›'}</Text>
-  );
   const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
 
   const mitzvahRow = ({ mitzvah, window, hasText, openNow }: (typeof today)[number]) => (
@@ -99,7 +95,7 @@ export default function SiddurScreen() {
       caption={
         openNow ? t('siddur.today.open') : hasText && window ? laterCaption(window.start) : t('siddur.catalog.notToday')
       }
-      trailing={hasText ? chevron : undefined}
+      chevron={hasText}
       onPress={() =>
         window && router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
       }
@@ -117,7 +113,7 @@ export default function SiddurScreen() {
         iconTone={open ? 'accent' : 'muted'}
         title={label(name)}
         caption={open ? undefined : availableLabel ? label(availableLabel) : t('siddur.catalog.notToday')}
-        trailing={open ? chevron : undefined}
+        chevron={open}
         onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
         disabled={!open}
       />

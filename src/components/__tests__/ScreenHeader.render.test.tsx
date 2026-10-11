@@ -47,11 +47,11 @@ describe('ScreenHeader', () => {
 
   it('points the back chevron right in Hebrew and left in English', () => {
     const { unmount } = renderWithTheme(<ScreenHeader title="Hilulot" onBack={jest.fn()} />);
-    expect(screen.UNSAFE_getByType(Path).props.d).toBe('M9 6l6 6-6 6');
+    expect(screen.UNSAFE_getByType(Path).props.d).toBe('M9,6L15,12L9,18');
     unmount();
     useUserStore.setState({ language: 'en' });
     renderWithTheme(<ScreenHeader title="Hilulot" onBack={jest.fn()} />);
-    expect(screen.UNSAFE_getByType(Path).props.d).toBe('M15 6l-6 6 6 6');
+    expect(screen.UNSAFE_getByType(Path).props.d).toBe('M15,6L9,12L15,18');
   });
 
   it('paints the back pill on the translucent header white', () => {

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { InteractionManager, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
-import { NavBar } from '@/components/NavBar';
-import { HeaderPill } from '@/components/ScreenHeader';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
+import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { getLocationName } from '@/data/cities';
 import { useDayModel } from '@/hooks/useDayModel';
@@ -69,7 +69,7 @@ export default function ScheduleScreen() {
   }, [view, enabled, completions, cursor, location, settings, language, t]);
 
   // 42 cells × (hebcal calendar + zmanim + every window) on the render thread. Deferred behind
-  // InteractionManager the way the history screen already does, so opening the tab is not a freeze.
+  // InteractionManager the way the history screen already does, so switching to the month is not a freeze.
   const [monthReady, setMonthReady] = useState(false);
   useEffect(() => {
     if (view !== 'month') {
@@ -101,6 +101,11 @@ export default function ScheduleScreen() {
     });
   }, [view, monthReady, cursor, enabled, completions, location, settings, language, t]);
 
+  const monthWeeks = useMemo(
+    () => Array.from({ length: monthGrid.length / 7 }, (_, row) => monthGrid.slice(row * 7, row * 7 + 7)),
+    [monthGrid],
+  );
+
   const highlightIndex = useMemo(() => {
     if (!isSelectedToday) return -1;
     const nowMs = Date.now();
@@ -113,11 +118,12 @@ export default function ScheduleScreen() {
   const subtitle = `${cursor.setLocale(language).toFormat(language === 'he' ? 'd LLLL yyyy' : 'LLL d, yyyy')} · ${getLocationName(location, language)}`;
   const prevArrow = language === 'he' ? '→' : '←';
   const nextArrow = language === 'he' ? '←' : '→';
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
-      <NavBar title={t('schedule.title')} subtitle={subtitle} />
-      <View style={[styles.controls, { backgroundColor: colors.headerBg }]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={t('schedule.title')} subtitle={subtitle} onBack={goBack}>
         <SegmentedControl
           tone="header"
           options={VIEW_MODES.map((value) => ({ value, label: t(`schedule.${value}`) }))}
@@ -142,7 +148,7 @@ export default function ScheduleScreen() {
             accessibilityLabel={t('common.next')}
           />
         </View>
-      </View>
+      </ScreenHeader>
 
       {view === 'day' ? (
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -253,7 +259,7 @@ export default function ScheduleScreen() {
                       },
                     ]}
                   >
-                    {item.done ? <Text style={[typography.micro, { color: colors.onGold }]}>✓</Text> : null}
+                    {item.done ? <MitzvahIcon name="check" size={12} color={colors.onGold} /> : null}
                   </View>
                 ) : null}
               </Pressable>
@@ -315,42 +321,46 @@ export default function ScheduleScreen() {
       ) : null}
 
       {view === 'month' ? (
-        <View style={styles.monthWrap}>
-          <View style={styles.monthHeader}>
+        <ScrollView contentContainerStyle={styles.monthWrap}>
+          <View style={styles.monthRow}>
             {Array.from({ length: 7 }).map((_, index) => (
               <Text key={index} style={[typography.micro, styles.monthHeaderCell, { color: colors.textMuted }]}>
                 {t(`weekday.short.${index}`)}
               </Text>
             ))}
           </View>
-          <View style={styles.monthGrid}>
-            {monthGrid.map((cell) => (
-              <Pressable
-                key={cell.day.toISODate()}
-                onPress={() => router.push({ pathname: '/day/[date]', params: { date: cell.day.toISODate() ?? '' } })}
-                style={[
-                  styles.monthCell,
-                  {
-                    backgroundColor: cell.day.hasSame(DateTime.now(), 'day') ? `${colors.gold}18` : colors.surface,
-                    borderColor: colors.border,
-                    opacity: cell.inMonth ? 1 : 0.45,
-                  },
-                ]}
-              >
-                {cell.openCount > 0 ? (
-                  <View style={[styles.monthBadge, { backgroundColor: colors.gold }]}>
-                    <Text style={[typography.micro, { color: colors.onGold, fontFamily: fontFamilies.heebo.bold }]}>
-                      {cell.openCount}
-                    </Text>
+          {monthWeeks.map((week) => (
+            <View key={week[0].day.toISODate()} style={styles.monthRow}>
+              {week.map((cell) => (
+                <Pressable
+                  key={cell.day.toISODate()}
+                  onPress={() => router.push({ pathname: '/day/[date]', params: { date: cell.day.toISODate() ?? '' } })}
+                  style={[
+                    styles.monthCell,
+                    {
+                      backgroundColor: cell.day.hasSame(DateTime.now(), 'day') ? `${colors.gold}18` : colors.surface,
+                      borderColor: colors.border,
+                      opacity: cell.inMonth ? 1 : 0.45,
+                    },
+                  ]}
+                >
+                  <View style={styles.monthBadgeRow}>
+                    {cell.openCount > 0 ? (
+                      <View style={[styles.monthBadge, { backgroundColor: colors.gold }]}>
+                        <Text style={[typography.micro, { color: colors.onGold, fontFamily: fontFamilies.heebo.bold }]}>
+                          {cell.openCount}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
-                ) : null}
-                <Text style={[typography.captionBold, { color: colors.text }]}>{cell.day.day}</Text>
-                <Text style={[typography.micro, { color: colors.textMuted }]}>{cell.hebrewDay}</Text>
-                {cell.holidays.length ? <View style={[styles.ping, { backgroundColor: colors.urgent }]} /> : null}
-              </Pressable>
-            ))}
-          </View>
-        </View>
+                  <Text style={[typography.captionBold, { color: colors.text }]}>{cell.day.day}</Text>
+                  <Text style={[typography.micro, { color: colors.textMuted }]}>{cell.hebrewDay}</Text>
+                  {cell.holidays.length ? <View style={[styles.ping, { backgroundColor: colors.urgent }]} /> : null}
+                </Pressable>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
       ) : null}
     </SafeAreaView>
   );
@@ -365,10 +375,6 @@ function shift(value: DateTime, mode: ViewMode, amount: number) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-  },
-  controls: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.md,
   },
   viewToggle: {
     marginBottom: spacing.md,
@@ -432,6 +438,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     gap: spacing.md,
+    alignItems: 'flex-start',
   },
   weekCard: {
     width: 120,
@@ -470,38 +477,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   monthWrap: {
-    flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+    gap: spacing.xs,
   },
-  monthHeader: {
+  monthRow: {
     flexDirection: 'row',
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
   monthHeaderCell: {
     flex: 1,
     textAlign: 'center',
   },
-  monthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
   monthCell: {
-    width: '13%',
-    aspectRatio: 0.9,
+    flex: 1,
+    minHeight: 64,
     borderRadius: radius.lg,
     borderWidth: 1,
-    padding: spacing.sm,
-    position: 'relative',
+    padding: spacing.xs,
+  },
+  monthBadgeRow: {
+    height: 16,
+    alignItems: 'flex-end',
   },
   monthBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    minWidth: 18,
-    height: 18,
+    minWidth: 16,
+    height: 16,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

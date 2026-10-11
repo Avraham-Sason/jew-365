@@ -569,12 +569,12 @@ Fix: carry the per-day `isShabbat`/`isYomTov` the loop already computes into `da
 > Superseded 2026-10-06 by the post-block check-in. Shabbat and Yom Tov are no longer neutral: they are marked after the block, and an unmarked one breaks the streak once its check-in closes. Every item counts toward a percentage only once it can no longer be marked, which also removed the morning dip the first fix left in `perMitzvah`. The streak is no longer capped by the 30-day window, and an archive of kept days carries it past the 400-day retention.
 
 ### 5.10 Month view does heavy synchronous work in render — ✅ FIXED
-`src/app/(tabs)/schedule.tsx:85`
+`src/app/schedule.tsx`
 
 42 cells × (`getHolidays` + `getHebrewDate` + `buildDayTimeline`, which itself calls `getZmanim` and every enabled mitzvah's `computeWindow`) — 42 full `HebrewCalendar.calendar()` computations plus 42 zmanim computations inside a `useMemo` on the render thread. History at least defers via `InteractionManager` (`history.tsx:58`); Schedule does not.
 
 ### 5.11 Week view starts Monday, everything else starts Sunday **[verified]** — ✅ FIXED
-`src/app/(tabs)/schedule.tsx:74`
+`src/app/schedule.tsx`
 
 `cursor.startOf('week')` is Luxon's ISO default — Monday. The month grid computes `monthStart.minus({ days: monthStart.weekday % 7 })` (Sunday-first) and the header renders `weekday.short.0..6` = א׳…ש׳.
 

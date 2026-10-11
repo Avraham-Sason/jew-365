@@ -46,6 +46,10 @@ describe('design system tripwires', () => {
     expect(offenders(allFiles, ({ source }) => source.includes('✦'))).toEqual([]);
   });
 
+  it('no file draws a chevron glyph; chevrons are the chevronLeft / chevronRight icons', () => {
+    expect(offenders(allFiles, ({ source }) => /[‹›]/.test(source))).toEqual([]);
+  });
+
   it('no white literal outside AppLogo; use colors.onGold, colors.onUrgent or BRAND.white', () => {
     const white = /(['"])#(?:fff|FFFFFF)\1/;
     expect(offenders(allFiles, ({ rel, source }) => rel !== 'components/AppLogo.tsx' && white.test(source))).toEqual(

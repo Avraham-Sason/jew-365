@@ -1,10 +1,11 @@
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { IconTile } from '@/components/IconTile';
-import type { IconName } from '@/components/MitzvahIcon';
+import { MitzvahIcon, type IconName } from '@/components/MitzvahIcon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
+import { useI18n } from '@/i18n';
 
 type Props = {
   icon: IconName;
@@ -12,6 +13,7 @@ type Props = {
   title: string;
   caption?: string;
   trailing?: React.ReactNode;
+  chevron?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
   disabled?: boolean;
@@ -25,6 +27,7 @@ export function ListRow({
   title,
   caption,
   trailing,
+  chevron = false,
   onPress,
   onLongPress,
   disabled = false,
@@ -32,6 +35,7 @@ export function ListRow({
   style,
 }: Props) {
   const { colors } = useTheme();
+  const { language } = useI18n();
   return (
     <Pressable
       onPress={onPress}
@@ -55,7 +59,15 @@ export function ListRow({
           <Text style={[typography.small, styles.caption, { color: colors.textMuted }]}>{caption}</Text>
         ) : null}
       </View>
-      {trailing}
+      {trailing ??
+        (chevron ? (
+          <MitzvahIcon
+            name={language === 'he' ? 'chevronLeft' : 'chevronRight'}
+            size={16}
+            color={colors.textMuted}
+            strokeWidth={2.5}
+          />
+        ) : null)}
     </Pressable>
   );
 }

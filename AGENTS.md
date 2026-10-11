@@ -24,7 +24,7 @@ pnpm test                          # jest
 pnpm test:tz                       # full suite across UTC, Jerusalem, LA and Kiritimati
 pnpm test:tz -- path/file.test.ts  # one file across the same four zones
 pnpm test -- path/to/file.test.ts  # single Jest file
-pnpm test -- -t "name fragment"    # Jest test-name filter
+pnpm test -t "name fragment"       # Jest test-name filter; no --, which pnpm passes on and Jest then reads -t as a path
 pnpm typecheck                     # tsc --noEmit
 pnpm lint                          # eslint (eslint-config-expo + prettier config), zero warnings expected
 pnpm format                        # prettier --write; format:check is the read-only form
@@ -94,13 +94,14 @@ Store copy lives in [release/](release).
 
 - [src/app/](src/app) - Expo Router routes. The router root is set in [app.json](app.json) via `extra.router.root`.
 - [src/app/_layout.tsx](src/app/_layout.tsx) - Root providers, font loading, onboarding redirect guard, RTL bootstrap, notification handler init, and the exported `ErrorBoundary`.
-- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: schedule, history, home, siddur, settings; the hidden `index` redirects to home.
+- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: more, history, home, siddur, settings; the hidden `index` redirects to home. More is a hub of rows that open stack screens, starting with the schedule.
 - [src/app/mitzvot.tsx](src/app/mitzvot.tsx) - The mitzvot library as a stack screen, opened from Settings and the onboarding ready screen.
 - [src/app/onboarding/](src/app/onboarding) - Onboarding flow: welcome, profile (gender, marital status and the taharah opt-in), nusach, location/notifications, ready.
 - [src/app/taharah/](src/app/taharah) - Taharat hamishpacha: dashboard, event log, calendar and minhag settings, behind the biometric lock in its `_layout.tsx`.
 - [src/app/mitzvah/[id].tsx](<src/app/mitzvah/[id].tsx>) - Static and custom mitzvah details, reminders, content blocks.
 - [src/app/siddur/[id].tsx](<src/app/siddur/[id].tsx>) - Nusach reader: a mitzvah's or a standalone text in the user's nusach and language, resolved for the day, with optional auto-scroll. Its section picker lists a text's chapters (Shacharit's eleven stations, from ברכות השחר to קוה אל ה׳, plus Hallel and Musaf on their days), or every section of a text without chapters.
 - [src/app/(tabs)/siddur.tsx](<src/app/(tabs)/siddur.tsx>) - Siddur tab: today's texts first, then a prayers card with shacharit, mincha and maariv taken from today's texts, then the thirteen standalone texts by group (meals, general with the blessings, the night texts and Tikkun HaKlali, festivals and celebrations), each greyed out on a day it is not said. [src/app/siddur/index.tsx](src/app/siddur/index.tsx) only redirects `/siddur` to it.
+- [src/app/schedule.tsx](src/app/schedule.tsx) - Schedule, a stack screen opened from the More tab: day, week and month views with previous / next arrows in its header, and a day drilldown into `/day/[date]`.
 - [src/app/day/[date].tsx](<src/app/day/[date].tsx>) - Read-only per-day route for schedule/history drilldown.
 - [src/app/custom-mitzvah.tsx](src/app/custom-mitzvah.tsx) - Create/edit custom mitzvot.
 - [src/app/checkin.tsx](src/app/checkin.tsx) - Post-block check-in: mark what was done during the Shabbat / Yom Tov block that just ended.
@@ -112,7 +113,7 @@ Store copy lives in [release/](release).
 - [src/stores/](src/stores) - Zustand stores persisted through MMKV.
 - [src/components/](src/components) - Reusable React Native UI.
 - [src/theme/](src/theme) - Theme colors, typography, spacing, animation/radius tokens.
-- [src/utils/](src/utils) - Pure helpers: day timeline, history stats, the weekly report, the shared `skipOn` predicate, and the taharah engine under [src/utils/taharah/](src/utils/taharah).
+- [src/utils/](src/utils) - Pure helpers: day timeline, history stats, the weekly report, the shared `skipOn` predicate, the Chok LeYisrael portion of a day or an instant ([src/utils/chok.ts](src/utils/chok.ts)), and the taharah engine under [src/utils/taharah/](src/utils/taharah).
 - [src/hooks/](src/hooks) - Shared React hooks (`useNow`).
 - [src/i18n/](src/i18n) - Flat [he.json](src/i18n/he.json) and [en.json](src/i18n/en.json) dictionaries plus a tiny translation wrapper.
 - [src/testing/](src/testing) - Test-only fixture helpers. Never imported by shipped code.
@@ -274,7 +275,7 @@ Coverage areas:
 - [src/data/__tests__/](src/data/__tests__) - registry integrity, windows, city data, skip metadata, nusach filtering, and siddur content per nusach on dated days.
 - [src/services/__tests__/](src/services/__tests__) - zmanim, Hebcal, location, storage, scheduler, notification responses, settings logic, web-shim parity, exact-alarm config.
 - [src/stores/__tests__/](src/stores/__tests__) - store behavior and completion/skipped edge cases.
-- [src/utils/__tests__/](src/utils/__tests__) - day timeline, history stats, cross-surface `skipOn` agreement, liturgical day flags, the weekly report (`weeklyReport.test.ts`), and the taharah engine (`taharah.*.test.ts`: onot, cycle, vestot, tasks, summary), which also runs under `pnpm test:tz -- src/utils/__tests__/taharah`.
+- [src/utils/__tests__/](src/utils/__tests__) - day timeline, history stats, cross-surface `skipOn` agreement, liturgical day flags, the weekly report (`weeklyReport.test.ts`), the Chok LeYisrael portion ([chok.test.ts](src/utils/__tests__/chok.test.ts), also under `pnpm test:tz`), and the taharah engine (`taharah.*.test.ts`: onot, cycle, vestot, tasks, summary), which also runs under `pnpm test:tz -- src/utils/__tests__/taharah`.
 - [src/i18n/__tests__/](src/i18n/__tests__) - translation parity and brand regression checks.
 - [src/theme/__tests__/](src/theme/__tests__) - token/key sanity.
 - [src/app/__tests__/routes.test.ts](src/app/__tests__/routes.test.ts) - Expo Router route discovery/regression tests.

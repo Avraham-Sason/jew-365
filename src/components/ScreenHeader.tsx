@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
@@ -37,15 +37,12 @@ export function ScreenHeader({ title, subtitle, onBack, actions, leading, childr
                 { backgroundColor: pressed ? HEADER_PILL_BG_PRESSED : HEADER_PILL_BG },
               ]}
             >
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d={language === 'he' ? 'M9 6l6 6-6 6' : 'M15 6l-6 6 6 6'}
-                  stroke={colors.headerText}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
+              <MitzvahIcon
+                name={language === 'he' ? 'chevronRight' : 'chevronLeft'}
+                size={14}
+                color={colors.headerText}
+                strokeWidth={2.5}
+              />
               <Text style={[typography.captionBold, { color: colors.headerText }]}>{t('common.back')}</Text>
             </Pressable>
           ) : null}

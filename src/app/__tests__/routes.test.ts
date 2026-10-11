@@ -31,6 +31,7 @@ describe('expo-router routes', () => {
     expect(routes).toContain('rosh-chodesh');
     expect(routes).toContain('report');
     expect(routes).toContain('mitzvot');
+    expect(routes).toContain('schedule');
   });
 
   it('discovers taharah routes', () => {
@@ -42,11 +43,12 @@ describe('expo-router routes', () => {
 
   it('discovers tabs', () => {
     expect(routes).toContain('(tabs)/home');
-    expect(routes).toContain('(tabs)/schedule');
+    expect(routes).toContain('(tabs)/more');
     expect(routes).toContain('(tabs)/history');
     expect(routes).toContain('(tabs)/siddur');
     expect(routes).toContain('(tabs)/settings');
     expect(routes).toContain('(tabs)/index');
+    expect(routes).not.toContain('(tabs)/schedule');
   });
 
   it('discovers onboarding flow', () => {
@@ -80,5 +82,17 @@ describe('expo-router routes', () => {
     const layout = fs.readFileSync(path.join(APP_DIR, '(tabs)/_layout.tsx'), 'utf8');
     const hidesIndex = /Tabs\.Screen[^>]*name="index"[^>]*href:\s*null/.test(layout);
     expect(hidesIndex).toBe(true);
+  });
+
+  it('registers the tabs in bar order with home third: more, history, home, siddur, settings', () => {
+    const layout = fs.readFileSync(path.join(APP_DIR, '(tabs)/_layout.tsx'), 'utf8');
+    const names = [...layout.matchAll(/<Tabs\.Screen\s+name="([^"]+)"/g)].map((match) => match[1]);
+    expect(names.filter((name) => name !== 'index')).toEqual(['more', 'history', 'home', 'siddur', 'settings']);
+  });
+
+  it('registers the schedule as a root stack screen', () => {
+    const layout = fs.readFileSync(path.join(APP_DIR, '_layout.tsx'), 'utf8');
+    const names = [...layout.matchAll(/<Stack\.Screen\s+name="([^"]+)"/g)].map((match) => match[1]);
+    expect(names).toContain('schedule');
   });
 });
