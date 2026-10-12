@@ -92,6 +92,7 @@ export function WheelPicker({ values, selected, onChange, renderLabel = String, 
         showsVerticalScrollIndicator={false}
         bounces={false}
         overScrollMode="never"
+        nestedScrollEnabled
         scrollEventThrottle={16}
         onContentSizeChange={() => scrollToIndex(restingIndex.current, false)}
         onMomentumScrollEnd={settleAt}

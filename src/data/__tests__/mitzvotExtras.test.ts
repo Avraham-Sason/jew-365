@@ -3,7 +3,7 @@ jest.mock('react-native-mmkv', () => {
   return { MMKV: jest.fn(() => createMockMMKV()) };
 });
 
-import { MITZVOT } from '../mitzvot';
+import { CHOK_LEYISRAEL, MITZVOT } from '../mitzvot';
 import { CITIES } from '../cities';
 import { customToMitzvah } from '../customMitzvotAdapter';
 import { HebcalService } from '@/services/HebcalService';
@@ -25,12 +25,17 @@ describe('Mitzvot extras', () => {
   // Named "at least one" but only asserted `Array.isArray`, so `defaultReminders: []` passed — a
   // mitzvah that shows up everywhere in the UI and can never notify.
   it('11.4 every mitzvah has at least one usable defaultReminder', () => {
-    for (const m of MITZVOT) {
+    for (const m of [...MITZVOT, CHOK_LEYISRAEL]) {
       expect(m.defaultReminders.length).toBeGreaterThan(0);
       for (const reminder of m.defaultReminders) {
         expect(reminder.label.trim().length).toBeGreaterThan(0);
-        expect(['start', 'end']).toContain(reminder.anchor);
+        expect(['start', 'end', 'clock']).toContain(reminder.anchor);
         expect(Number.isFinite(reminder.offsetMin)).toBe(true);
+        if (reminder.anchor === 'clock') {
+          expect(Number.isInteger(reminder.offsetMin)).toBe(true);
+          expect(reminder.offsetMin).toBeGreaterThanOrEqual(0);
+          expect(reminder.offsetMin).toBeLessThan(24 * 60);
+        }
       }
     }
   });

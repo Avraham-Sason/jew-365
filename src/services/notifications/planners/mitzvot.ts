@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import type { ComputeContext, Mitzvah, Reminder, UserSettings } from '@/types/mitzvah';
 import type { Location } from '@/types/zmanim';
 import { hasSiddurText, siddurPlace } from '@/data/siddur';
@@ -23,7 +24,24 @@ function contextFor(date: Date, location: Location, settings: UserSettings): Com
   return zmanim ? { date, location, settings, zmanim } : null;
 }
 
-export function buildTriggerTime(reminder: Reminder, window: { start: Date; end: Date }): Date {
+// The first instant at that wall-clock time on the location's clock at or after `start`. A time a
+// spring-forward day skips resolves the way Luxon resolves it, an hour later.
+function clockTriggerAfter(start: Date, minutesAfterMidnight: number, zone: string): Date {
+  const first = DateTime.fromJSDate(start, { zone }).set({
+    hour: Math.floor(minutesAfterMidnight / 60),
+    minute: minutesAfterMidnight % 60,
+    second: 0,
+    millisecond: 0,
+  });
+  return (first.toMillis() < start.getTime() ? first.plus({ days: 1 }) : first).toJSDate();
+}
+
+export function buildTriggerTime(
+  reminder: Reminder,
+  window: { start: Date; end: Date },
+  location: Pick<Location, 'tz'>,
+): Date {
+  if (reminder.anchor === 'clock') return clockTriggerAfter(window.start, reminder.offsetMin, location.tz);
   const anchor = reminder.anchor === 'start' ? window.start : window.end;
   return new Date(anchor.getTime() + reminder.offsetMin * 60_000);
 }
@@ -71,7 +89,7 @@ export function windowTriggers(
 
   const triggers: WindowTrigger[] = [];
   reminders.forEach((reminder, index) => {
-    const trigger = buildTriggerTime(reminder, window);
+    const trigger = buildTriggerTime(reminder, window, location);
     // The reminder editor rejects out-of-window offsets up front; this is the backstop for
     // already-persisted ones, and the same rule drops anything inside a Shabbat / Yom Tov block.
     if (reminderFires(trigger, window, location, now)) triggers.push({ index, reminder, trigger });

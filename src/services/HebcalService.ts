@@ -21,6 +21,17 @@ function civilDayAt(instant: Date, loc: Location): HDate {
   return toHDate(new Date(year, month - 1, day, 12));
 }
 
+const DAWN_FALLBACK_HOUR = 4;
+
+// Alot of the location's calendar date of `instant`, where a night ends; 04:00 on the location's
+// clock where the sun neither rises nor sets.
+function dawnAt(instant: Date, loc: Location): Date {
+  const alot = ZmanimService.getZmanim(instant, loc)?.alotHaShachar;
+  if (alot) return alot;
+  const { year, month, day } = DateTime.fromJSDate(instant).setZone(loc.tz);
+  return DateTime.fromObject({ year, month, day, hour: DAWN_FALLBACK_HOUR }, { zone: loc.tz }).toJSDate();
+}
+
 function buildLocation(loc: Location): HebcalLocation {
   return new HebcalLocation(loc.lat, loc.lng, loc.inIsrael, loc.tz, loc.name, 'XX');
 }
@@ -152,12 +163,10 @@ export const HebcalService = {
   // it is the night still running, from dawn on it is tonight, which opens the next Hebrew day.
   hebrewNightAt(instant: Date, loc: Location): HDate {
     const civil = civilDayAt(instant, loc);
-    const dawn = ZmanimService.getZmanim(instant, loc)?.alotHaShachar;
-    const beforeDawn = dawn
-      ? instant.getTime() < dawn.getTime()
-      : DateTime.fromJSDate(instant).setZone(loc.tz).hour < 4;
-    return beforeDawn ? civil : civil.next();
+    return instant.getTime() < dawnAt(instant, loc).getTime() ? civil : civil.next();
   },
+
+  dawnAt,
 
   getParasha(date: Date, loc: Location, locale: CalendarLocale = 'he'): string | undefined {
     const events = HebrewCalendar.calendar({

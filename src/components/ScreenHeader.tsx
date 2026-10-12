@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MitzvahIcon } from '@/components/MitzvahIcon';
+import { IconName, MitzvahIcon, backIcon } from '@/components/MitzvahIcon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
@@ -37,12 +37,7 @@ export function ScreenHeader({ title, subtitle, onBack, actions, leading, childr
                 { backgroundColor: pressed ? HEADER_PILL_BG_PRESSED : HEADER_PILL_BG },
               ]}
             >
-              <MitzvahIcon
-                name={language === 'he' ? 'chevronRight' : 'chevronLeft'}
-                size={14}
-                color={colors.headerText}
-                strokeWidth={2.5}
-              />
+              <MitzvahIcon name={backIcon(language)} size={14} color={colors.headerText} strokeWidth={2.5} />
               <Text style={[typography.captionBold, { color: colors.headerText }]}>{t('common.back')}</Text>
             </Pressable>
           ) : null}
@@ -64,21 +59,27 @@ export function ScreenHeader({ title, subtitle, onBack, actions, leading, childr
 }
 
 type HeaderPillProps = {
-  label: string;
   onPress: () => void;
-  accessibilityLabel?: string;
   selected?: boolean;
   disabled?: boolean;
-};
+} & (
+  | { label: string; icon?: IconName; accessibilityLabel?: string }
+  | { label?: undefined; icon: IconName; accessibilityLabel: string }
+);
+
+const PILL_ICON_SIZE = 18;
+const PILL_ICON_STROKE = 2.2;
 
 export function HeaderPill({
   label,
+  icon,
   onPress,
   accessibilityLabel,
   selected = false,
   disabled = false,
 }: HeaderPillProps) {
   const { colors } = useTheme();
+  const color = selected ? colors.headerBg : colors.headerText;
   return (
     <Pressable
       onPress={onPress}
@@ -92,7 +93,8 @@ export function HeaderPill({
         { backgroundColor: selected ? colors.headerAccent : HEADER_PILL_BG, opacity: disabled ? 0.5 : 1 },
       ]}
     >
-      <Text style={[typography.captionBold, { color: selected ? colors.headerBg : colors.headerText }]}>{label}</Text>
+      {icon ? <MitzvahIcon name={icon} size={PILL_ICON_SIZE} color={color} strokeWidth={PILL_ICON_STROKE} /> : null}
+      {label ? <Text style={[typography.captionBold, { color }]}>{label}</Text> : null}
     </Pressable>
   );
 }
@@ -137,6 +139,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,

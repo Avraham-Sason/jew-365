@@ -3,7 +3,7 @@ import { at, zmanimFor } from '@/testing/zmanim';
 import { Location } from '@/types/zmanim';
 import { CITIES } from '@/data/cities';
 import { candleLightingMinutes } from '@/data/mitzvot';
-import { HOLY_BLOCK_EXIT_MIN } from '@/services/ZmanimService';
+import { HOLY_BLOCK_EXIT_MIN, ZmanimService } from '@/services/ZmanimService';
 
 // Boundary instants are derived from the zmanim themselves rather than written as clock times, so
 // the fixtures cannot silently mean a different moment than the one they claim.
@@ -155,6 +155,28 @@ describe('HebcalService', () => {
       expect(today.render('en')).toMatch(/^24th of Kislev/);
       expect(HebcalService.hebrewNightAt(afternoon, place).abs()).toBe(today.abs() + 1);
     }
+  });
+
+  it('2.5i dawnAt is the alot of the location date, and 04:00 on its clock where the sun neither rises nor sets', () => {
+    const { alotHaShachar } = zmanimFor(noonOn('2026-04-09'), JERUSALEM);
+    expect(HebcalService.dawnAt(noonOn('2026-04-09'), JERUSALEM).getTime()).toBe(alotHaShachar.getTime());
+    expect(HebcalService.dawnAt(at(JERUSALEM, '2026-04-09T00:30'), JERUSALEM).getTime()).toBe(alotHaShachar.getTime());
+    expect(HebcalService.dawnAt(at(JERUSALEM, '2026-04-09T23:30'), JERUSALEM).getTime()).toBe(alotHaShachar.getTime());
+
+    const midnightSun: Location = {
+      name: 'Longyearbyen',
+      lat: 78.2232,
+      lng: 15.6267,
+      tz: 'Arctic/Longyearbyen',
+      inIsrael: false,
+    };
+    expect(ZmanimService.getZmanim(at(midnightSun, '2026-06-18T12:00'), midnightSun)).toBeNull();
+    const fourOClock = at(midnightSun, '2026-06-18T04:00');
+    expect(HebcalService.dawnAt(at(midnightSun, '2026-06-18T12:00'), midnightSun).getTime()).toBe(fourOClock.getTime());
+    expect(HebcalService.dawnAt(at(midnightSun, '2026-06-18T23:30'), midnightSun).getTime()).toBe(fourOClock.getTime());
+    const before = HebcalService.hebrewNightAt(minutesFrom(fourOClock, -1), midnightSun);
+    const after = HebcalService.hebrewNightAt(fourOClock, midnightSun);
+    expect(after.abs() - before.abs()).toBe(1);
   });
 
   it('2.5e isShabbat keeps its shkia-in / tzeit-out boundaries', () => {

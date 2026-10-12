@@ -9,6 +9,11 @@ export function timeToMinutes(value: string): number {
   return hours * 60 + minutes;
 }
 
+export function minutesToTime(minutes: number): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+}
+
 export function formatRemaining(ms: number, t: Translate): string {
   const totalMin = Math.max(0, Math.round(ms / 60000));
   if (totalMin >= 60) {

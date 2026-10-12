@@ -17,6 +17,7 @@
 - Completions are not subscribed. `checkInInput()` reads `completions`, `skipped` and `checkIns` from `useCompletionsStore.getState()` at the moment it is called and takes `enabled`, `settings`, `location` and `enabledSince` from the model. A screen that must re-run when a mark changes keeps its own `useCompletionsStore` selector and lists it as a memo dependency, with an `eslint-disable` that says why.
 - A screen never rebuilds the mitzvah list, the enabled set, the settings object, the check-in input or the `language === 'en' && name.en` choice itself.
 - A screen that needs an exact instant reads `new Date()` where it decides; `useNow()` is the re-render trigger and a stable memo dependency, and may lag by up to `intervalMs`.
+- Neither hook knows the app's day (it turns at alot, not midnight): a screen calls `appDay()` from [../utils/locationDay.ts](../utils/locationDay.ts) and `appDayWindow()` / `currentOrNextWindow()` from [../utils/buildDayTimeline.ts](../utils/buildDayTimeline.ts) at the instant it reads, so the `DayModel` keeps its identity while the clock moves.
 - Never re-implement the tick inline with `setInterval` in a screen.
 
 ## Work Guidance

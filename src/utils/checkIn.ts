@@ -4,7 +4,7 @@ import { HolyBlock, Location } from '@/types/zmanim';
 import { HebcalService } from '@/services/HebcalService';
 import { ZmanimService } from '@/services/ZmanimService';
 import { isSkippedAt } from '@/utils/skipRules';
-import { locationNoon } from '@/utils/locationDay';
+import { appDayEnd, locationNoon } from '@/utils/locationDay';
 import { CheckIns, Completions, dateKey } from '@/stores/useCompletionsStore';
 
 export type CheckInItem = { mitzvah: Mitzvah; window: { start: Date; end: Date }; done: boolean };
@@ -57,21 +57,21 @@ export function overlapsBlock(window: { start: Date; end: Date }, block: HolyBlo
   return window.end.getTime() >= block.start.getTime() && window.start.getTime() < block.end.getTime();
 }
 
-// Midnight that ends the first weekday after the block, on the device's clock: a block that ends
-// on motzaei Shabbat can still be marked all of Sunday.
-export function checkInDeadline(block: HolyBlock): Date {
-  return calendarDay(block.days[block.days.length - 1], 2);
-}
-
-// The calendar day whose midnight closes the check-in, for "until Sunday at midnight".
+// The calendar day whose app day closes the check-in, for "until dawn after Sunday".
 export function checkInLastDay(block: HolyBlock): Date {
   return calendarDay(block.days[block.days.length - 1], 1);
 }
 
+// The end of the app day of the first weekday after the block, the alot that follows it: a block
+// that ends on motzaei Shabbat can still be marked all of Sunday and the night after it.
+export function checkInDeadline(block: HolyBlock, location: Location): Date {
+  return appDayEnd(checkInLastDay(block), location);
+}
+
 // Whether the block's check-in still accepts marks at `now`. Inside the block the app shows only
 // the Shabbat screen, so this is only reachable from its end until the deadline.
-export function checkInPending(block: HolyBlock, checkIns: CheckIns, now: Date): boolean {
-  return !checkIns[checkInId(block)] && now.getTime() < checkInDeadline(block).getTime();
+export function checkInPending(block: HolyBlock, checkIns: CheckIns, now: Date, location: Location): boolean {
+  return !checkIns[checkInId(block)] && now.getTime() < checkInDeadline(block, location).getTime();
 }
 
 // i18n keys for "on Shabbat" / "on Yom Tov" — the check-in screen, banner and reminders.
@@ -98,12 +98,13 @@ export function checkInFor(block: HolyBlock, input: CheckInInput, now: Date): Ch
     if (items.length) days.push({ date, key, items });
   }
   if (!days.length) return null;
-  const finished = !checkInPending(block, checkIns, now) || days.every((day) => day.items.every((item) => item.done));
+  const finished =
+    !checkInPending(block, checkIns, now, location) || days.every((day) => day.items.every((item) => item.done));
   return {
     id: checkInId(block),
     block,
     days,
-    deadline: checkInDeadline(block),
+    deadline: checkInDeadline(block, location),
     finished,
     open: !finished && now.getTime() >= block.end.getTime(),
   };
@@ -138,7 +139,7 @@ export function latestCheckIn(input: CheckInInput, now: Date = new Date()): Chec
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
     const block = HebcalService.holyBlockOn(locationNoon(day, input.location), input.location);
     if (!block || block.end.getTime() > now.getTime()) continue;
-    if (!checkInPending(block, input.checkIns, now)) return null;
+    if (!checkInPending(block, input.checkIns, now, input.location)) return null;
     return checkInFor(block, input, now);
   }
   return null;

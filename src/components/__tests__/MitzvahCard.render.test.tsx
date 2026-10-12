@@ -97,13 +97,32 @@ describe('MitzvahCard', () => {
 
     it('warns when urgent and has no status text', () => {
       renderWithTheme(<MitzvahCard {...BASE} urgent onPress={jest.fn()} />);
-      expect(screen.getByText('⚠ פג בקרוב')).toBeOnTheScreen();
-      expect(screen.getByText('⚠ פג בקרוב')).toHaveStyle({ color: THEMES.gold.urgent });
+      expect(screen.getByText('פג בקרוב')).toBeOnTheScreen();
+      expect(screen.getByText('פג בקרוב')).toHaveStyle({ color: THEMES.gold.urgent });
+    });
+
+    it('draws the urgent warning with the warning icon in the urgent colour, never a text glyph', () => {
+      renderWithTheme(<MitzvahCard {...BASE} urgent onPress={jest.fn()} />);
+      const warnings = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'warning');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0].props.color).toBe(THEMES.gold.urgent);
+      expect(screen.queryByText(/⚠/)).toBeNull();
+    });
+
+    it('names the card the same while urgent: the warning adds nothing to the accessible name', () => {
+      renderWithTheme(<MitzvahCard {...BASE} urgent onPress={jest.fn()} />);
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeOnTheScreen();
+    });
+
+    it('draws no warning icon on a card that is not urgent', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onPress={jest.fn()} />);
+      expect(screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'warning')).toHaveLength(0);
     });
 
     it('lets the status text replace the urgent warning, in the tone it names', () => {
       renderWithTheme(<MitzvahCard {...BASE} urgent statusText="עד חצות" statusTone="safe" onPress={jest.fn()} />);
-      expect(screen.queryByText('⚠ פג בקרוב')).toBeNull();
+      expect(screen.queryByText('פג בקרוב')).toBeNull();
+      expect(screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'warning')).toHaveLength(0);
       expect(screen.getByText('עד חצות')).toHaveStyle({ color: THEMES.gold.safe });
     });
 

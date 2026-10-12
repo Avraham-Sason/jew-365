@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   I18nManager,
   Keyboard,
@@ -33,28 +33,31 @@ export function normalizeTimeInput(raw: string): string {
   return joined.slice(0, 5);
 }
 
-type Props = {
-  label: string;
+type PickerProps = {
   value: string;
   onChange: (value: string) => void;
-  style?: StyleProp<ViewStyle>;
 };
 
-export function TimeField({ label, value, onChange, style }: Props) {
+type Props = PickerProps & {
+  label: string;
+  style?: StyleProp<ViewStyle>;
+  inline?: boolean;
+};
+
+function TimePicker({ value, onChange }: PickerProps) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
-  const [picking, setPicking] = useState(false);
   const [draft, setDraft] = useState(value);
   const valid = TIME_PATTERN.test(value);
   const hour = valid ? Number(value.slice(0, 2)) : null;
   const minute = valid ? Number(value.slice(3)) : null;
   // react-native-web has no I18nManager.isRTL: its rows mirror through the document dir, which follows the language.
   const rowMirrored = Platform.OS === 'web' ? language === 'he' : I18nManager.isRTL;
-  const openPicker = () => {
-    Keyboard.dismiss();
+
+  useEffect(() => {
     setDraft(value);
-    setPicking(true);
-  };
+  }, [value]);
+
   const pick = (next: string) => {
     setDraft(next);
     onChange(next);
@@ -93,8 +96,50 @@ export function TimeField({ label, value, onChange, style }: Props) {
   );
 
   return (
+    <>
+      <Text style={[typography.captionBold, styles.typeLabel, { color: colors.textSub }]}>{t('custom.typeTime')}</Text>
+      <TextInput
+        value={draft}
+        onChangeText={type}
+        accessibilityLabel={t('custom.typeTime')}
+        placeholder={PLACEHOLDER}
+        placeholderTextColor={colors.textMuted}
+        keyboardType="numbers-and-punctuation"
+        maxLength={5}
+        style={[
+          styles.box,
+          styles.valueText,
+          { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border },
+        ]}
+      />
+      <View style={styles.wheels}>
+        {rowMirrored ? [minuteWheel, colon, hourWheel] : [hourWheel, colon, minuteWheel]}
+      </View>
+    </>
+  );
+}
+
+export function TimeField({ label, value, onChange, style, inline = false }: Props) {
+  const { colors } = useTheme();
+  const [picking, setPicking] = useState(false);
+  const openPicker = () => {
+    Keyboard.dismiss();
+    setPicking(true);
+  };
+  const labelText = <Text style={[typography.captionBold, styles.label, { color: colors.textSub }]}>{label}</Text>;
+
+  if (inline) {
+    return (
+      <View style={style}>
+        {labelText}
+        <TimePicker value={value} onChange={onChange} />
+      </View>
+    );
+  }
+
+  return (
     <View style={style}>
-      <Text style={[typography.captionBold, styles.label, { color: colors.textSub }]}>{label}</Text>
+      {labelText}
       <Pressable
         onPress={openPicker}
         accessibilityRole="button"
@@ -107,26 +152,7 @@ export function TimeField({ label, value, onChange, style }: Props) {
         </Text>
       </Pressable>
       <BottomSheet visible={picking} title={label} onClose={() => setPicking(false)}>
-        <Text style={[typography.captionBold, styles.typeLabel, { color: colors.textSub }]}>
-          {t('custom.typeTime')}
-        </Text>
-        <TextInput
-          value={draft}
-          onChangeText={type}
-          accessibilityLabel={t('custom.typeTime')}
-          placeholder={PLACEHOLDER}
-          placeholderTextColor={colors.textMuted}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-          style={[
-            styles.box,
-            styles.valueText,
-            { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border },
-          ]}
-        />
-        <View style={styles.wheels}>
-          {rowMirrored ? [minuteWheel, colon, hourWheel] : [hourWheel, colon, minuteWheel]}
-        </View>
+        <TimePicker value={value} onChange={onChange} />
       </BottomSheet>
     </View>
   );

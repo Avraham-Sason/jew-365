@@ -1,19 +1,32 @@
 import {
+  calendarDay,
   checkInDeadline,
   checkInFor,
+  checkInId,
   checkInLastDay,
+  checkInPending,
   latestCheckIn,
   overlapsBlock,
   pendingCheckInIds,
 } from '../checkIn';
 import { judgeDay } from '../historyStats';
+import { locationNoon } from '../locationDay';
 import { findMitzvah } from '@/data/mitzvot';
-import { CITIES } from '@/data/cities';
+import { CITIES, findCityById } from '@/data/cities';
 import { HebcalService } from '@/services/HebcalService';
 import { Mitzvah, UserSettings } from '@/types/mitzvah';
-import { at } from '@/testing/zmanim';
+import { Location } from '@/types/zmanim';
+import { at, zmanimFor } from '@/testing/zmanim';
 
 const JERUSALEM = CITIES[0];
+const LOS_ANGELES = findCityById('los-angeles')!;
+const LONGYEARBYEN: Location = {
+  name: 'Longyearbyen',
+  lat: 78.2232,
+  lng: 15.6267,
+  tz: 'Arctic/Longyearbyen',
+  inIsrael: false,
+};
 const SETTINGS: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
 const MITZVOT = ['tefillin', 'shacharit', 'mincha', 'maariv', 'candle_lighting', 'havdalah'].map((id) =>
   findMitzvah(id)!,
@@ -29,6 +42,8 @@ const input = (overrides = {}) => ({
   settings: SETTINGS,
   ...overrides,
 });
+const alotOf = (key: string, location: Location) =>
+  zmanimFor(locationNoon(calendarDay(key), location), location).alotHaShachar;
 const idsOn = (checkIn: ReturnType<typeof checkInFor>, key: string) =>
   checkIn!.days.find((day) => day.key === key)?.items.map((item) => item.mitzvah.id) ?? [];
 
@@ -79,18 +94,53 @@ describe('checkIn', () => {
     expect(asked(checkInFor(block, only, block.end))).toEqual([['2026-11-13', ['until_lighting']]]);
     const pesach = HebcalService.holyBlockOn(at(JERUSALEM, '2027-04-22T12:00'), JERUSALEM)!;
     expect(asked(checkInFor(pesach, only, pesach.end))).toEqual([['2027-04-21', ['until_lighting']]]);
-    expect(judgeDay(new Date(2026, 10, 13), only, new Date(2026, 10, 15, 12)).pending).toEqual(['until_lighting']);
-    expect(judgeDay(new Date(2026, 10, 13), only, new Date(2026, 10, 16, 12)).missed).toEqual(['until_lighting']);
-    expect(judgeDay(new Date(2027, 3, 21), only, new Date(2027, 3, 23, 12)).pending).toEqual(['until_lighting']);
+    const sunday = at(JERUSALEM, '2026-11-15T12:00');
+    const monday = at(JERUSALEM, '2026-11-16T12:00');
+    expect(judgeDay(new Date(2026, 10, 13), only, sunday).pending).toEqual(['until_lighting']);
+    expect(judgeDay(new Date(2026, 10, 13), only, monday).missed).toEqual(['until_lighting']);
+    expect(judgeDay(new Date(2027, 3, 21), only, at(JERUSALEM, '2027-04-23T12:00')).pending).toEqual([
+      'until_lighting',
+    ]);
   });
 
-  it('stays open from tzeit until midnight ending the first weekday after the block', () => {
-    expect(checkInDeadline(block)).toEqual(new Date(2026, 10, 16));
+  it('stays open from tzeit until the alot that ends the first weekday after the block', () => {
+    const deadline = alotOf('2026-11-16', JERUSALEM);
+    expect(checkInDeadline(block, JERUSALEM)).toEqual(deadline);
+    expect(checkInFor(block, input(), SHABBAT)!.deadline).toEqual(deadline);
     expect(checkInLastDay(block)).toEqual(new Date(2026, 10, 15));
     expect(checkInFor(block, input(), SHABBAT)!.open).toBe(false);
     expect(checkInFor(block, input(), block.end)!.open).toBe(true);
-    expect(checkInFor(block, input(), new Date(2026, 10, 15, 23, 59))!.open).toBe(true);
-    expect(checkInFor(block, input(), new Date(2026, 10, 16))!.open).toBe(false);
+    expect(checkInFor(block, input(), at(JERUSALEM, '2026-11-15T23:59'))!.open).toBe(true);
+    expect(checkInFor(block, input(), at(JERUSALEM, '2026-11-16T00:30'))!.open).toBe(true);
+    expect(checkInFor(block, input(), new Date(deadline.getTime() - 1))!.open).toBe(true);
+    expect(checkInFor(block, input(), deadline)!.open).toBe(false);
+  });
+
+  describe('the deadline', () => {
+    it('is the alot of the second day after the last day of the block, in winter, in summer and abroad', () => {
+      expect(block.days).toEqual(['2026-11-14']);
+      expect(checkInDeadline(block, JERUSALEM).getTime()).toBe(alotOf('2026-11-16', JERUSALEM).getTime());
+      const summer = HebcalService.holyBlockOn(at(JERUSALEM, '2027-06-19T12:00'), JERUSALEM)!;
+      expect(summer.days).toEqual(['2027-06-19']);
+      expect(checkInDeadline(summer, JERUSALEM).getTime()).toBe(alotOf('2027-06-21', JERUSALEM).getTime());
+      const abroad = HebcalService.holyBlockOn(at(LOS_ANGELES, '2026-11-14T12:00'), LOS_ANGELES)!;
+      expect(checkInDeadline(abroad, LOS_ANGELES).getTime()).toBe(alotOf('2026-11-16', LOS_ANGELES).getTime());
+    });
+
+    it('is 04:00 on the location clock where the sun never sets', () => {
+      const shabbat = HebcalService.holyBlockOn(at(LONGYEARBYEN, '2026-06-13T12:00'), LONGYEARBYEN)!;
+      expect(shabbat.days).toEqual(['2026-06-13']);
+      expect(checkInDeadline(shabbat, LONGYEARBYEN).getTime()).toBe(at(LONGYEARBYEN, '2026-06-15T04:00').getTime());
+    });
+
+    it('accepts marks through the night after the last day, and stops at alot or once the check-in is finished', () => {
+      const deadline = alotOf('2026-11-16', JERUSALEM);
+      const pendingAt = (instant: Date, checkIns = {}) => checkInPending(block, checkIns, instant, JERUSALEM);
+      expect(pendingAt(at(JERUSALEM, '2026-11-16T00:30'))).toBe(true);
+      expect(pendingAt(new Date(deadline.getTime() - 1))).toBe(true);
+      expect(pendingAt(deadline)).toBe(false);
+      expect(pendingAt(at(JERUSALEM, '2026-11-16T00:30'), { [checkInId(block)]: 1 })).toBe(false);
+    });
   });
 
   it('is finished once the user says so, or once everything is marked', () => {
@@ -115,9 +165,9 @@ describe('checkIn', () => {
   it('latestCheckIn finds the block that just ended, and nothing once its deadline passes', () => {
     expect(latestCheckIn(input(), SHABBAT)).toBeNull(); // still inside the block
     expect(latestCheckIn(input(), at(JERUSALEM, '2026-11-14T20:00'))?.id).toBe('2026-11-14');
-    // The deadline is midnight on the device's own clock, the clock completions are keyed by.
-    expect(latestCheckIn(input(), new Date(2026, 10, 15, 21))?.id).toBe('2026-11-14');
-    expect(latestCheckIn(input(), new Date(2026, 10, 16, 0, 1))).toBeNull();
+    expect(latestCheckIn(input(), at(JERUSALEM, '2026-11-15T21:00'))?.id).toBe('2026-11-14');
+    expect(latestCheckIn(input(), at(JERUSALEM, '2026-11-16T00:30'))?.id).toBe('2026-11-14');
+    expect(latestCheckIn(input(), alotOf('2026-11-16', JERUSALEM))).toBeNull();
     expect(latestCheckIn(input({ checkIns: { '2026-11-14': 1 } }), at(JERUSALEM, '2026-11-15T09:00'))).toBeNull();
     expect(latestCheckIn(input(), at(JERUSALEM, '2026-11-12T09:00'))).toBeNull();
   });
@@ -126,7 +176,7 @@ describe('checkIn', () => {
     const roshHashana = HebcalService.holyBlockAt(at(JERUSALEM, '2028-09-22T12:00'), JERUSALEM)!;
     const checkIn = checkInFor(roshHashana, input(), at(JERUSALEM, '2028-09-23T21:00'))!;
     expect(checkIn.days.map((day) => day.key)).toEqual(['2028-09-20', '2028-09-21', '2028-09-22', '2028-09-23']);
-    expect(checkIn.deadline).toEqual(new Date(2028, 8, 25));
+    expect(checkIn.deadline).toEqual(alotOf('2028-09-25', JERUSALEM));
     expect(latestCheckIn(input(), at(JERUSALEM, '2028-09-24T09:00'))?.id).toBe('2028-09-21');
   });
 

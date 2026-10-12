@@ -155,7 +155,7 @@ describe('NotificationScheduler weekly report', () => {
       ['checkin:2026-10-10:0', end.getTime()],
       ['report:2026-10-10', end.getTime() + REPORT_DELAY_MS],
       ['checkin:2026-10-10:1', end.getTime() + 120 * 60_000],
-      ['checkin:2026-10-10:2', new Date(2026, 9, 11, 20).getTime()],
+      ['checkin:2026-10-10:2', at(JERUSALEM, '2026-10-11T20:00').getTime()],
     ]);
   });
 

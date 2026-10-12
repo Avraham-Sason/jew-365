@@ -3,6 +3,7 @@ import {
   aloneFolds,
   autoScrollPixelsPerSecond,
   dayFeatures,
+  forMaritalStatus,
   liturgicalDay,
   matchesCondition,
   pickerEntries,
@@ -706,6 +707,55 @@ describe('aloneFolds', () => {
     expect(aloneFolds(optionalSection, 'alone').optionalOpen).toBe(true);
     expect(aloneFolds(optionalSection, 'minyan').optionalOpen).toBe(false);
     expect(aloneFolds({ ...optionalSection, optional: someSay }, 'alone').optionalOpen).toBe(false);
+  });
+});
+
+describe('forMaritalStatus', () => {
+  const marriedOnly: PassageLabel = {
+    he: 'בלילה שיש בו תשמיש המטה',
+    en: 'On a night of marital relations',
+    marriedOnly: true,
+  };
+  const someSay: PassageLabel = { he: 'יש אומרים', en: 'Some say' };
+  const said = (t: string, optional?: PassageLabel): SiddurSegment => ({
+    he: [[{ t }]],
+    ...(optional ? { optional } : {}),
+  });
+  const section = (he: string, segments: SiddurSegment[], optional?: PassageLabel): SiddurSection => ({
+    title: { he, en: he },
+    ...(optional ? { optional } : {}),
+    segments,
+  });
+  const hamapil = section('המפיל', [said('המפיל')]);
+  const relations = section('לפני תשמיש המטה', [said('תשמיש')], marriedOnly);
+  const mixed = section('שמע', [said('שמע'), said('תשמיש', marriedOnly), said('יש אומרים', someSay), said('ויאמר')]);
+  const sections = [hamapil, relations, mixed];
+  const titles = (list: SiddurSection[]) => list.map((candidate) => candidate.title.he);
+
+  it('drops a section whose label is married-only for a single reader, and nothing else of its neighbours', () => {
+    const single = forMaritalStatus(sections, 'single');
+    expect(titles(single)).toEqual(['המפיל', 'שמע']);
+    expect(single[0]).toBe(hamapil);
+  });
+
+  it('drops a married-only block inside a section, keeping the other labels', () => {
+    const [, shma] = forMaritalStatus(sections, 'single');
+    expect(shma.segments.map((segment) => segment.he[0][0].t)).toEqual(['שמע', 'יש אומרים', 'ויאמר']);
+    expect(shma.segments[1].optional).toBe(someSay);
+  });
+
+  it('drops a section left with no segment once its married-only block is gone', () => {
+    const onlyRelations = section('תשמיש', [said('תשמיש', marriedOnly)]);
+    expect(forMaritalStatus([hamapil, onlyRelations], 'single')).toEqual([hamapil]);
+  });
+
+  it('keeps the passage, folded under its label, for a married reader and for one who has not answered', () => {
+    for (const status of ['married', null] as const) {
+      const kept = forMaritalStatus(sections, status);
+      expect(kept).toBe(sections);
+      expect(kept[1].optional).toBe(marriedOnly);
+      expect(kept[2].segments[1].optional).toBe(marriedOnly);
+    }
   });
 });
 

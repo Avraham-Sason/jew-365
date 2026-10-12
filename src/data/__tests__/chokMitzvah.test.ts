@@ -27,6 +27,8 @@ const EVERY_PARASHA: Record<string, number> = Object.fromEntries(
 );
 const JERUSALEM = CITIES[0];
 const LOS_ANGELES = CITIES.find((city) => city.nameEn === 'Los Angeles')!;
+const LONDON = CITIES.find((city) => city.cityId === 'london')!;
+const NEW_YORK = CITIES.find((city) => city.cityId === 'new-york')!;
 const IL: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
 const ABROAD: UserSettings = { ...IL, inIsrael: false };
 const MARK = 1_000;
@@ -74,6 +76,15 @@ function windowOn(location: Location, iso: string, settings: UserSettings, mitzv
 function shownWindow(location: Location, iso: string, settings: UserSettings) {
   const window = windowOn(location, iso, settings);
   return window && [clock(window.start, location), clock(window.end, location)];
+}
+
+function fireTimes(location: Location, iso: string, settings: UserSettings) {
+  const window = windowOn(location, iso, settings)!;
+  const before = new Date(window.start.getTime() - 60_000);
+  return CHOK.defaultReminders.map((reminder) => {
+    const trigger = WITH_CONTENT.planner.buildTriggerTime(reminder, window, location);
+    return WITH_CONTENT.skipRules.reminderFires(trigger, window, location, before) ? clock(trigger, location) : null;
+  });
 }
 
 function planInput(overrides: Partial<PlanInput> = {}): PlanInput {
@@ -127,7 +138,7 @@ describe('the chok_leyisrael registry entry', () => {
         label: 'זמן לימוד חק לישראל',
         bodyVariants: ['זמן לימוד חק לישראל', 'חק לישראל של היום מחכה לך', 'כמה דקות של תורה עם חק לישראל'],
       },
-      { anchor: 'start', offsetMin: 945, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
+      { anchor: 'clock', offsetMin: 20 * 60 + 30, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
     ]);
     expect(CHOK.defaultReminders.filter((reminder) => DURATION.test(reminder.label))).toEqual([]);
   });
@@ -213,22 +224,13 @@ describe('computeWindow', () => {
 });
 
 describe('default reminders', () => {
-  const fireTimes = (location: Location, iso: string, settings: UserSettings) => {
-    const window = windowOn(location, iso, settings)!;
-    const before = new Date(window.start.getTime() - 60_000);
-    return CHOK.defaultReminders.map((reminder) => {
-      const trigger = WITH_CONTENT.planner.buildTriggerTime(reminder, window);
-      return WITH_CONTENT.skipRules.reminderFires(trigger, window, location, before) ? clock(trigger, location) : null;
-    });
-  };
-
   it.each([
-    [JERUSALEM, IL, '2026-12-14', ['2026-12-14 09:13', '2026-12-14 20:58']],
-    [JERUSALEM, IL, '2027-06-14', ['2027-06-14 08:05', '2027-06-14 19:50']],
-    [LOS_ANGELES, ABROAD, '2026-12-14', ['2026-12-14 09:30', '2026-12-14 21:15']],
-    [LOS_ANGELES, ABROAD, '2027-06-14', ['2027-06-14 08:09', '2027-06-14 19:54']],
+    [JERUSALEM, IL, '2026-12-14', ['2026-12-14 09:13', '2026-12-14 20:30']],
+    [JERUSALEM, IL, '2027-06-14', ['2027-06-14 08:05', '2027-06-14 20:30']],
+    [LOS_ANGELES, ABROAD, '2026-12-14', ['2026-12-14 09:30', '2026-12-14 20:30']],
+    [LOS_ANGELES, ABROAD, '2027-06-14', ['2027-06-14 08:09', '2027-06-14 20:30']],
   ] as const)(
-    'fire four hours after alot and in the evening on a weekday in %s, %s',
+    'fire four hours after alot and at 20:30 on the clock of the location on a weekday in %s, %s',
     (location, settings, iso, expected) => {
       expect(fireTimes(location, iso, settings)).toEqual(expected);
     },
@@ -243,6 +245,103 @@ describe('default reminders', () => {
     [LOS_ANGELES, ABROAD, '2027-04-21', ['2027-04-21 08:55', null]],
   ] as const)('drop the evening one on an erev in %s, %s', (location, settings, iso, expected) => {
     expect(fireTimes(location, iso, settings)).toEqual(expected);
+  });
+});
+
+describe('the evening reminder at 20:30 on the clock of the location', () => {
+  const EVENING = 1;
+  const ORDINARY_TUESDAYS = [
+    '2026-10-13',
+    '2026-11-10',
+    '2026-12-08',
+    '2027-01-12',
+    '2027-02-09',
+    '2027-03-09',
+    '2027-04-13',
+    '2027-05-11',
+    '2027-06-08',
+    '2027-07-13',
+    '2027-08-10',
+    '2027-09-14',
+  ];
+  const fridaysFrom = (first: string, weeks: number) =>
+    Array.from({ length: weeks }, (_, week) => DateTime.fromISO(first).plus({ weeks: week }).toISODate()!);
+
+  it.each([
+    ['Jerusalem', JERUSALEM, IL],
+    ['London', LONDON, ABROAD],
+    ['New York', NEW_YORK, ABROAD],
+  ] as const)('fires at 20:30 on one ordinary weekday of every month in %s', (_name, location, settings) => {
+    for (const iso of ORDINARY_TUESDAYS) {
+      expect(fireTimes(location, iso, settings)[EVENING]).toBe(`${iso} 20:30`);
+    }
+  });
+
+  it.each([
+    ['Jerusalem', JERUSALEM, IL],
+    ['New York', NEW_YORK, ABROAD],
+  ] as const)(
+    'is dropped on every Friday of the year in %s, where candle lighting is before 20:30',
+    (_name, location, settings) => {
+      const fridays = fridaysFrom('2026-10-02', 52).filter((iso) => windowOn(location, iso, settings));
+      expect(fridays.length).toBeGreaterThan(40);
+      for (const iso of fridays) {
+        expect(fireTimes(location, iso, settings)[EVENING]).toBeNull();
+      }
+    },
+  );
+
+  it.each([
+    ['Jerusalem', JERUSALEM, IL, ['2027-04-21', '2027-04-27', '2027-06-10']],
+    ['New York', NEW_YORK, ABROAD, ['2027-04-21', '2027-04-27', '2027-06-10']],
+    ['London', LONDON, ABROAD, ['2027-04-21', '2027-04-27']],
+  ] as const)(
+    'is dropped on the erev of Yom Tov in %s, whose window ends at candle lighting',
+    (_name, location, settings, erevs) => {
+      for (const iso of erevs) {
+        expect(fireTimes(location, iso, settings)).toEqual([expect.any(String), null]);
+      }
+    },
+  );
+
+  it.each([
+    ['2026-12-18', ['2026-12-18 15:32'], null],
+    ['2027-05-14', ['2027-05-14 20:24'], null],
+    ['2027-05-21', ['2027-05-21 20:34'], '2027-05-21 20:30'],
+    ['2027-06-18', ['2027-06-18 21:00'], '2027-06-18 20:30'],
+    ['2027-07-30', ['2027-07-30 20:32'], '2027-07-30 20:30'],
+    ['2027-08-06', ['2027-08-06 20:20'], null],
+  ] as const)('on London Friday %s candle lighting is %j and the reminder is %j', (iso, [candleLighting], evening) => {
+    expect(shownWindow(LONDON, iso, ABROAD)![1]).toBe(candleLighting);
+    expect(fireTimes(LONDON, iso, ABROAD)[EVENING]).toBe(evening);
+  });
+
+  it('plans the summer Friday evening reminder in London before candle lighting, offering the text', () => {
+    const now = at(LONDON, '2027-06-17T03:00');
+    const candidates = WITH_CONTENT.plan
+      .buildPlan(planInput({ now, fromDate: now, location: LONDON, settings: ABROAD }))
+      .filter((candidate) => candidate.id.startsWith('chok_leyisrael__'));
+    expect(candidates.map((candidate) => [candidate.id, clock(candidate.trigger, LONDON)])).toEqual([
+      ['chok_leyisrael__2027-06-17__0', '2027-06-17 07:30'],
+      ['chok_leyisrael__2027-06-17__1', '2027-06-17 20:30'],
+      ['chok_leyisrael__2027-06-18__0', '2027-06-18 07:30'],
+      ['chok_leyisrael__2027-06-18__1', '2027-06-18 20:30'],
+      ['chok_leyisrael__2027-06-20__0', '2027-06-20 07:30'],
+      ['chok_leyisrael__2027-06-20__1', '2027-06-20 20:30'],
+    ]);
+    const friday = candidates.find((candidate) => candidate.id === 'chok_leyisrael__2027-06-18__1')!;
+    expect(friday.categoryIdentifier).toBe(MITZVAH_TEXT_CATEGORY);
+    expect(friday.data).toMatchObject({ dateKey: '2027-06-18', reminderIndex: 1, skipIfDone: true, hasText: true });
+  });
+
+  it('stays quiet once the day is marked done, as before', () => {
+    const now = at(LONDON, '2027-06-17T03:00');
+    const completions = { '2027-06-18': { chok_leyisrael: MARK } };
+    const ids = WITH_CONTENT.plan
+      .buildPlan(planInput({ now, fromDate: now, location: LONDON, settings: ABROAD, completions }))
+      .filter((candidate) => candidate.id.startsWith('chok_leyisrael__2027-06-18'))
+      .map((candidate) => candidate.id);
+    expect(ids).toEqual([]);
   });
 });
 
@@ -284,10 +383,10 @@ describe('the scheduler', () => {
     const candidates = chokCandidates(planInput());
     expect(candidates.map((candidate) => [candidate.id, clock(candidate.trigger, JERUSALEM)])).toEqual([
       ['chok_leyisrael__2026-12-17__0', '2026-12-17 09:14'],
-      ['chok_leyisrael__2026-12-17__1', '2026-12-17 20:59'],
+      ['chok_leyisrael__2026-12-17__1', '2026-12-17 20:30'],
       ['chok_leyisrael__2026-12-18__0', '2026-12-18 09:15'],
       ['chok_leyisrael__2026-12-20__0', '2026-12-20 09:16'],
-      ['chok_leyisrael__2026-12-20__1', '2026-12-20 21:01'],
+      ['chok_leyisrael__2026-12-20__1', '2026-12-20 20:30'],
     ]);
     expect(new Set(candidates.map((candidate) => candidate.categoryIdentifier))).toEqual(
       new Set([MITZVAH_TEXT_CATEGORY]),
@@ -306,10 +405,10 @@ describe('the scheduler', () => {
     const candidates = chokCandidates(planInput({ now, fromDate: now, location: LOS_ANGELES, settings: ABROAD }));
     expect(candidates.map((candidate) => [candidate.id, clock(candidate.trigger, LOS_ANGELES)])).toEqual([
       ['chok_leyisrael__2027-06-17__0', '2027-06-17 08:09'],
-      ['chok_leyisrael__2027-06-17__1', '2027-06-17 19:54'],
+      ['chok_leyisrael__2027-06-17__1', '2027-06-17 20:30'],
       ['chok_leyisrael__2027-06-18__0', '2027-06-18 08:09'],
       ['chok_leyisrael__2027-06-20__0', '2027-06-20 08:10'],
-      ['chok_leyisrael__2027-06-20__1', '2027-06-20 19:55'],
+      ['chok_leyisrael__2027-06-20__1', '2027-06-20 20:30'],
     ]);
   });
 
@@ -340,9 +439,9 @@ describe('the scheduler', () => {
 
 describe('history, the streak and the check-in', () => {
   const { computeStats, judgeDay } = WITH_CONTENT.history;
-  const since = { chok_leyisrael: new Date(2026, 11, 1).getTime() };
+  const since = { chok_leyisrael: at(JERUSALEM, '2026-12-01T12:00').getTime() };
   const statsWith = (completions: Record<string, Record<string, number>>) =>
-    computeStats([CHOK], completions, JERUSALEM, IL, 4, new Date(2026, 11, 17, 12), { enabledSince: since });
+    computeStats([CHOK], completions, JERUSALEM, IL, 4, at(JERUSALEM, '2026-12-17T12:00'), { enabledSince: since });
 
   it('turns a missed day into a done one when its make-up is marked', () => {
     const before = statsWith({
@@ -381,8 +480,8 @@ describe('history, the streak and the check-in', () => {
       JERUSALEM,
       IL,
       2,
-      new Date(2027, 3, 23, 12),
-      { enabledSince: { chok_leyisrael: new Date(2027, 3, 1).getTime() } },
+      at(JERUSALEM, '2027-04-23T12:00'),
+      { enabledSince: { chok_leyisrael: at(JERUSALEM, '2027-04-01T12:00').getTime() } },
     );
     expect(stats.daily).toEqual([
       { date: '2027-04-22', doneCount: 0, totalCount: 0, pendingCount: 0 },
@@ -395,7 +494,10 @@ describe('history, the streak and the check-in', () => {
   it('keeps the day open until the next alot', () => {
     const input = { mitzvot: [CHOK], completions: {}, location: JERUSALEM, settings: IL };
     expect(judgeDay(day('2026-12-14'), input, at(JERUSALEM, '2026-12-15T03:00')).pending).toEqual(['chok_leyisrael']);
-    expect(judgeDay(day('2026-12-14'), input, new Date(2026, 11, 16, 12)).missed).toEqual(['chok_leyisrael']);
+    expect(judgeDay(day('2026-12-14'), input, at(JERUSALEM, '2026-12-16T12:00')).missed).toEqual(['chok_leyisrael']);
+    const alot = zmanimFor(at(JERUSALEM, '2026-12-15T12:00'), JERUSALEM).alotHaShachar;
+    expect(judgeDay(day('2026-12-14'), input, new Date(alot.getTime() - 1)).pending).toEqual(['chok_leyisrael']);
+    expect(judgeDay(day('2026-12-14'), input, alot).missed).toEqual(['chok_leyisrael']);
   });
 
   it('puts the Friday window, which ends at candle lighting, in the check-in of that Shabbat', () => {
@@ -418,7 +520,7 @@ describe('history, the streak and the check-in', () => {
 
   it('keeps an unmarked Friday pending until the check-in is finished or its deadline, and a mark fills the day', () => {
     const input = { mitzvot: [CHOK], completions: {}, checkIns: {}, location: JERUSALEM, settings: IL };
-    const sunday = new Date(2026, 11, 20, 12);
+    const sunday = at(JERUSALEM, '2026-12-20T12:00');
     expect(judgeDay(day('2026-12-18'), input, sunday)).toEqual({
       key: '2026-12-18',
       done: [],
@@ -428,7 +530,10 @@ describe('history, the streak and the check-in', () => {
     expect(judgeDay(day('2026-12-18'), { ...input, checkIns: { '2026-12-19': MARK } }, sunday).missed).toEqual([
       'chok_leyisrael',
     ]);
-    expect(judgeDay(day('2026-12-18'), input, new Date(2026, 11, 21, 12)).missed).toEqual(['chok_leyisrael']);
+    expect(judgeDay(day('2026-12-18'), input, at(JERUSALEM, '2026-12-21T12:00')).missed).toEqual(['chok_leyisrael']);
+    const deadline = zmanimFor(at(JERUSALEM, '2026-12-21T12:00'), JERUSALEM).alotHaShachar;
+    expect(judgeDay(day('2026-12-18'), input, new Date(deadline.getTime() - 1)).pending).toEqual(['chok_leyisrael']);
+    expect(judgeDay(day('2026-12-18'), input, deadline).missed).toEqual(['chok_leyisrael']);
     const marked = { ...input, completions: { '2026-12-18': { chok_leyisrael: MARK } } };
     expect(judgeDay(day('2026-12-18'), marked, sunday).done).toEqual(['chok_leyisrael']);
     const block = HebcalService.holyBlockOn(at(JERUSALEM, '2026-12-19T12:00'), JERUSALEM)!;
@@ -445,7 +550,7 @@ describe('history, the streak and the check-in', () => {
     expect(yomTov.days.map((entry) => [entry.key, entry.items.map((item) => item.mitzvah.id)])).toEqual([
       ['2027-04-21', ['chok_leyisrael']],
     ]);
-    expect(judgeDay(day('2027-04-21'), input, new Date(2027, 3, 23, 12)).pending).toEqual(['chok_leyisrael']);
+    expect(judgeDay(day('2027-04-21'), input, at(JERUSALEM, '2027-04-23T12:00')).pending).toEqual(['chok_leyisrael']);
     const shabbat = HebcalService.holyBlockOn(at(JERUSALEM, '2027-04-24T12:00'), JERUSALEM)!;
     const cholHamoed = WITH_CONTENT.checkIn.checkInFor(shabbat, input, shabbat.end)!;
     expect(cholHamoed.days.map((entry) => entry.key)).toEqual(['2027-04-23']);

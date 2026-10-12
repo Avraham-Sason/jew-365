@@ -1163,7 +1163,7 @@ describe('NotificationScheduler', () => {
       expect(checkInsOf().map(triggerOf)).toEqual([
         block.end.getTime(),
         block.end.getTime() + 2 * 3_600_000,
-        new Date(2026, 10, 15, 20).getTime(),
+        at(jerusalem, '2026-11-15T20:00').getTime(),
       ]);
       const [first, , last] = checkInsOf();
       expect(first.content.title).toBe(t('checkin.title', { in: t('checkin.in.shabbat') }));
@@ -1216,17 +1216,16 @@ describe('NotificationScheduler', () => {
       const yomKippur = HebcalService.holyBlockAt(at(jerusalem, '2027-10-11T12:00'), jerusalem)!;
       const last = checkInsOf().find((p) => p.identifier === 'checkin:2027-10-09:2');
       expect(last).toBeDefined();
-      // 20:00 on the device clock, unless that is already inside Yom Kippur: then half an hour before it.
+      // 20:00 on the location's clock, unless that is already inside Yom Kippur: then half an hour before it.
       expect(triggerOf(last!)).toBeLessThanOrEqual(yomKippur.start.getTime() - 30 * 60_000);
-      if (HebcalService.holyBlockAt(new Date(2027, 9, 10, 20), jerusalem)) {
+      if (HebcalService.holyBlockAt(at(jerusalem, '2027-10-10T20:00'), jerusalem)) {
         expect(triggerOf(last!)).toBe(yomKippur.start.getTime() - 30 * 60_000);
       }
     });
 
     it('still sends the last call when the app is rebuilt the morning after', async () => {
       setupEnabled(['shacharit']);
-      // Sunday morning on the device's clock, the clock the last call and the deadline run on.
-      await scheduleAt(new Date(2026, 10, 15, 10));
+      await scheduleAt(at(jerusalem, '2026-11-15T10:00'));
       expect(checkInsOf().map((p) => p.identifier)).toEqual(['checkin:2026-11-14:2']);
     });
 

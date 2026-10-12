@@ -2,7 +2,8 @@ import { Mitzvah, UserSettings } from '@/types/mitzvah';
 import { Location, Zmanim } from '@/types/zmanim';
 import { ZmanimService } from '@/services/ZmanimService';
 import { isSkippedAt } from '@/utils/skipRules';
-import { locationNoon } from '@/utils/locationDay';
+import { appDay, appDayKey, locationNoon } from '@/utils/locationDay';
+import { addDays } from '@/utils/historyStats';
 import { mitzvahName } from '@/utils/mitzvahName';
 import { Completions, dateKey } from '@/stores/useCompletionsStore';
 
@@ -33,25 +34,53 @@ type Translate = (key: string, params?: Record<string, unknown>) => string;
 
 const NEXT_WINDOW_LOOKAHEAD_DAYS = 9;
 
+export type DayWindow = { start: Date; end: Date; date: Date };
+
+// The window `mitzvah` has on calendar day `date` (device-local midnight of a location date, zmanim at
+// the location's noon), or null when it has none or isSkippedAt() skips it. `date` keys its mark and ids.
+export function dayWindow(mitzvah: Mitzvah, date: Date, location: Location, settings: UserSettings): DayWindow | null {
+  const zmanim = ZmanimService.getZmanim(locationNoon(date, location), location);
+  if (!zmanim) return null;
+  const window = mitzvah.computeWindow({ date, location, settings, zmanim });
+  if (!window || isSkippedAt(mitzvah, window.start, location, settings)) return null;
+  return { ...window, date };
+}
+
 export function currentOrNextWindow(
   mitzvah: Mitzvah,
   location: Location,
   settings: UserSettings,
   now: Date = new Date(),
-): { start: Date; end: Date; date: Date } | null {
+): DayWindow | null {
+  const today = appDay(now, location);
   // Far enough ahead to clear the longest run of skipped days — Sukkot in Israel keeps tefillin
   // off for chol hamoed, Shemini Atzeret and a Shabbat — and to reach next week's candle lighting.
   for (let offset = -1; offset <= NEXT_WINDOW_LOOKAHEAD_DAYS; offset++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() + offset);
-    const zmanim = ZmanimService.getZmanim(date, location);
-    if (!zmanim) continue;
-    const window = mitzvah.computeWindow({ date, location, settings, zmanim });
-    if (!window || window.end.getTime() <= now.getTime()) continue;
-    if (isSkippedAt(mitzvah, window.start, location, settings)) continue;
-    return { ...window, date };
+    const window = dayWindow(mitzvah, addDays(today, offset), location, settings);
+    if (window && window.end.getTime() > now.getTime()) return window;
   }
   return null;
+}
+
+const isWindow = (window: DayWindow | null): window is DayWindow => window !== null;
+
+// The window home shows: one open now, whatever day it was computed for; else the one whose start
+// falls in this app day, the day's own or the next date's; else none.
+export function appDayWindow(
+  mitzvah: Mitzvah,
+  location: Location,
+  settings: UserSettings,
+  now: Date = new Date(),
+): DayWindow | null {
+  const today = appDay(now, location);
+  const todayKey = dateKey(today);
+  const windows = [-1, 0, 1].map((offset) => dayWindow(mitzvah, addDays(today, offset), location, settings));
+  const [, own, next] = windows;
+  const open = windows
+    .filter(isWindow)
+    .find((window) => window.start.getTime() <= now.getTime() && now.getTime() < window.end.getTime());
+  if (open) return open;
+  return [own, next].filter(isWindow).find((window) => appDayKey(window.start, location) === todayKey) ?? null;
 }
 
 export function buildDayTimeline(
@@ -73,7 +102,7 @@ export function buildDayTimeline(
   }));
   const selectedDateKey = dateKey(date);
   const doneToday = completions[selectedDateKey] ?? {};
-  const isToday = selectedDateKey === dateKey(new Date());
+  const isToday = selectedDateKey === appDayKey(new Date(), location);
   mitzvot.forEach((mitzvah) => {
     const window = mitzvah.computeWindow({ date, location, settings, zmanim });
     if (!window) return;

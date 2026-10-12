@@ -83,7 +83,7 @@ export default function MitzvotScreen() {
         onBack={goBack}
         actions={
           <HeaderPill
-            label="+"
+            icon="plus"
             accessibilityLabel={t('library.addCustom')}
             onPress={() => router.push('/custom-mitzvah')}
           />

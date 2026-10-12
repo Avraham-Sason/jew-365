@@ -3,7 +3,7 @@ import { InteractionManager, Pressable, ScrollView, StyleSheet, Text, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
-import { MitzvahIcon } from '@/components/MitzvahIcon';
+import { MitzvahIcon, backIcon, forwardIcon } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { getLocationName } from '@/data/cities';
@@ -16,6 +16,7 @@ import { fontFamilies, typography } from '@/theme/typography';
 import { buildDayTimeline } from '@/utils/buildDayTimeline';
 import { latestCheckIn, pendingCheckInIds } from '@/utils/checkIn';
 import { clockOf } from '@/utils/clock';
+import { appDay } from '@/utils/locationDay';
 import { useI18n } from '@/i18n';
 
 const VIEW_MODES = ['day', 'week', 'month'] as const;
@@ -42,8 +43,8 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const completions = useCompletionsStore((s) => s.completions);
   const [view, setView] = useState<ViewMode>('day');
-  const [cursor, setCursor] = useState(DateTime.now());
-  const today = DateTime.now().startOf('day');
+  const [cursor, setCursor] = useState(() => DateTime.fromJSDate(appDay(new Date(), location)));
+  const today = DateTime.fromJSDate(appDay(new Date(), location)).startOf('day');
   const cursorDay = cursor.startOf('day');
   const isSelectedToday = cursorDay.hasSame(today, 'day');
   const isSelectedPast = cursorDay < today;
@@ -128,8 +129,6 @@ export default function ScheduleScreen() {
   }, [isSelectedToday, dayItems]);
 
   const subtitle = `${cursor.setLocale(language).toFormat(language === 'he' ? 'd LLLL yyyy' : 'LLL d, yyyy')} · ${getLocationName(location, language)}`;
-  const prevArrow = language === 'he' ? '→' : '←';
-  const nextArrow = language === 'he' ? '←' : '→';
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
 
   return (
@@ -145,7 +144,7 @@ export default function ScheduleScreen() {
         />
         <View style={styles.navRow}>
           <HeaderPill
-            label={prevArrow}
+            icon={backIcon(language)}
             onPress={() => setCursor((prev) => shift(prev, view, -1))}
             accessibilityLabel={t('common.previous')}
           />
@@ -155,7 +154,7 @@ export default function ScheduleScreen() {
               : cursor.setLocale(language).toFormat(language === 'he' ? 'cccc d LLL' : 'ccc LLL d')}
           </Text>
           <HeaderPill
-            label={nextArrow}
+            icon={forwardIcon(language)}
             onPress={() => setCursor((prev) => shift(prev, view, 1))}
             accessibilityLabel={t('common.next')}
           />
@@ -292,7 +291,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.weekCard,
                 {
-                  backgroundColor: day.hasSame(DateTime.now(), 'day') ? colors.goldLight : colors.surface,
+                  backgroundColor: day.hasSame(today, 'day') ? colors.goldLight : colors.surface,
                   borderColor: colors.border,
                 },
               ]}
@@ -350,7 +349,7 @@ export default function ScheduleScreen() {
                   style={[
                     styles.monthCell,
                     {
-                      backgroundColor: cell.day.hasSame(DateTime.now(), 'day') ? colors.goldWashStrong : colors.surface,
+                      backgroundColor: cell.day.hasSame(today, 'day') ? colors.goldWashStrong : colors.surface,
                       borderColor: colors.border,
                       opacity: cell.inMonth ? 1 : 0.45,
                     },

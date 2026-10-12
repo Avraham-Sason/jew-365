@@ -1,4 +1,4 @@
-import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
+import { useCompletionsStore } from '@/stores/useCompletionsStore';
 
 // Every store action queues its own scheduler call (cancel, settle, rebuild), so this layer never
 // adds one: the cancel it used to await ran a second time on every completion.
@@ -22,6 +22,4 @@ export const CompletionService = {
   isSkipped(mitzvahId: string, date: Date = new Date()): boolean {
     return useCompletionsStore.getState().isSkipped(mitzvahId, date);
   },
-
-  getDateKey: dateKey,
 };

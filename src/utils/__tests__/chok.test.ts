@@ -445,14 +445,20 @@ describe('chokOpenMakeUps', () => {
   });
 
   it('starts on the day the mitzvah was switched on', () => {
-    const mondayAfternoon = new Date(2026, 10, 16, 15).getTime();
+    const mondayAfternoon = at(JERUSALEM, '2026-11-16T15:00').getTime();
     expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, mondayAfternoon))).toEqual([
       '2026-11-16',
       '2026-11-17',
     ]);
-    const tuesdayMidnight = new Date(2026, 10, 17).getTime();
-    expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, tuesdayMidnight))).toEqual(['2026-11-17']);
-    expect(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, new Date(2026, 10, 18, 9).getTime())).toEqual([]);
+    const mondayNight = at(JERUSALEM, '2026-11-17T00:30').getTime();
+    expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, mondayNight))).toEqual([
+      '2026-11-16',
+      '2026-11-17',
+    ]);
+    const tuesdayMorning = at(JERUSALEM, '2026-11-17T06:00').getTime();
+    expect(keys(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, tuesdayMorning))).toEqual(['2026-11-17']);
+    const wednesdayMorning = at(JERUSALEM, '2026-11-18T09:00').getTime();
+    expect(chokOpenMakeUps(day(2026, 11, 18), JERUSALEM, true, {}, wednesdayMorning)).toEqual([]);
   });
 
   it('keeps a Yom Tov day until it is marked', () => {

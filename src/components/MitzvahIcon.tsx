@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
+import type { AppLanguage } from '@/i18n';
 
 export const ICON_NAMES = [
   'tefillin',
@@ -25,6 +26,12 @@ export const ICON_NAMES = [
   'chevronRight',
   'sparkle',
   'check',
+  'close',
+  'plus',
+  'minus',
+  'sun',
+  'undo',
+  'warning',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -36,6 +43,9 @@ export const ICON_VARIANT: IconVariant = 'outline';
 export function iconFor(icon: string): IconName {
   return (ICON_NAMES as readonly string[]).includes(icon) ? (icon as IconName) : 'custom';
 }
+
+export const backIcon = (language: AppLanguage): IconName => (language === 'he' ? 'chevronRight' : 'chevronLeft');
+export const forwardIcon = (language: AppLanguage): IconName => (language === 'he' ? 'chevronLeft' : 'chevronRight');
 
 type Drawing = { fill: string; sw: number };
 
@@ -205,6 +215,28 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
     <Path d="M12,2.8Q13.66,10.34 21.2,12Q13.66,13.66 12,21.2Q10.34,13.66 2.8,12Q10.34,10.34 12,2.8Z" fill={fill} />
   ),
   check: () => <Path d="M4.5,12.5L9.5,17.5L19.5,6.5" />,
+  close: () => <Path d="M6,6L18,18M18,6L6,18" />,
+  plus: () => <Path d="M12,5V19M5,12H19" />,
+  minus: () => <Path d="M5,12H19" />,
+  sun: ({ fill }) => (
+    <>
+      <Circle cx={12} cy={12} r={4.5} fill={fill} />
+      <Path d="M19.5,12H21.8M17.3,6.7L18.93,5.07M12,4.5V2.2M6.7,6.7L5.07,5.07M4.5,12H2.2M6.7,17.3L5.07,18.93M12,19.5V21.8M17.3,17.3L18.93,18.93" />
+    </>
+  ),
+  undo: () => (
+    <>
+      <Path d="M5,13A7,7 0 1 0 7.05,8.05" />
+      <Path d="M7.05,4.05V8.05H11.05" />
+    </>
+  ),
+  warning: ({ fill }) => (
+    <>
+      <Path d="M10.8,5.28Q12,3.2 13.2,5.28L20.4,17.72Q21.6,19.8 19.2,19.8H4.8Q2.4,19.8 3.6,17.72Z" fill={fill} />
+      <Line x1={12} y1={9.8} x2={12} y2={13.8} />
+      <Line x1={12} y1={16.7} x2={12} y2={16.8} />
+    </>
+  ),
 };
 
 type Props = {

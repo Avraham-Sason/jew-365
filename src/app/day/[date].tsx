@@ -14,6 +14,7 @@ import { typography } from '@/theme/typography';
 import { buildDayTimeline } from '@/utils/buildDayTimeline';
 import { latestCheckIn, pendingCheckInIds } from '@/utils/checkIn';
 import { clockRange, formatRemaining } from '@/utils/clock';
+import { appDay } from '@/utils/locationDay';
 import { useI18n } from '@/i18n';
 
 const EMPTY_COMPLETIONS = Object.freeze({}) as Completions;
@@ -30,7 +31,7 @@ export default function DayRoute() {
   const dateParam = typeof params.date === 'string' ? params.date : '';
   const parsed = useMemo(() => DateTime.fromISO(dateParam).startOf('day'), [dateParam]);
   const valid = Boolean(dateParam.match(/^\d{4}-\d{2}-\d{2}$/)) && parsed.isValid;
-  const today = DateTime.now().startOf('day');
+  const today = DateTime.fromJSDate(appDay(new Date(), location)).startOf('day');
   const isToday = valid && parsed.hasSame(today, 'day');
   const isPast = valid && parsed < today;
   const isFuture = valid && parsed > today;

@@ -1,10 +1,15 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MitzvahIcon, type IconName } from '@/components/MitzvahIcon';
 import { SIDDUR_SCROLL_SPEEDS, scrollSpeedLevel } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
+
+const STEP_ICON_SIZE = 16;
+const STEP_ICON_STROKE = 2.8;
+const STEP_HEIGHT = 30;
 
 type Props = {
   level: number;
@@ -20,7 +25,7 @@ export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: P
   const max = SIDDUR_SCROLL_SPEEDS.length;
   const onHeader = tone === 'header';
   const textColor = onHeader ? colors.headerText : colors.text;
-  const step = (label: string, accessibilityLabel: string, next: number) => {
+  const step = (icon: IconName, accessibilityLabel: string, next: number) => {
     const disabled = next < 1 || next > max;
     return (
       <Pressable
@@ -36,7 +41,7 @@ export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: P
           { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 },
         ]}
       >
-        <Text style={[typography.bodyBold, { color: textColor }]}>{label}</Text>
+        <MitzvahIcon name={icon} size={STEP_ICON_SIZE} color={textColor} strokeWidth={STEP_ICON_STROKE} />
       </Pressable>
     );
   };
@@ -49,14 +54,14 @@ export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: P
           : { backgroundColor: colors.surface2, borderColor: colors.border },
       ]}
     >
-      {step('−', t('siddur.scrollSlower'), current - 1)}
+      {step('minus', t('siddur.scrollSlower'), current - 1)}
       <Text
         style={[typography.captionBold, styles.level, compact && styles.levelCompact, { color: textColor }]}
         accessibilityLabel={t('siddur.scrollSpeed', { level: current, max })}
       >
         {current}
       </Text>
-      {step('+', t('siddur.scrollFaster'), current + 1)}
+      {step('plus', t('siddur.scrollFaster'), current + 1)}
     </View>
   );
 }
@@ -70,8 +75,9 @@ const styles = StyleSheet.create({
   },
   step: {
     minWidth: 32,
-    paddingVertical: spacing.xs,
+    minHeight: STEP_HEIGHT,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   stepCompact: {
     minWidth: 26,

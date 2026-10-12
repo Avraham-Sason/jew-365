@@ -21,6 +21,7 @@ import { HebcalService } from '@/services/HebcalService';
 import { at, zmanimFor } from '@/testing/zmanim';
 import { t } from '@/i18n';
 import type { Mitzvah } from '@/types/mitzvah';
+import { checkInDeadline } from '@/utils/checkIn';
 
 const JERUSALEM = CITIES[0];
 const ALL_NUSCHAOT: Mitzvah['nuschaotSupported'] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
@@ -293,13 +294,27 @@ describe('buildPlan', () => {
       expect(summary(nudges)).toEqual([
         ['checkin:2026-11-14:0', shabbat().end.getTime()],
         ['checkin:2026-11-14:1', minutes(shabbat().end, 120)],
-        ['checkin:2026-11-14:2', new Date(2026, 10, 15, 20).getTime()],
+        ['checkin:2026-11-14:2', at(JERUSALEM, '2026-11-15T20:00').getTime()],
       ]);
       for (const nudge of nudges) {
         expect(nudge.channel).toBe('system');
         expect(nudge.categoryIdentifier).toBeUndefined();
         expect(nudge.data).toEqual({ kind: 'checkin', blockId: '2026-11-14' });
       }
+    });
+
+    it('plans every check-in nudge before the check-in closes at alot, and none once it has', () => {
+      const deadline = checkInDeadline(shabbat(), JERUSALEM);
+      const nudgesAt = (now: Date) =>
+        buildPlan(planInput({ now, mitzvot: [byId('shacharit'), byId('mincha')] })).filter((candidate) =>
+          candidate.id.startsWith('checkin:'),
+        );
+
+      const all = nudgesAt(FRIDAY);
+      expect(all).toHaveLength(3);
+      for (const nudge of all) expect(nudge.trigger.getTime()).toBeLessThan(deadline.getTime());
+      expect(nudgesAt(new Date(deadline.getTime() - 1))).toEqual([]);
+      expect(nudgesAt(deadline)).toEqual([]);
     });
 
     it('sends the weekly report between the first and second check-in nudge, on the system channel', () => {
@@ -311,7 +326,7 @@ describe('buildPlan', () => {
         ['checkin:2026-11-14:0', shabbat().end.getTime()],
         ['report:2026-11-14', minutes(shabbat().end, 45)],
         ['checkin:2026-11-14:1', minutes(shabbat().end, 120)],
-        ['checkin:2026-11-14:2', new Date(2026, 10, 15, 20).getTime()],
+        ['checkin:2026-11-14:2', at(JERUSALEM, '2026-11-15T20:00').getTime()],
       ]);
       const report = sequence[1];
       expect(report.channel).toBe('system');

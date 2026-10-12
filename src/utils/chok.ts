@@ -8,7 +8,7 @@ import { Nusach } from '@/types/mitzvah';
 import { SiddurSection, SiddurText } from '@/types/siddur';
 import { Location } from '@/types/zmanim';
 import { calendarDay } from '@/utils/checkIn';
-import { locationNoon } from '@/utils/locationDay';
+import { appDayEnd, locationNoon } from '@/utils/locationDay';
 import { quietBlockAt } from '@/utils/skipRules';
 import { civilHebrewDayAt, dayNoon, hebrewDay } from '@/utils/taharah/onot';
 
@@ -174,7 +174,7 @@ export function chokOpenMakeUps(
   return chokMakeUpsBefore(today, location, inIsrael).filter(
     (makeUp) =>
       !completions[makeUp.dateKey]?.[CHOK_TEXT_ID] &&
-      (enabledAt === undefined || enabledAt < calendarDay(makeUp.dateKey, 1).getTime()),
+      (enabledAt === undefined || enabledAt < appDayEnd(calendarDay(makeUp.dateKey), location).getTime()),
   );
 }
 

@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { useShallow } from 'zustand/react/shallow';
 import { BottomSheet } from '@/components/BottomSheet';
 import { formatDayLine } from '@/components/DayStepper';
+import { IconName, MitzvahIcon, backIcon, forwardIcon } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { useNow } from '@/hooks/useNow';
 import { HebcalService } from '@/services/HebcalService';
@@ -41,12 +42,15 @@ type Cell = {
 };
 
 const WEEKS = 6;
-const SUN = '☀︎';
-const MOON = '☾';
+const MARK_ICON_SIZE = 14;
 
 // A night onah opens at the previous day's shkia, so it is drawn on the evening cell before its own day.
 const cellOf = (onah: Onah) => (onah.kind === 'night' ? onah.abs - 1 : onah.abs);
-const glyphOf = (kind: OnahKind) => (kind === 'day' ? SUN : MOON);
+const markIconOf = (kind: OnahKind): IconName => (kind === 'day' ? 'sun' : 'moon');
+
+function Mark({ icon, color }: { icon: IconName; color: string }) {
+  return <MitzvahIcon name={icon} size={MARK_ICON_SIZE} color={color} tint={color} variant="duotone" />;
+}
 
 function cellItems(marks: DayMarks, t: Translate) {
   const items: { key: string; title: string; detail: string; disputed: boolean }[] = [];
@@ -140,8 +144,6 @@ export default function TaharahCalendar() {
   }, [ready, cursor, location, marksByDay, now]);
 
   const monthEmpty = ready && !weeks.some((week) => week.some((cell) => cell.inMonth && cell.marks));
-  const prevArrow = language === 'he' ? '→' : '←';
-  const nextArrow = language === 'he' ? '←' : '→';
   const monthLabel = (month: DateTime) => `${t(`month.${month.month - 1}`)} ${month.year}`;
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -155,13 +157,13 @@ export default function TaharahCalendar() {
       <ScreenHeader title={t('taharah.calendar.title')} onBack={close}>
         <View style={styles.monthBand}>
           <HeaderPill
-            label={prevArrow}
+            icon={backIcon(language)}
             onPress={() => setCursor((prev) => prev.minus({ months: 1 }))}
             accessibilityLabel={monthLabel(cursor.minus({ months: 1 }))}
           />
           <Text style={[typography.captionBold, { color: colors.headerText }]}>{monthLabel(cursor)}</Text>
           <HeaderPill
-            label={nextArrow}
+            icon={forwardIcon(language)}
             onPress={() => setCursor((prev) => prev.plus({ months: 1 }))}
             accessibilityLabel={monthLabel(cursor.plus({ months: 1 }))}
           />
@@ -200,15 +202,13 @@ export default function TaharahCalendar() {
             </View>
           )}
           <View style={styles.legendItem}>
-            <Text style={[typography.captionBold, { color: colors.optional }]}>{MOON}</Text>
+            <Mark icon="moon" color={colors.optional} />
             <Text style={[typography.small, { color: colors.textSub }]}>{t('taharah.event.tevila')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.perishaBadge, { backgroundColor: colors.warning }]}>
-              <Text style={[typography.micro, styles.perishaGlyph]}>
-                {SUN}
-                {MOON}
-              </Text>
+              <Mark icon="sun" color={BRAND.white} />
+              <Mark icon="moon" color={BRAND.white} />
             </View>
             <Text style={[typography.small, { color: colors.textSub }]}>{t('taharah.calendar.legend.perisha')}</Text>
           </View>
@@ -267,12 +267,12 @@ function DayCell({ cell, onPress }: { cell: Cell; onPress: () => void }) {
       <Text style={[typography.micro, { color: colors.textMuted }]}>{cell.hebrewDay}</Text>
       <View style={styles.marks}>
         {marks?.onsets.length ? <View style={[styles.onsetDot, { backgroundColor: colors.gold }]} /> : null}
-        {marks?.tevila ? <Text style={[typography.micro, { color: colors.optional }]}>{MOON}</Text> : null}
+        {marks?.tevila ? <Mark icon="moon" color={colors.optional} /> : null}
         {(['day', 'night'] as const)
           .filter((kind) => perishaKinds.has(kind))
           .map((kind) => (
             <View key={kind} style={[styles.perishaBadge, { backgroundColor: colors.warning }]}>
-              <Text style={[typography.micro, styles.perishaGlyph]}>{glyphOf(kind)}</Text>
+              <Mark icon={markIconOf(kind)} color={BRAND.white} />
             </View>
           ))}
       </View>
@@ -338,12 +338,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   perishaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: radius.sm,
     paddingHorizontal: 3,
     paddingVertical: 1,
-  },
-  perishaGlyph: {
-    color: BRAND.white,
   },
   empty: {
     textAlign: 'center',

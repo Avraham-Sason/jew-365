@@ -59,15 +59,7 @@ export const NotificationScheduler = {
   async rebuildForNewDay(): Promise<void> {},
 };
 
-export function buildTriggerTime(
-  reminder: { anchor: 'start' | 'end'; offsetMin: number },
-  window: { start: Date; end: Date },
-): Date {
-  const anchor = reminder.anchor === 'start' ? window.start : window.end;
-  return new Date(anchor.getTime() + reminder.offsetMin * 60_000);
-}
-
-export { nextReminderAt } from '@/services/notifications/planners/mitzvot';
+export { buildTriggerTime, nextReminderAt } from '@/services/notifications/planners/mitzvot';
 
 export function setSchedulingSuspended(_value: boolean): void {}
 

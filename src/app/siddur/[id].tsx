@@ -45,6 +45,7 @@ import {
   standaloneTextDay,
   standaloneTextId,
 } from '@/data/siddur';
+import { useDayModel } from '@/hooks/useDayModel';
 import { useNow } from '@/hooks/useNow';
 import { HDate } from '@hebcal/core';
 import { loadChokParasha, loadSiddurText } from '@/services/SiddurService';
@@ -77,6 +78,7 @@ import {
   aloneFolds,
   autoScrollPixelsPerSecond,
   dayFeatures,
+  forMaritalStatus,
   liturgicalDay,
   pickerEntries,
   pickerEntryAt,
@@ -98,7 +100,9 @@ import {
   chokToday,
   chokWeekName,
 } from '@/utils/chok';
+import { currentOrNextWindow } from '@/utils/buildDayTimeline';
 import { calendarDay } from '@/utils/checkIn';
+import { appDay } from '@/utils/locationDay';
 import { translate, useI18n } from '@/i18n';
 
 const KEEP_AWAKE_TAG = 'siddur-reader';
@@ -306,11 +310,19 @@ export default function SiddurScreen() {
   const setScrollSpeed = useUserStore((s) => s.setSiddurScrollSpeed);
   const prayerMode = useUserStore((s) => s.prayerMode);
   const setPrayerMode = useUserStore((s) => s.setPrayerMode);
+  const maritalStatus = useUserStore((s) => s.maritalStatus);
   const doubleChoice = useUserStore((s) => s.chokDoubleChoice);
   const setDoubleChoice = useUserStore((s) => s.setChokDoubleChoice);
   const standalone = mitzvah || chok ? null : standaloneTextId(params.id);
   const requestedDate = useMemo(() => parseDateParam(params.date), [params.date]);
-  const windowDate = useMemo(() => requestedDate ?? new Date(), [requestedDate]);
+  const { settings } = useDayModel();
+  const windowDate = useMemo(
+    () =>
+      requestedDate ??
+      (mitzvah && currentOrNextWindow(mitzvah, location, settings)?.date) ??
+      appDay(new Date(), location),
+    [requestedDate, mitzvah, location, settings],
+  );
   const mitzvahText = mitzvah && !mitzvah.isCustom ? mitzvahTextId(mitzvah.id) : null;
   const textId = mitzvahText ?? standalone;
   const evening = mitzvahText
@@ -475,7 +487,10 @@ export default function SiddurScreen() {
     });
   }, [load, shownSlot, doubleChoice, nusach, makeUpFolds]);
 
-  const sections = useMemo(() => (readyText ? resolveSiddurText(readyText, features) : []), [readyText, features]);
+  const sections = useMemo(
+    () => (readyText ? forMaritalStatus(resolveSiddurText(readyText, features), maritalStatus) : []),
+    [readyText, features, maritalStatus],
+  );
 
   useEffect(() => {
     if (!chok) return;

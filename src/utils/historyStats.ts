@@ -2,7 +2,7 @@ import { Mitzvah, UserSettings } from '@/types/mitzvah';
 import { Location } from '@/types/zmanim';
 import { ZmanimService } from '@/services/ZmanimService';
 import { isSkippedAt } from '@/utils/skipRules';
-import { locationNoon } from '@/utils/locationDay';
+import { appDay, appDayEnd, locationNoon } from '@/utils/locationDay';
 import { blockForDay, checkInPending, overlapsBlock, wasEnabledBy } from '@/utils/checkIn';
 import { ArchivedDays, CheckIns, Completions, dateKey, isArchivedDay } from '@/stores/useCompletionsStore';
 
@@ -35,10 +35,10 @@ export function addDays(day: Date, days: number): Date {
 }
 
 // Every mitzvah of one calendar day, judged done, missed or still open. An item stays open for as
-// long as it can still be marked: until the day ends, or — when its window reaches into a Shabbat /
-// Yom Tov block — until that block's check-in is finished or its deadline passes. Only then can a
-// missing mark count against the user. A skip settles it at once, and a mitzvah switched on after
-// the day ended is not judged on it.
+// long as it can still be marked: until its day ends at the next alot, or — when its window reaches
+// into a Shabbat / Yom Tov block — until that block's check-in is finished or its deadline passes.
+// Only then can a missing mark count against the user. A skip settles it at once, and a mitzvah
+// switched on after the day ended is not judged on it.
 export function judgeDay(day: Date, input: HistoryInput, now: Date): DayVerdict {
   const key = dateKey(day);
   const verdict: DayVerdict = { key, done: [], missed: [], pending: [] };
@@ -46,7 +46,7 @@ export function judgeDay(day: Date, input: HistoryInput, now: Date): DayVerdict 
   const noon = locationNoon(day, location);
   const zmanim = ZmanimService.getZmanim(noon, location);
   if (!zmanim) return verdict;
-  const dayEnd = addDays(day, 1);
+  const dayEnd = appDayEnd(day, location);
   const doneMap = input.completions[key] ?? {};
   const skippedMap = input.skipped?.[key] ?? {};
   let block: ReturnType<typeof blockForDay> | undefined;
@@ -67,7 +67,7 @@ export function judgeDay(day: Date, input: HistoryInput, now: Date): DayVerdict 
     if (block === undefined) block = blockForDay(day, location);
     const inBlock = block !== null && overlapsBlock(window, block);
     const open = now.getTime() < Math.max(dayEnd.getTime(), window.end.getTime());
-    if (inBlock ? checkInPending(block!, input.checkIns ?? {}, now) : open) {
+    if (inBlock ? checkInPending(block!, input.checkIns ?? {}, now, location) : open) {
       verdict.pending.push(mitzvah.id);
     } else {
       verdict.missed.push(mitzvah.id);
@@ -90,11 +90,7 @@ export function computeStreak(input: HistoryInput, now: Date = new Date(), judge
   const floor = earliestKey(input);
   if (!floor) return 0;
   let streak = 0;
-  for (
-    let day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    dateKey(day) >= floor;
-    day = addDays(day, -1)
-  ) {
+  for (let day = appDay(now, input.location); dateKey(day) >= floor; day = addDays(day, -1)) {
     const key = dateKey(day);
     if (Object.keys(input.completions[key] ?? {}).length || isArchivedDay(input.archivedDays ?? [], key)) {
       streak += 1;
@@ -119,7 +115,7 @@ export function computeStats(
   extra: Pick<HistoryInput, 'checkIns' | 'archivedDays' | 'skipped' | 'enabledSince'> = {},
 ): HistoryStats {
   const input: HistoryInput = { mitzvot, completions, location, settings, ...extra };
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = appDay(now, location);
   const yesterdayKey = dateKey(addDays(today, -1));
   const perMitzvah: HistoryStats['perMitzvah'] = Object.fromEntries(
     mitzvot.map((mitzvah) => [mitzvah.id, { done: 0, eligible: 0, pending: 0, percent: 0 }]),

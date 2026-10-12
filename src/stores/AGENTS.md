@@ -29,6 +29,7 @@
 - `AppResetService` resets `useTaharahStore` and then wipes its storage and replaces its key with `clearTaharahStorage()`; a new taharah field needs a default in `initialData()` so that reset covers it.
 - Completion maps are pruned to `RETENTION_DAYS` on hydrate and must never write empty day buckets. The days pruned away are folded into `archivedDays` first (`archiveMarkedDays()`), and finished check-ins are pruned with the same cutoff.
 - `finishCheckIn()` is idempotent and withdraws the block's check-in reminders through the same queued `require()` the completion actions use. `markDone` and `markSkipped` also call `settleCheckIn()`, so the mark that empties a check-in withdraws its reminders too.
+- A completion or skip is keyed by the day its window was computed for, `dateKey(window.date)`, the key that window's notifications carry: after midnight a night window (maariv, the Omer, a custom window across midnight) still belongs to the previous date. A screen always passes that date to `markDone`, `markSkipped` and `unmark`, never `dateKey(new Date())`; the `date = new Date()` defaults of the actions and selectors serve tests only.
 - `useCompletionsStore.markDone`, `markSkipped`, and `unmark` must preserve notification cancellation/rebuild side effects.
 - Do not replace the deliberate `../../node_modules/zustand/middleware.js` require in [zustandMiddleware.ts](zustandMiddleware.ts) unless Metro and Jest are both verified.
 

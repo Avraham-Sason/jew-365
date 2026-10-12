@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DateTime } from 'luxon';
+import { MitzvahIcon, backIcon, forwardIcon } from '@/components/MitzvahIcon';
 import { HebcalService } from '@/services/HebcalService';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -20,6 +21,9 @@ export function formatDayLine(date: Date, language: AppLanguage): string {
     .toFormat(language === 'he' ? 'cccc · d LLLL' : 'cccc · LLL d');
 }
 
+const ARROW_SIZE = 20;
+const ARROW_STROKE = 2.4;
+
 const stepDay = (date: Date, days: number) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
 export function DayStepper({ value, onChange, min, max }: Props) {
@@ -29,8 +33,6 @@ export function DayStepper({ value, onChange, min, max }: Props) {
   const next = stepDay(value, 1);
   const prevDisabled = min !== undefined && prev.getTime() < stepDay(min, 0).getTime();
   const nextDisabled = max !== undefined && next.getTime() > stepDay(max, 0).getTime();
-  const prevArrow = language === 'he' ? '→' : '←';
-  const nextArrow = language === 'he' ? '←' : '→';
 
   return (
     <View style={styles.row}>
@@ -41,7 +43,7 @@ export function DayStepper({ value, onChange, min, max }: Props) {
         accessibilityLabel={formatDayLine(prev, language)}
         style={[styles.arrow, { backgroundColor: colors.surface2, opacity: prevDisabled ? 0.35 : 1 }]}
       >
-        <Text style={[typography.bodyBold, { color: colors.text }]}>{prevArrow}</Text>
+        <MitzvahIcon name={backIcon(language)} size={ARROW_SIZE} color={colors.text} strokeWidth={ARROW_STROKE} />
       </Pressable>
       <View style={styles.label}>
         <Text style={[typography.bodyBold, { color: colors.text }]}>{formatDayLine(value, language)}</Text>
@@ -56,7 +58,7 @@ export function DayStepper({ value, onChange, min, max }: Props) {
         accessibilityLabel={formatDayLine(next, language)}
         style={[styles.arrow, { backgroundColor: colors.surface2, opacity: nextDisabled ? 0.35 : 1 }]}
       >
-        <Text style={[typography.bodyBold, { color: colors.text }]}>{nextArrow}</Text>
+        <MitzvahIcon name={forwardIcon(language)} size={ARROW_SIZE} color={colors.text} strokeWidth={ARROW_STROKE} />
       </Pressable>
     </View>
   );

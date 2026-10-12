@@ -92,7 +92,7 @@ function reset(enabled: boolean) {
   useMitzvotStore.setState({
     activeMitzvot: {
       ...useMitzvotStore.getState().activeMitzvot,
-      chok_leyisrael: { enabled: true, enabledAt: new Date(2026, 10, 16, 8).getTime() },
+      chok_leyisrael: { enabled: true, enabledAt: at(JERUSALEM, '2026-11-16T08:00').getTime() },
     },
   });
 }

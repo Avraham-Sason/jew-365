@@ -2,6 +2,7 @@ import { Text } from 'react-native';
 import { Path } from 'react-native-svg';
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { HEADER_PILL_BG, HeaderPill, ScreenHeader } from '../ScreenHeader';
+import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES, THEME_NAMES } from '@/theme/colors';
 import { useUserStore } from '@/stores/useUserStore';
@@ -132,5 +133,50 @@ describe('HeaderPill', () => {
     expect(pill).toBeSelected();
     expect(pill).toHaveStyle({ backgroundColor: THEMES[name].headerAccent });
     expect(screen.getByText('Today')).toHaveStyle({ color: THEMES[name].headerBg });
+  });
+
+  describe('with an icon', () => {
+    it('draws the icon in headerText with no text, named by its accessibilityLabel, and fires onPress once', async () => {
+      const onPress = jest.fn();
+      renderWithTheme(<HeaderPill icon="chevronRight" accessibilityLabel="Previous week" onPress={onPress} />);
+      const icon = screen.UNSAFE_getByType(MitzvahIcon);
+      expect(icon.props.name).toBe('chevronRight');
+      expect(icon.props.color).toBe(THEMES.gold.headerText);
+      expect(screen.UNSAFE_getByType(Path).props.d).toBe('M9,6L15,12L9,18');
+      expect(screen.queryByText(/./)).toBeNull();
+      await userEvent.setup().press(screen.getByRole('button', { name: 'Previous week' }));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(THEME_NAMES)('%s: selected turns the icon headerBg on the headerAccent pill', (name) => {
+      useUserStore.setState({ theme: name });
+      renderWithTheme(<HeaderPill icon="chevronLeft" accessibilityLabel="Next week" selected onPress={jest.fn()} />);
+      const pill = screen.getByRole('button', { name: 'Next week' });
+      expect(pill).toBeSelected();
+      expect(pill).toHaveStyle({ backgroundColor: THEMES[name].headerAccent });
+      expect(screen.UNSAFE_getByType(MitzvahIcon).props.color).toBe(THEMES[name].headerBg);
+    });
+
+    it('disabled fades the pill and swallows the press', () => {
+      const onPress = jest.fn();
+      renderWithTheme(<HeaderPill icon="chevronLeft" accessibilityLabel="Next week" disabled onPress={onPress} />);
+      const pill = screen.getByRole('button', { name: 'Next week' });
+      expect(pill).toBeDisabled();
+      expect(pill).toHaveStyle({ opacity: 0.5 });
+      fireEvent.press(pill);
+      expect(onPress).not.toHaveBeenCalled();
+    });
+
+    it('draws the icon and the label together when both are given', () => {
+      renderWithTheme(<HeaderPill icon="plus" label="Add" onPress={jest.fn()} />);
+      expect(screen.UNSAFE_getByType(MitzvahIcon).props.name).toBe('plus');
+      expect(screen.getByText('Add')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Add' })).toBeOnTheScreen();
+    });
+
+    it('draws no icon for a label-only pill', () => {
+      renderWithTheme(<HeaderPill label="Today" onPress={jest.fn()} />);
+      expect(screen.UNSAFE_queryByType(MitzvahIcon)).toBeNull();
+    });
   });
 });

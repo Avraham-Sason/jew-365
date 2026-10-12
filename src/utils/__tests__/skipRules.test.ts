@@ -200,7 +200,7 @@ describe('skipRules', () => {
     const timelineIds = buildDayTimeline(SHABBAT, [tefillin, shacharit], {}, JERUSALEM, SETTINGS, 'he', identity)
       .filter((item) => item.type === 'mitzvah')
       .map((item) => item.mitzvahId);
-    const stats = computeStats([tefillin, shacharit], {}, JERUSALEM, SETTINGS, 1, SHABBAT);
+    const stats = computeStats([tefillin, shacharit], {}, JERUSALEM, SETTINGS, 1, SHABBAT_NOON);
 
     expect(timelineIds).not.toContain('tefillin');
     expect(stats.perMitzvah.tefillin.eligible).toBe(0);
@@ -217,7 +217,7 @@ describe('skipRules', () => {
       .filter((item) => item.type === 'mitzvah')
       .map((item) => item.mitzvahId);
     // Judged the day after, so the day is decided: shacharit counts, tefillin is not asked for.
-    const stats = computeStats([tefillin, shacharit], {}, JERUSALEM, SETTINGS, 2, new Date(2027, 9, 19, 12));
+    const stats = computeStats([tefillin, shacharit], {}, JERUSALEM, SETTINGS, 2, at(JERUSALEM, '2027-10-19T12:00'));
     expect(timelineIds).toEqual(['shacharit']);
     expect(stats.daily.find((day) => day.date === '2027-10-18')).toMatchObject({ totalCount: 1, pendingCount: 0 });
     expect(stats.perMitzvah.tefillin.eligible).toBe(0);

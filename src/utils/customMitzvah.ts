@@ -1,6 +1,6 @@
 import { findMitzvah } from '@/data/mitzvot';
 import { STANDALONE_TEXTS, isSiddurTextId, standaloneTextId } from '@/data/siddur';
-import { TIME_PATTERN, timeToMinutes } from '@/utils/clock';
+import { TIME_PATTERN, minutesToTime, timeToMinutes } from '@/utils/clock';
 import { mitzvahName } from '@/utils/mitzvahName';
 import { ContentBlock, MitzvahCategory, Reminder, Weekday } from '@/types/mitzvah';
 
@@ -32,8 +32,6 @@ export function isActiveOn(activeDays: Weekday[] | undefined, weekday: Weekday):
   return activeDays === undefined || activeDays.includes(weekday);
 }
 
-const pad = (value: number) => String(value).padStart(2, '0');
-
 export function reminderClock(
   startHHMM: string,
   endHHMM: string,
@@ -44,8 +42,7 @@ export function reminderClock(
   const duration = windowMinutes(startHHMM, endHHMM);
   const trigger = (reminder.anchor === 'start' ? start : start + duration) + reminder.offsetMin;
   if (!(trigger >= start && trigger - start <= duration)) return null;
-  const clock = trigger % DAY_MIN;
-  return `${pad(Math.floor(clock / 60))}:${pad(clock % 60)}`;
+  return minutesToTime(trigger % DAY_MIN);
 }
 
 export function siddurTextName(id: string, language: 'he' | 'en'): string | null {

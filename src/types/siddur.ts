@@ -78,7 +78,7 @@ export type Condition = {
 
 export type Run = { t: string; s?: 'b' | 'n' | 't'; when?: Condition };
 
-export type PassageLabel = { he: string; en: string; when?: Condition; alone?: boolean };
+export type PassageLabel = { he: string; en: string; when?: Condition; alone?: boolean; marriedOnly?: boolean };
 
 export type SiddurSegment = {
   he: Run[][];

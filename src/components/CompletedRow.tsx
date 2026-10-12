@@ -5,6 +5,11 @@ import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies, typography } from '@/theme/typography';
+import { useI18n } from '@/i18n';
+import { MitzvahIcon } from './MitzvahIcon';
+
+const UNDO_ICON_SIZE = 16;
+const UNDO_ICON_STROKE = 2.2;
 
 type Props = {
   name: string;
@@ -16,6 +21,7 @@ type Props = {
 
 export function CompletedRow({ name, time, onPress, onUndo, undoLabel }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(7);
 
@@ -47,10 +53,20 @@ export function CompletedRow({ name, time, onPress, onUndo, undoLabel }: Props) 
       </Text>
       <Text style={[typography.small, { color: colors.textMuted }]}>{time}</Text>
       {onUndo ? (
-        <Pressable onPress={onUndo} hitSlop={8} style={[styles.undoBtn, { borderColor: colors.border }]}>
-          <Text style={[typography.small, { color: colors.goldText, fontFamily: fontFamilies.heebo.bold }]}>
-            {undoLabel ?? '↺'}
-          </Text>
+        <Pressable
+          onPress={onUndo}
+          accessibilityRole="button"
+          accessibilityLabel={undoLabel ?? t('home.undo')}
+          hitSlop={8}
+          style={[styles.undoBtn, { borderColor: colors.border }]}
+        >
+          {undoLabel ? (
+            <Text style={[typography.small, { color: colors.goldText, fontFamily: fontFamilies.heebo.bold }]}>
+              {undoLabel}
+            </Text>
+          ) : (
+            <MitzvahIcon name="undo" size={UNDO_ICON_SIZE} color={colors.goldText} strokeWidth={UNDO_ICON_STROKE} />
+          )}
         </Pressable>
       ) : null}
     </Animated.View>

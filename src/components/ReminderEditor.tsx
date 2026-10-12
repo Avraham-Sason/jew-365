@@ -1,68 +1,110 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-import { Reminder, ReminderAnchor } from '@/types/mitzvah';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Mitzvah, Reminder, ReminderAnchor, UserSettings } from '@/types/mitzvah';
+import type { Location } from '@/types/zmanim';
+import { nextReminderAt } from '@/services/NotificationScheduler';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
+import { currentOrNextWindow } from '@/utils/buildDayTimeline';
+import { TIME_PATTERN, minutesToTime, timeToMinutes } from '@/utils/clock';
 import { BottomSheet } from './BottomSheet';
 import { SegmentedControl } from './SegmentedControl';
+import { TimeField } from './TimeField';
+
+const BODY_HEIGHT_SHARE = 0.65;
 
 const MAX_OFFSET_MIN = 720;
 
 type Props = {
   visible: boolean;
   initialValue?: Reminder | null;
-  window?: { start: Date; end: Date } | null;
+  mitzvah: Mitzvah;
+  location: Location;
+  settings: UserSettings;
+  allowClock?: boolean;
   mitzvahName?: string;
   onClose: () => void;
   onSave: (value: Reminder) => void;
 };
 
-export function ReminderEditor({ visible, initialValue, window, mitzvahName, onClose, onSave }: Props) {
+export function ReminderEditor({
+  visible,
+  initialValue,
+  mitzvah,
+  location,
+  settings,
+  allowClock = false,
+  mitzvahName,
+  onClose,
+  onSave,
+}: Props) {
   const { colors } = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
   const { t } = useI18n();
   const [anchor, setAnchor] = useState<ReminderAnchor>('start');
   const [offsetMin, setOffsetMin] = useState('0');
+  const [time, setTime] = useState('');
   const [label, setLabel] = useState('');
   const [skipIfDone, setSkipIfDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) return;
+    const startsOnClock = initialValue?.anchor === 'clock';
     setAnchor(initialValue?.anchor ?? 'start');
-    setOffsetMin(String(initialValue?.offsetMin ?? 0));
+    setOffsetMin(startsOnClock ? '0' : String(initialValue?.offsetMin ?? 0));
+    setTime(startsOnClock ? minutesToTime(initialValue.offsetMin) : '');
     setLabel(initialValue?.label ?? '');
     setSkipIfDone(initialValue?.skipIfDone ?? false);
     setError(null);
   }, [initialValue, visible]);
 
-  const [error, setError] = useState<string | null>(null);
+  const changeAnchor = (next: ReminderAnchor) => {
+    if (anchor === 'clock' && next !== 'clock') setOffsetMin('0');
+    setAnchor(next);
+  };
 
-  // The scheduler drops any trigger outside its window, so an unbounded offset produced a reminder
-  // that looked saved and could never fire. Reject it here instead, with the reason.
+  // A reminder is sendable when the scheduler would fire it at least once in its own lookahead. The marks
+  // are left out, so a mitzvah already done today never makes a sendable reminder look dead.
+  const firesAtLeastOnce = (reminder: Reminder) => {
+    const now = new Date();
+    if (!currentOrNextWindow(mitzvah, location, settings, now)) return true;
+    return nextReminderAt(mitzvah, [reminder], { now, location, settings, completions: {}, skipped: {} }) !== null;
+  };
+
   const save = () => {
-    const minutes = Number(offsetMin) || 0;
-    if (Math.abs(minutes) > MAX_OFFSET_MIN) {
+    const onClock = anchor === 'clock';
+    if (onClock && !TIME_PATTERN.test(time)) {
+      setError(t('reminder.errors.timeRequired'));
+      return;
+    }
+    const minutes = onClock ? timeToMinutes(time) : Number(offsetMin) || 0;
+    if (!onClock && Math.abs(minutes) > MAX_OFFSET_MIN) {
       setError(t('reminder.errors.offsetRange', { max: MAX_OFFSET_MIN }));
       return;
     }
-    if (window) {
-      const anchorTime = anchor === 'start' ? window.start : window.end;
-      const trigger = anchorTime.getTime() + minutes * 60_000;
-      if (trigger < window.start.getTime() || trigger > window.end.getTime()) {
-        setError(t('reminder.errors.outsideWindow'));
-        return;
-      }
+    const reminder: Reminder = {
+      anchor,
+      offsetMin: minutes,
+      label: label.trim() || mitzvahName || t('detail.addReminder'),
+      skipIfDone,
+    };
+    if (!firesAtLeastOnce(reminder)) {
+      setError(t(onClock ? 'reminder.errors.timeOutsideWindow' : 'reminder.errors.outsideWindow'));
+      return;
     }
     setError(null);
-    onSave({ anchor, offsetMin: minutes, label: label.trim() || mitzvahName || t('detail.addReminder'), skipIfDone });
+    onSave(reminder);
     onClose();
   };
 
   const anchorOptions: { value: ReminderAnchor; label: string }[] = [
     { value: 'start', label: t('reminder.anchor.start') },
     { value: 'end', label: t('reminder.anchor.end') },
+    ...(allowClock ? [{ value: 'clock' as const, label: t('reminder.anchor.clock') }] : []),
   ];
 
   return (
@@ -72,12 +114,16 @@ export function ReminderEditor({ visible, initialValue, window, mitzvahName, onC
       caption={mitzvahName}
       onClose={onClose}
     >
-      <View style={styles.fields}>
+      <ScrollView
+        style={{ maxHeight: windowHeight * BODY_HEIGHT_SHARE }}
+        contentContainerStyle={styles.fields}
+        keyboardShouldPersistTaps="handled"
+      >
         <SegmentedControl
           tone="surface"
           options={anchorOptions}
           value={anchor}
-          onChange={setAnchor}
+          onChange={changeAnchor}
           style={styles.anchor}
         />
         <Text style={[typography.captionBold, styles.fieldLabel, { color: colors.text }]}>{t('reminder.label')}</Text>
@@ -89,32 +135,40 @@ export function ReminderEditor({ visible, initialValue, window, mitzvahName, onC
           placeholderTextColor={colors.textMuted}
           style={[styles.input, { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border }]}
         />
-        <Text style={[typography.captionBold, styles.fieldLabel, { color: colors.text }]}>{t('reminder.offset')}</Text>
-        <View style={styles.offsetRow}>
-          <Pressable
-            onPress={() => setOffsetMin(String((Number(offsetMin) || 0) - 5))}
-            style={[styles.stepper, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.text }]}>-5</Text>
-          </Pressable>
-          <TextInput
-            accessibilityLabel={t('reminder.offset')}
-            keyboardType="numbers-and-punctuation"
-            value={offsetMin}
-            onChangeText={setOffsetMin}
-            style={[
-              styles.input,
-              styles.offsetInput,
-              { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border },
-            ]}
-          />
-          <Pressable
-            onPress={() => setOffsetMin(String((Number(offsetMin) || 0) + 5))}
-            style={[styles.stepper, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.text }]}>+5</Text>
-          </Pressable>
-        </View>
+        {anchor === 'clock' ? (
+          <TimeField inline label={t('reminder.time')} value={time} onChange={setTime} />
+        ) : (
+          <>
+            <Text style={[typography.captionBold, styles.fieldLabel, { color: colors.text }]}>
+              {t('reminder.offset')}
+            </Text>
+            <View style={styles.offsetRow}>
+              <Pressable
+                onPress={() => setOffsetMin(String((Number(offsetMin) || 0) - 5))}
+                style={[styles.stepper, { backgroundColor: colors.surface2, borderColor: colors.border }]}
+              >
+                <Text style={[typography.bodyBold, { color: colors.text }]}>-5</Text>
+              </Pressable>
+              <TextInput
+                accessibilityLabel={t('reminder.offset')}
+                keyboardType="numbers-and-punctuation"
+                value={offsetMin}
+                onChangeText={setOffsetMin}
+                style={[
+                  styles.input,
+                  styles.offsetInput,
+                  { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border },
+                ]}
+              />
+              <Pressable
+                onPress={() => setOffsetMin(String((Number(offsetMin) || 0) + 5))}
+                style={[styles.stepper, { backgroundColor: colors.surface2, borderColor: colors.border }]}
+              >
+                <Text style={[typography.bodyBold, { color: colors.text }]}>+5</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
         <View style={[styles.switchRow, { borderTopColor: colors.border }]}>
           <View style={styles.switchLabel}>
             <Text style={[typography.subheading, { color: colors.text }]}>{t('reminder.skipIfDone')}</Text>
@@ -130,7 +184,7 @@ export function ReminderEditor({ visible, initialValue, window, mitzvahName, onC
         <Pressable onPress={save} accessibilityRole="button" style={[styles.saveBtn, { backgroundColor: colors.gold }]}>
           <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.save')}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </BottomSheet>
   );
 }
@@ -167,6 +221,7 @@ const styles = StyleSheet.create({
   },
   offsetInput: {
     flex: 1,
+    minWidth: 0,
     marginBottom: 0,
     textAlign: 'center',
   },

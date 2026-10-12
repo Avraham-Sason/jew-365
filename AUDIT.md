@@ -6,7 +6,7 @@ Audit date: 2026-08-09 · Commit `edf9211` (+ the uncommitted `skipIfDone` work)
 
 ## Status
 
-All 63 findings below are annotated. **59 are fixed**, verified by `pnpm typecheck` plus the Jest
+All 63 findings below are annotated. **61 are fixed**, verified by `pnpm typecheck` plus the Jest
 suite in four timezones (`pnpm test:tz`: UTC, Asia/Jerusalem, America/Los_Angeles,
 Pacific/Kiritimati). The four-zone part was only genuine from 2026-10-04 (see §8.7 below). Each fix
 carries a note under its finding.
@@ -48,12 +48,11 @@ Found after the audit:
     day could be the wrong one (no spices on a plain motzaei Shabbat). It now steps by the
     location's dates and keys each reminder by its own day.
 
-Still open, tracked in [not-close.md](not-close.md) with every other open item: §2.11 with the
-completion-key half of §2.8 (Bugs). Closed since
-the first open list: §7.6 (live store URLs, 2026-09-01) and the rendering gap of §8.8
-(`@testing-library/react-native` and render tests since 2026-10-09, per-screen smoke renders
-since 2026-10-12). §1.4
-stays partial by design: the consequential failures reach the user through the error channel
+Nothing from the first open list is still open; [not-close.md](not-close.md) tracks every open item
+of the project. Closed since that list: §2.11 and the completion-key half of §2.8 (2026-10-12), §7.6
+(live store URLs, 2026-09-01) and the rendering gap of §8.8 (`@testing-library/react-native` and
+render tests since 2026-10-09, per-screen smoke renders since 2026-10-12). §1.4 stays partial by
+design: the consequential failures reach the user through the error channel
 (`src/services/errors.ts` and the banner on home) and Sentry, while the cosmetic
 `.catch(() => {})` sites still swallow.
 
@@ -272,8 +271,10 @@ Only lat/lng are replaced. `tz`, `inIsrael`, `elevation` and `name` come from th
 
 Fix: take the device zone for `tz`, derive `inIsrael` from the coordinates, drop the inherited elevation when the nearest city is >~25 km away, label it "מיקום נוכחי" rather than a wrong city name, and expose an explicit "אני בארץ ישראל" switch wired to `location.inIsrael`.
 
-### 2.8 The calendar day is resolved in the **device** zone, never the location's **[verified]** — ✅ FIXED (zmanim) / PARTIAL (completion keys)
+### 2.8 The calendar day is resolved in the **device** zone, never the location's **[verified]** — ✅ FIXED
 `src/services/ZmanimService.ts:31`
+
+> **Completion keys fixed 2026-10-12**, with §2.11: a mark is keyed by the day its window was computed for, a location date, on every surface, not by the device's clock at the moment of the mark.
 
 `cal.setDate(date)` hands kosher-zmanim a JS `Date`; its `setDate` materialises it via `DateTime.fromJSDate(date)` — the **system** zone — and `setGeoLocation` is never called afterwards to re-zone it. So the Y/M/D given to the solar calculator is the device's date while `loc.tz` describes somewhere else. `dateKey()` (used for completions and notification identifiers) has the same device-local basis.
 
@@ -307,8 +308,10 @@ Fix: gate on the calendar (`isYomTov(nextDay) || isFriday`), route through the a
 
 Fix: `-60`, or reword. A registry test asserting duration-mentioning `end` labels match `|offsetMin|` would keep this honest.
 
-### 2.11 Sunset-crossing windows are filed on the wrong day — ⚠️ OPEN (deliberate)
+### 2.11 Sunset-crossing windows are filed on the wrong day — ✅ FIXED (2026-10-12, no key migration)
 `src/stores/useCompletionsStore.ts:28`
+
+> **Fixed 2026-10-12, with no key migration.** The app's day now turns at alot hashachar (`appDay()`), and every mark is keyed by the day its window was computed for, so a mark made after midnight files under the evening's date and `cancelForMitzvah` targets that same day. Notification ids and stored keys are unchanged.
 
 `dateKey()` is the device-local Gregorian date, but maariv and Sefirat HaOmer deliberately cross midnight. `buildId` and the payload `dateKey` come from the day the window was *computed for*, while `buildTriggerTime` can land on the next civil day. The reminder fires next morning, "עשיתי" writes yesterday's key, every screen reads today's. Maariv still shows outstanding, the day count is wrong, and `cancelForMitzvah` cancels the wrong day. See also 2.3 for the inverse (a completion suppressing the *next* night).
 

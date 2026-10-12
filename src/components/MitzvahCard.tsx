@@ -20,6 +20,8 @@ import { useI18n } from '@/i18n';
 const TILE_SIZE = 38;
 const BUTTON_SIZE = 30;
 const DONE_LINE_ICON_SIZE = 14;
+const URGENT_LINE_ICON_SIZE = 12;
+const URGENT_LINE_ICON_STROKE = 2;
 
 type Props = {
   name: string;
@@ -154,7 +156,7 @@ export function MitzvahCard({
               {name}
             </Text>
             {done && (
-              <View style={styles.doneLine}>
+              <View style={styles.iconLine}>
                 <MitzvahIcon name="check" size={DONE_LINE_ICON_SIZE} color={colors.safe} />
                 <Text style={[typography.micro, { color: colors.safe, fontFamily: fontFamilies.heebo.semibold }]}>
                   {t('state.completed')}
@@ -172,14 +174,17 @@ export function MitzvahCard({
               </Text>
             ) : null}
             {urgent && !done && !statusText && (
-              <Text
-                style={[
-                  typography.micro,
-                  { color: colors.urgent, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
-                ]}
-              >
-                ⚠ {t('state.urgentSoon')}
-              </Text>
+              <View style={styles.iconLine}>
+                <MitzvahIcon
+                  name="warning"
+                  size={URGENT_LINE_ICON_SIZE}
+                  color={colors.urgent}
+                  strokeWidth={URGENT_LINE_ICON_STROKE}
+                />
+                <Text style={[typography.micro, { color: colors.urgent, fontFamily: fontFamilies.heebo.semibold }]}>
+                  {t('state.urgentSoon')}
+                </Text>
+              </View>
             )}
             {readOnly && !done && !statusText && (
               <Text
@@ -268,7 +273,7 @@ const styles = StyleSheet.create({
   body: { padding: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   meta: { flex: 1, minWidth: 0 },
-  doneLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
+  iconLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
   actions: {
     position: 'absolute',
     top: spacing.lg,

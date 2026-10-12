@@ -28,8 +28,8 @@ const day = (month: number, date: number, year = 2026) => new Date(year, month -
 
 const SHABBAT_NOACH = day(11, 14);
 const WEEK_START = day(11, 8);
-const MONDAY_AFTER = new Date(2026, 10, 16, 9);
-const SATURDAY_NIGHT = new Date(2026, 10, 14, 21);
+const MONDAY_AFTER = at(JERUSALEM, '2026-11-16T12:00');
+const SATURDAY_NIGHT = at(JERUSALEM, '2026-11-14T21:00');
 
 const ALL = { shacharit: 1, mincha: 1, maariv: 1 };
 const COMPLETIONS = {
@@ -284,6 +284,32 @@ describe('weekSummary', () => {
         weekSummary(input({ ...waiting, completions: marked }), WEEK_START, SHABBAT_NOACH, afterExit).checkInPending,
       ).toBe(0);
       expect(weekSummary(input(waiting), WEEK_START, SHABBAT_NOACH, beforeExit).checkInPending).toBe(0);
+    });
+  });
+
+  describe('the night after Shabbat', () => {
+    const justAfterMidnight = at(JERUSALEM, '2026-11-15T00:30');
+    const maarivOnly = [findMitzvah('maariv')!];
+
+    it('is filed under Saturday until alot: a mark is Saturday’s, and an unmarked maariv is still open', () => {
+      const marked = weekSummary(
+        input({ mitzvot: maarivOnly, completions: { '2026-11-14': { maariv: 1 } } }),
+        WEEK_START,
+        SHABBAT_NOACH,
+        justAfterMidnight,
+      );
+      expect(marked.days[6]).toEqual({ key: '2026-11-14', done: 1, missed: 0, pending: 0 });
+      const unmarked = weekSummary(
+        input({ mitzvot: maarivOnly, completions: {} }),
+        WEEK_START,
+        SHABBAT_NOACH,
+        justAfterMidnight,
+      );
+      expect(unmarked.days[6]).toEqual({ key: '2026-11-14', done: 0, missed: 0, pending: 1 });
+    });
+
+    it('still reports the week that Shabbat closed', () => {
+      expect(reportWeekEnd(null, JERUSALEM, justAfterMidnight)).toEqual(SHABBAT_NOACH);
     });
   });
 

@@ -559,6 +559,10 @@ const NOTES = {
     en: 'On Chol HaMoed, those who put on tefillin say the blessings quietly.',
     when: CHOL_HAMOED,
   },
+  tallitKatan: {
+    he: '<small>הלובש טלית קטן בלי טלית גדול מברך:</small>',
+    en: 'One who wears a tallit katan without a tallit gadol says:',
+  },
   megillahNight: {
     he: '<small>בליל פורים קוראים כאן את המגילה בברכותיה, ואחר כך אומרים "ואתה קדוש".</small>',
     en: 'On Purim night, the Megillah is read here with its blessings, followed by VeAtah Kadosh.',
@@ -679,10 +683,6 @@ const WHEN_SAID = {
     he: 'אם הפסיק בין תפילין של יד לתפילין של ראש',
     en: 'Only if one interrupted between the hand and head tefillin',
   },
-  tallitKatan: {
-    he: 'הלובש טלית קטן בלי טלית גדול',
-    en: 'For one wearing a tallit katan without a tallit gadol',
-  },
   fastDay: { he: 'ביום תענית אומרים', en: 'Said on a fast day', when: { none: ['publicFast'] } },
   gomel: { he: 'מי שחייב להודות מברך הגומל', en: 'Said by one who must give thanks (HaGomel)' },
   barMitzvahFather: {
@@ -700,7 +700,7 @@ const WHEN_SAID = {
     he: 'מי שלא קרא קריאת שמע בזמנה, ויש נוהגים בכל לילה: גם פרשת "והיה אם שמוע"',
     en: 'For one who did not recite the Shema on time, and by some custom every night: also the paragraph "Vehaya Im Shamoa"',
   },
-  maritalRelations: { he: 'בלילה שיש בו תשמיש המטה', en: 'On a night of marital relations' },
+  maritalRelations: { he: 'בלילה שיש בו תשמיש המטה', en: 'On a night of marital relations', marriedOnly: true },
 };
 const NO_KOHANIM_IN_ISRAEL = { ...WHEN_SAID.noKohanim, when: IN_ISRAEL };
 const SEFARD_SHOMEA_TEFILLAH_CLOSING =
@@ -1297,27 +1297,24 @@ const TEFILLIN = {
 };
 const ASHKENAZ_TEFILLIN_CHOL_HAMOED = { at: 0, ...NOTES.tefillinCholHamoed };
 
-// The tallit katan blessing, a fold at the start of the standalone tefillin text. Edot HaMizrach
-// prints none.
+// The tallit katan blessing, ahead of the tefillin in the standalone text and ahead of the tallit gadol
+// in Shacharit, under an authored line that names who says it. Edot HaMizrach prints none. Sefard
+// starts after its own "before putting on the tallit katan" instruction, which the line replaces.
 const TALLIT_KATAN = {
-  ashkenaz: {
-    ...ASHKENAZ,
-    path: ashkenazPrep('Tzitzit'),
-    optionalParts: [{ from: 0, to: 1, label: WHEN_SAID.tallitKatan }],
-  },
+  ashkenaz: { ...ASHKENAZ, path: ashkenazPrep('Tzitzit'), insert: [{ at: 0, ...NOTES.tallitKatan }] },
   sefard: {
     ...SEFARD,
     path: 'Upon Arising > Modeh Ani',
-    from: 4,
+    from: 5,
     to: 6,
-    optionalParts: [{ from: 4, to: 6, label: WHEN_SAID.tallitKatan }],
+    insert: [{ at: 5, ...NOTES.tallitKatan }],
   },
   chabad: {
     ...CHABAD,
     path: 'Shacharit > Tzitzit and Tallit',
     from: 1,
     to: 1,
-    optionalParts: [{ from: 1, label: WHEN_SAID.tallitKatan }],
+    insert: [{ at: 1, ...NOTES.tallitKatan }],
   },
 };
 
@@ -1349,7 +1346,9 @@ function chapter(label, specs) {
 function tallitAndTefillin(nusach) {
   const title = T.tallitAndTefillin;
   const ordinaryDay = { none: ['tishaBav', ...CHOL_HAMOED.any] };
+  const tallitKatan = TALLIT_KATAN[nusach];
   const specs = [
+    ...(tallitKatan ? [{ ...tallitKatan, title, when: NOT_TISHA_BAV }] : []),
     { ...TALLIT_GADOL[nusach], title, when: NOT_TISHA_BAV },
     { ...TEFILLIN[nusach], title, when: ordinaryDay },
   ];
@@ -1626,6 +1625,7 @@ const TEXTS = {
             from: 'all who see us. May You hear the sound of our supplication, because',
             to: 'all who see us, because',
           },
+          { seg: 0, from: 'grant us peace, kindness, and mercy', to: 'grant us grace, kindness, and mercy' },
         ],
       },
       { ...DAAT, title: T.derechVerses, path: 'Berachot > Tefillat HaDerech', from: 1, groups: [[3, 5]] },
@@ -1825,6 +1825,7 @@ function chabadMincha() {
           from: 'Remember us for kindness, King who desires kindness, write us in the Book of Kindness',
           to: 'Remember us for life, King who desires life, write us in the Book of Life',
         },
+        { seg: 7, from: 'for a life of kindness', to: 'for a life of mercy' },
       ],
       insert: [{ at: 44, ...NOTES.erevYomKippurVidui }],
       optionalParts: [{ from: 39, label: NO_KOHANIM_IN_ISRAEL }],

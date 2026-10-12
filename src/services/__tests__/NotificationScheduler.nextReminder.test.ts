@@ -39,6 +39,7 @@ type ChokModules = {
 };
 
 const JERUSALEM = CITIES[0];
+const LONDON = CITIES.find((city) => city.cityId === 'london')!;
 const LOS_ANGELES = CITIES.find((city) => city.nameEn === 'Los Angeles')!;
 const IL: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
 const ABROAD: UserSettings = { ...IL, inIsrael: false };
@@ -242,7 +243,7 @@ describe('nextReminderAt for Chok LeYisrael', () => {
   });
   const CHOK = chok.mitzvot.findMitzvah('chok_leyisrael')!;
   const morning = (iso: string) => minutes(zmanimOn(iso).alotHaShachar, 240);
-  const evening = (iso: string) => minutes(zmanimOn(iso).alotHaShachar, 945);
+  const evening = (iso: string) => at(JERUSALEM, `${iso}T20:30`);
   const nextChok = (now: Date, overrides: Partial<ReminderScope> = {}) =>
     chok.planner.nextReminderAt(CHOK, CHOK.defaultReminders, scopeAt(now, overrides));
 
@@ -270,6 +271,19 @@ describe('nextReminderAt for Chok LeYisrael', () => {
     expect(nextChok(now, { completions: { '2026-12-14': { chok_leyisrael: MARK } } })?.getTime()).toBe(
       morning('2026-12-15').getTime(),
     );
+  });
+
+  it('names the 20:30 reminder on the clock of the location, the Friday one too where candle lighting is later', () => {
+    const london = { location: LONDON, settings: ABROAD };
+    const morningIn = (iso: string) => minutes(zmanimOn(iso, LONDON).alotHaShachar, 240);
+    const afterMorning = (iso: string) => minutes(morningIn(iso), 1);
+    expect(nextChok(afterMorning('2027-06-17'), london)?.getTime()).toBe(at(LONDON, '2027-06-17T20:30').getTime());
+    expect(nextChok(at(LONDON, '2027-06-17T21:00'), london)?.getTime()).toBe(morningIn('2027-06-18').getTime());
+    expect(nextChok(afterMorning('2027-06-18'), london)?.getTime()).toBe(at(LONDON, '2027-06-18T20:30').getTime());
+    for (const now of [afterMorning('2027-06-17'), at(LONDON, '2027-06-17T21:00'), afterMorning('2027-06-18')]) {
+      const planned = plannedNext(chok.plan.buildPlan(planInput(CHOK, now, london)), 'chok_leyisrael');
+      expect(nextChok(now, london)?.getTime()).toBe(planned!.getTime());
+    }
   });
 
   it('agrees with the plan', () => {

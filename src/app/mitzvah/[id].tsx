@@ -6,7 +6,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { DateTime } from 'luxon';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconTile } from '@/components/IconTile';
-import { iconFor } from '@/components/MitzvahIcon';
+import { MitzvahIcon, iconFor } from '@/components/MitzvahIcon';
 import { ReminderEditor } from '@/components/ReminderEditor';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
@@ -21,10 +21,15 @@ import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { ContentBlock, Reminder, UserSettings } from '@/types/mitzvah';
 import { currentOrNextWindow } from '@/utils/buildDayTimeline';
-import { clockOf, clockRange } from '@/utils/clock';
+import { clockOf, clockRange, minutesToTime } from '@/utils/clock';
 import { mitzvahName } from '@/utils/mitzvahName';
 import { nextReminderAt } from '@/services/NotificationScheduler';
 import { useI18n } from '@/i18n';
+
+const LEGEND_DOT_SIZE = 8;
+const DELETE_ICON_SIZE = 16;
+const ADD_ICON_SIZE = 18;
+const ICON_STROKE = 2.4;
 
 export default function MitzvahDetailScreen() {
   const { colors } = useTheme();
@@ -175,9 +180,10 @@ export default function MitzvahDetailScreen() {
               ['time.warning', colors.warning],
               ['time.urgent', colors.urgent],
             ].map(([key, color]) => (
-              <Text key={key} style={[typography.micro, { color }]}>
-                ● {t(key)}
-              </Text>
+              <View key={key} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: color }]} />
+                <Text style={[typography.micro, { color }]}>{t(key)}</Text>
+              </View>
             ))}
           </View>
         </View>
@@ -270,8 +276,7 @@ export default function MitzvahDetailScreen() {
               >
                 <Text style={[typography.bodyBold, { color: colors.text }]}>{reminder.label}</Text>
                 <Text style={[typography.micro, { color: colors.textMuted, marginTop: 2 }]}>
-                  {t(`reminder.anchor.${reminder.anchor}`)} · {reminder.offsetMin >= 0 ? '+' : ''}
-                  {reminder.offsetMin} {t('reminder.minutesShort')}
+                  {t(`reminder.anchor.${reminder.anchor}`)} · {reminderOffsetText(reminder, t('reminder.minutesShort'))}
                 </Text>
               </Pressable>
               <Pressable
@@ -281,7 +286,7 @@ export default function MitzvahDetailScreen() {
                 hitSlop={10}
                 style={[styles.deleteBtn, { backgroundColor: colors.surface2 }]}
               >
-                <Text style={[typography.captionBold, { color: colors.textMuted }]}>✕</Text>
+                <MitzvahIcon name="close" size={DELETE_ICON_SIZE} color={colors.textMuted} strokeWidth={ICON_STROKE} />
               </Pressable>
             </View>
           ))}
@@ -298,7 +303,7 @@ export default function MitzvahDetailScreen() {
             style={[styles.addRow, { borderTopColor: `${colors.gold}44` }]}
           >
             <View style={[styles.plus, { backgroundColor: colors.goldLight }]}>
-              <Text style={{ fontSize: 16, color: colors.gold }}>＋</Text>
+              <MitzvahIcon name="plus" size={ADD_ICON_SIZE} color={colors.gold} strokeWidth={ICON_STROKE} />
             </View>
             <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('detail.addReminder')}</Text>
           </Pressable>
@@ -314,7 +319,10 @@ export default function MitzvahDetailScreen() {
       <ReminderEditor
         visible={editorVisible}
         initialValue={editIndex === null ? null : reminders[editIndex]}
-        window={window}
+        mitzvah={mitzvah}
+        location={location}
+        settings={settings}
+        allowClock={!mitzvah.isCustom}
         mitzvahName={name}
         onClose={() => {
           setEditorVisible(false);
@@ -333,6 +341,11 @@ export default function MitzvahDetailScreen() {
       />
     </SafeAreaView>
   );
+}
+
+function reminderOffsetText(reminder: Reminder, minutesShort: string): string {
+  if (reminder.anchor === 'clock') return minutesToTime(reminder.offsetMin);
+  return `${reminder.offsetMin >= 0 ? '+' : ''}${reminder.offsetMin} ${minutesShort}`;
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -417,6 +430,16 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  legendDot: {
+    width: LEGEND_DOT_SIZE,
+    height: LEGEND_DOT_SIZE,
+    borderRadius: radius.full,
   },
   row: {
     flexDirection: 'row',

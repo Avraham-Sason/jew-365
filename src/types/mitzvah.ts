@@ -21,7 +21,8 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type SkipContext = 'shabbat' | 'yomtov' | 'cholHamoed' | 'fastDay';
 
-export type ReminderAnchor = 'start' | 'end';
+// With `clock`, `offsetMin` is minutes after midnight (0-1439) on the location's clock, not an offset from the window.
+export type ReminderAnchor = 'start' | 'end' | 'clock';
 
 export type Reminder = {
   anchor: ReminderAnchor;

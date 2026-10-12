@@ -98,7 +98,7 @@ export const CHOK_LEYISRAEL: Mitzvah = {
       label: 'זמן לימוד חק לישראל',
       bodyVariants: ['זמן לימוד חק לישראל', 'חק לישראל של היום מחכה לך', 'כמה דקות של תורה עם חק לישראל'],
     },
-    { anchor: 'start', offsetMin: 945, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
+    { anchor: 'clock', offsetMin: 20 * 60 + 30, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
   ],
   computeWindow: (ctx) => {
     const day = dayOf(ctx.zmanim, ctx.location);

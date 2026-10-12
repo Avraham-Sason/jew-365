@@ -9,6 +9,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import MitzvotScreen from '../mitzvot';
 import { MITZVOT } from '@/data/mitzvot';
 import { IconTile } from '@/components/IconTile';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -51,6 +52,15 @@ describe('Mitzvot library', () => {
     const disabledIcon = MITZVOT.find((mitzvah) => mitzvah.name.he === HAVDALAH)!.icon;
     expect(tones[enabledIcon]).toBe('accent');
     expect(tones[disabledIcon]).toBe('muted');
+  });
+
+  it('opens the custom mitzvah form from the add pill, drawn as the plus icon and named by its label', () => {
+    renderWithTheme(<MitzvotScreen />);
+    const add = screen.getByRole('button', { name: 'הוסף מצווה חדשה' });
+    expect(screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'plus')).toHaveLength(1);
+    expect(screen.queryByText('+')).toBeNull();
+    fireEvent.press(add);
+    expect(mockPush).toHaveBeenCalledWith('/custom-mitzvah');
   });
 
   it('draws no active / available segmented control', () => {

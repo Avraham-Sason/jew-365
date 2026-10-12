@@ -1,7 +1,11 @@
-import { computeStats, isTrackedInRange, judgeDay } from '../historyStats';
+import { computeStats, isTrackedInRange, judgeDay, type HistoryInput } from '../historyStats';
+import { calendarDay } from '../checkIn';
+import { locationNoon } from '../locationDay';
 import { Mitzvah } from '@/types/mitzvah';
 import { CITIES } from '@/data/cities';
+import { findMitzvah } from '@/data/mitzvot';
 import { dateKey } from '@/stores/useCompletionsStore';
+import { at, zmanimFor } from '@/testing/zmanim';
 
 function fixtureMitzvah(id: string, skipOn: Mitzvah['skipOn'] = []): Mitzvah {
   return {
@@ -24,26 +28,19 @@ describe('historyStats', () => {
   it('keeps an item open past midnight while its window still runs', () => {
     const night: Mitzvah = {
       ...fixtureMitzvah('night'),
-      computeWindow: () => ({ start: new Date(2026, 4, 6, 20), end: new Date(2026, 4, 7, 3) }),
+      computeWindow: () => ({ start: at(CITIES[0], '2026-05-06T20:00'), end: at(CITIES[0], '2026-05-07T03:00') }),
     };
     const input = { mitzvot: [night], completions: {}, location: CITIES[0], settings };
     const day = new Date(2026, 4, 6);
-    expect(judgeDay(day, input, new Date(2026, 4, 7, 1))).toEqual({
-      key: '2026-05-06',
-      done: [],
-      missed: [],
-      pending: ['night'],
-    });
-    expect(judgeDay(day, input, new Date(2026, 4, 7, 4))).toEqual({
-      key: '2026-05-06',
-      done: [],
-      missed: ['night'],
-      pending: [],
-    });
+    const verdictAt = (wallClock: string) => judgeDay(day, input, at(CITIES[0], wallClock));
+    const pending = { key: '2026-05-06', done: [], missed: [], pending: ['night'] };
+    expect(verdictAt('2026-05-07T01:00')).toEqual(pending);
+    expect(verdictAt('2026-05-07T04:00')).toEqual(pending);
+    expect(verdictAt('2026-05-07T05:00')).toEqual({ key: '2026-05-06', done: [], missed: ['night'], pending: [] });
   });
 
   it('computes a three-day streak when the fourth day back has a gap', () => {
-    const today = new Date(2026, 4, 7);
+    const today = at(CITIES[0], '2026-05-07T12:00');
     const stats = computeStats(
       [fixtureMitzvah('daily')],
       {
@@ -63,7 +60,7 @@ describe('historyStats', () => {
   });
 
   it('counts a day whose only mark is a retired mitzvah id toward the streak and nowhere else', () => {
-    const today = new Date(2026, 4, 7);
+    const today = at(CITIES[0], '2026-05-07T12:00');
     const stats = computeStats(
       [fixtureMitzvah('daily')],
       {
@@ -84,14 +81,14 @@ describe('historyStats', () => {
   });
 
   it('keeps a 23:59 completion on that date key', () => {
-    const ts = new Date(2026, 4, 6, 23, 59).getTime();
+    const ts = at(CITIES[0], '2026-05-06T23:59').getTime();
     const stats = computeStats(
       [fixtureMitzvah('daily')],
       { '2026-05-06': { daily: ts } },
       CITIES[0],
       settings,
       1,
-      new Date(2026, 4, 6),
+      at(CITIES[0], '2026-05-06T12:00'),
     );
 
     expect(stats.daily[0]).toMatchObject({ date: '2026-05-06', doneCount: 1, totalCount: 1 });
@@ -104,7 +101,7 @@ describe('historyStats', () => {
       CITIES[0],
       settings,
       1,
-      new Date(2026, 4, 2),
+      at(CITIES[0], '2026-05-02T12:00'),
     );
 
     expect(stats.daily[0]).toMatchObject({ date: '2026-05-02', doneCount: 0, totalCount: 0 });
@@ -114,7 +111,7 @@ describe('historyStats', () => {
 
 describe('historyStats tracking range', () => {
   const location = CITIES[0];
-  const now = new Date(2026, 4, 7, 8);
+  const now = at(location, '2026-05-07T08:00');
 
   function windowOn(id: string, ...keys: string[]): Mitzvah {
     const base = fixtureMitzvah(id);
@@ -155,7 +152,7 @@ describe('historyStats tracking range', () => {
       location,
       settings,
       1,
-      new Date(2026, 4, 2),
+      at(location, '2026-05-02T12:00'),
     );
     expect(isTrackedInRange(stats.perMitzvah.weekday)).toBe(false);
   });
@@ -171,23 +168,23 @@ describe('historyStats around Shabbat', () => {
     computeStats(mitzvot, completions, location, settings, 7, now, extra).streak;
 
   it('a Shabbat waiting for its check-in neither counts nor breaks', () => {
-    expect(streakAt(weekdays, new Date(2026, 10, 15, 8))).toBe(3);
+    expect(streakAt(weekdays, at(location, '2026-11-15T08:00'))).toBe(3);
   });
 
   it('a Shabbat marked in the check-in counts like any other day', () => {
-    expect(streakAt({ ...weekdays, ...done('2026-11-14') }, new Date(2026, 10, 15, 8))).toBe(4);
+    expect(streakAt({ ...weekdays, ...done('2026-11-14') }, at(location, '2026-11-15T08:00'))).toBe(4);
   });
 
   it('a Shabbat left unmarked breaks the streak once the check-in closes', () => {
-    expect(streakAt({ ...weekdays, ...done('2026-11-15') }, new Date(2026, 10, 16, 8))).toBe(1);
+    expect(streakAt({ ...weekdays, ...done('2026-11-15') }, at(location, '2026-11-16T08:00'))).toBe(1);
   });
 
   it('finishing the check-in early closes it at once', () => {
-    expect(streakAt(weekdays, new Date(2026, 10, 15, 8), { checkIns: { '2026-11-14': 1 } })).toBe(0);
+    expect(streakAt(weekdays, at(location, '2026-11-15T08:00'), { checkIns: { '2026-11-14': 1 } })).toBe(0);
   });
 
   it('counts an item toward its percentage only once it can no longer be marked', () => {
-    const stats = computeStats(mitzvot, weekdays, location, settings, 7, new Date(2026, 10, 15, 8));
+    const stats = computeStats(mitzvot, weekdays, location, settings, 7, at(location, '2026-11-15T08:00'));
     // Mon and Tue missed, Wed-Fri done; Shabbat waits for its check-in and today is still open.
     expect(stats.perMitzvah.daily).toMatchObject({ done: 3, eligible: 5, percent: 60 });
     const shabbat = stats.daily.find((day) => day.date === '2026-11-14')!;
@@ -201,11 +198,13 @@ describe('historyStats around Shabbat', () => {
       const day = new Date(2026, 10, 15 - back);
       return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
     });
-    expect(computeStats(mitzvot, done(...keys), location, settings, 30, new Date(2026, 10, 15, 20)).streak).toBe(45);
+    expect(computeStats(mitzvot, done(...keys), location, settings, 30, at(location, '2026-11-15T20:00')).streak).toBe(
+      45,
+    );
   });
 
   it('a skipped Shabbat mitzvah is settled as not done, not left waiting', () => {
-    const stats = computeStats(mitzvot, weekdays, location, settings, 7, new Date(2026, 10, 15, 8), {
+    const stats = computeStats(mitzvot, weekdays, location, settings, 7, at(location, '2026-11-15T08:00'), {
       skipped: { '2026-11-14': { daily: 1 } },
     });
     expect(stats.daily.find((day) => day.date === '2026-11-14')).toMatchObject({
@@ -219,8 +218,8 @@ describe('historyStats around Shabbat', () => {
   it('a mitzvah switched on later is not judged on the days before', () => {
     const later = fixtureMitzvah('later');
     const marked = done('2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15');
-    const enabledSince = { later: new Date(2026, 10, 15, 9).getTime() };
-    const stats = computeStats([mitzvot[0], later], marked, location, settings, 7, new Date(2026, 10, 15, 20), {
+    const enabledSince = { later: at(location, '2026-11-15T09:00').getTime() };
+    const stats = computeStats([mitzvot[0], later], marked, location, settings, 7, at(location, '2026-11-15T20:00'), {
       enabledSince,
     });
     expect(stats.streak).toBe(5);
@@ -229,12 +228,12 @@ describe('historyStats around Shabbat', () => {
 
   it('with nothing enabled the walk does not wander across empty days', () => {
     const sparse = done('2026-11-15', '2026-11-01');
-    expect(computeStats([], sparse, location, settings, 30, new Date(2026, 10, 15, 20)).streak).toBe(1);
+    expect(computeStats([], sparse, location, settings, 30, at(location, '2026-11-15T20:00')).streak).toBe(1);
   });
 
   it('reaches past retention through the archive of kept days', () => {
     const recent = done('2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15');
-    const now = new Date(2026, 10, 15, 20);
+    const now = at(location, '2026-11-15T20:00');
     const kept = computeStats(mitzvot, recent, location, settings, 30, now, {
       archivedDays: [['2025-10-01', '2026-11-10']],
     });
@@ -244,5 +243,56 @@ describe('historyStats around Shabbat', () => {
       archivedDays: [['2025-10-01', '2026-11-09']],
     });
     expect(gap.streak).toBe(5);
+  });
+});
+
+describe('the night belongs to the evening before', () => {
+  const location = CITIES[0];
+  const maariv = findMitzvah('maariv')!;
+  const shacharit = findMitzvah('shacharit')!;
+  const alotOf = (key: string) => zmanimFor(locationNoon(calendarDay(key), location), location).alotHaShachar;
+  const JUNE_14 = calendarDay('2027-06-14');
+  const verdictAt = (instant: Date, extra: Partial<HistoryInput> = {}) =>
+    judgeDay(JUNE_14, { mitzvot: [maariv, shacharit], completions: {}, location, settings, ...extra }, instant);
+
+  it('files a maariv marked at 00:30 under the evening it belongs to, and judges the day before as over', () => {
+    const stats = computeStats(
+      [maariv],
+      { '2027-06-14': { maariv: at(location, '2027-06-15T00:30').getTime() } },
+      location,
+      settings,
+      2,
+      at(location, '2027-06-15T00:30'),
+    );
+    expect(stats.daily.map((entry) => entry.date)).toEqual(['2027-06-13', '2027-06-14']);
+    expect(stats.daily[1]).toMatchObject({ doneCount: 1, totalCount: 1, pendingCount: 0 });
+    expect(stats.daily[0]).toMatchObject({ doneCount: 0, totalCount: 1, pendingCount: 0 });
+    expect(stats.streak).toBe(1);
+  });
+
+  it('keeps the streak through an unmarked evening until alot, then breaks it', () => {
+    const streakAt = (wallClock: string) =>
+      computeStats([maariv], { '2027-06-13': { maariv: 1 } }, location, settings, 3, at(location, wallClock)).streak;
+    expect(streakAt('2027-06-15T00:20')).toBe(1);
+    expect(streakAt('2027-06-15T04:30')).toBe(0);
+  });
+
+  it('leaves every item of the evening open until the next alot, then calls it missed', () => {
+    const pending = { key: '2027-06-14', done: [], missed: [], pending: ['maariv', 'shacharit'] };
+    const missed = { key: '2027-06-14', done: [], missed: ['maariv', 'shacharit'], pending: [] };
+    const alot = alotOf('2027-06-15');
+    expect(verdictAt(at(location, '2027-06-15T00:20'))).toEqual(pending);
+    expect(verdictAt(at(location, '2027-06-15T01:30'))).toEqual(pending);
+    expect(verdictAt(new Date(alot.getTime() - 1))).toEqual(pending);
+    expect(verdictAt(alot)).toEqual(missed);
+    expect(verdictAt(at(location, '2027-06-15T04:30'))).toEqual(missed);
+  });
+
+  it('does not judge a mitzvah on an evening that ended before it was switched on', () => {
+    const duringTheNight = { maariv: at(location, '2027-06-15T00:10').getTime() };
+    expect(verdictAt(at(location, '2027-06-15T04:30'), { enabledSince: duringTheNight }).missed).toContain('maariv');
+    const afterAlot = { maariv: at(location, '2027-06-15T04:20').getTime() };
+    const verdict = verdictAt(at(location, '2027-06-15T04:30'), { enabledSince: afterAlot });
+    expect([...verdict.done, ...verdict.missed, ...verdict.pending]).not.toContain('maariv');
   });
 });

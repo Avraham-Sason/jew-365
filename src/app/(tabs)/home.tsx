@@ -21,7 +21,7 @@ import { hasSiddurText, siddurPlace } from '@/data/siddur';
 import { HebcalService } from '@/services/HebcalService';
 import { StorageService } from '@/services/StorageService';
 import { CompletionService } from '@/services/CompletionService';
-import { useCompletionsStore } from '@/stores/useCompletionsStore';
+import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -31,11 +31,12 @@ import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { fontFamilies, typography } from '@/theme/typography';
 import { durations, radius, spacing } from '@/theme/tokens';
 import { clockOf, formatRemaining } from '@/utils/clock';
-import { isSkippedAt } from '@/utils/skipRules';
+import { DayWindow, appDayWindow } from '@/utils/buildDayTimeline';
 import { checkInLastDay, checkInPhraseKey, latestCheckIn, overlapsBlock } from '@/utils/checkIn';
-import { ComputeContext, Mitzvah, MitzvahWindow, UserSettings } from '@/types/mitzvah';
+import { Mitzvah } from '@/types/mitzvah';
 import { TaharahEvent, TaharahSettings } from '@/types/taharah';
 import { Location } from '@/types/zmanim';
+import { appDay, locationNoon } from '@/utils/locationDay';
 import { deriveCycle } from '@/utils/taharah/cycle';
 import { currentOnah } from '@/utils/taharah/onot';
 import { renderHint, stageHint, visibleStage } from '@/utils/taharah/summary';
@@ -52,7 +53,7 @@ import { useI18n } from '@/i18n';
 
 type LiveItem = {
   mitzvah: Mitzvah;
-  window: Exclude<MitzvahWindow, null>;
+  window: DayWindow;
   pct: number;
   timeLeft: string;
   urgent: boolean;
@@ -60,8 +61,16 @@ type LiveItem = {
   hasText: boolean;
 };
 
-const EMPTY_DAY_STATE = Object.freeze({}) as Record<string, number>;
 const PROFILE_INTRO_KEY = 'profile:intro-dismissed';
+
+type CompletedItem = {
+  id: string;
+  name: string;
+  time: string;
+  timestamp: number;
+  wasSkipped: boolean;
+  date: Date;
+};
 
 type Translate = (scope: string, options?: Record<string, unknown>) => string;
 type BannerSpec = { tone: BannerTone; text: string; onPress?: () => void };
@@ -95,12 +104,6 @@ function taharahCardFor(
   };
 }
 
-function buildContext(date: Date, location: Location, settings: UserSettings): ComputeContext | null {
-  const zmanim = ZmanimService.getZmanim(date, location);
-  if (!zmanim) return null;
-  return { date, location, settings, zmanim };
-}
-
 export default function HomeScreen() {
   const { colors } = useTheme();
   const quiet = useQuietBlock() !== null;
@@ -120,9 +123,6 @@ export default function HomeScreen() {
   const taharahEvents = useTaharahStore((s) => s.events);
   const taharahSettings = useTaharahStore((s) => s.settings);
   const taharahLockEnabled = useTaharahStore((s) => s.lockEnabled);
-  const todayKey = CompletionService.getDateKey();
-  const doneMap = useCompletionsStore((s) => s.completions[todayKey] ?? EMPTY_DAY_STATE);
-  const skippedMap = useCompletionsStore((s) => s.skipped[todayKey] ?? EMPTY_DAY_STATE);
   const completions = useCompletionsStore((s) => s.completions);
   const checkIns = useCompletionsStore((s) => s.checkIns);
   const skipped = useCompletionsStore((s) => s.skipped);
@@ -147,14 +147,16 @@ export default function HomeScreen() {
     zmanimUnavailable,
     checkIn,
     taharahCard,
+    today,
+    windowDays,
   } = useMemo(() => {
     const now = new Date();
-    const ctx = buildContext(now, location, settings);
+    const today = appDay(now, location);
     const hebrew = HebcalService.getHebrewDateAt(now, location);
-    const greg = DateTime.fromJSDate(now)
+    const greg = DateTime.fromJSDate(today)
       .setLocale(language)
       .toFormat(language === 'he' ? 'cccc · d LLLL' : 'cccc · LLL d');
-    const parasha = HebcalService.getParasha(now, location);
+    const parasha = HebcalService.getParasha(today, location);
     const subtitleText = [greg, getLocationName(location, language), parasha].filter(Boolean).join(' · ');
 
     const place = siddurPlace(location, inIsrael);
@@ -163,35 +165,14 @@ export default function HomeScreen() {
     const currentItems: LiveItem[] = [];
     const upcomingItems: LiveItem[] = [];
     const missedItems: LiveItem[] = [];
-    // Done and skipped share the list, so a skip is visible and has the same undo as a completion.
-    const completedItems = [
-      ...Object.entries(doneMap).map(([id, ts]) => ({ id, ts, wasSkipped: false })),
-      ...Object.entries(skippedMap).map(([id, ts]) => ({ id, ts, wasSkipped: true })),
-    ]
-      .filter(({ id }) => id !== stampingId)
-      .flatMap(({ id, ts, wasSkipped }) => {
-        const mitzvah = allMitzvot.find((item) => item.id === id);
-        if (!mitzvah) return [];
-        return [
-          {
-            id,
-            name: nameFor(mitzvah),
-            time: wasSkipped ? t('state.skipped') : clockOf(new Date(ts)),
-            timestamp: ts,
-            wasSkipped,
-          },
-        ];
-      })
-      .sort((a, b) => b.timestamp - a.timestamp);
-
-    // Counts what actually applies today: enabled, has a window, and not skipped for Shabbat/Yom
-    // Tov. Using `enabled.length` made Shabbat read "5/6" with everything applicable done.
-    let applicable = 0;
+    // Counts what actually applies in this app day: enabled, has a window, and not skipped for
+    // Shabbat/Yom Tov. Using `enabled.length` made Shabbat read "5/6" with everything applicable done.
+    // A mark is filed under the day of the mitzvah's window, which after midnight is yesterday's date.
+    const windowDays = new Map<string, Date>();
     for (const mitzvah of enabled) {
-      const window = ctx ? mitzvah.computeWindow(ctx) : null;
+      const window = appDayWindow(mitzvah, location, settings, now);
       if (!window) continue;
-      if (isSkippedAt(mitzvah, window.start, location, settings)) continue;
-      applicable += 1;
+      windowDays.set(mitzvah.id, window.date);
       const totalMs = window.end.getTime() - window.start.getTime();
       const remainingMs = window.end.getTime() - now.getTime();
       const item: LiveItem = {
@@ -201,11 +182,12 @@ export default function HomeScreen() {
         timeLeft: formatRemaining(remainingMs, t),
         urgent: remainingMs <= 45 * 60 * 1000,
         name: nameFor(mitzvah),
-        hasText: hasSiddurText(mitzvah, nusach, now, place),
+        hasText: hasSiddurText(mitzvah, nusach, window.date, place),
       };
       // The card being stamped stays put until its animation ends, even though the completion is
       // already persisted.
-      if ((doneMap[mitzvah.id] || skippedMap[mitzvah.id]) && mitzvah.id !== stampingId) {
+      const key = dateKey(window.date);
+      if ((completions[key]?.[mitzvah.id] || skipped[key]?.[mitzvah.id]) && mitzvah.id !== stampingId) {
         continue;
       }
       if (now > window.end) {
@@ -224,31 +206,53 @@ export default function HomeScreen() {
     upcomingItems.sort((a, b) => a.window.start.getTime() - b.window.start.getTime());
     missedItems.sort((a, b) => b.window.end.getTime() - a.window.end.getTime());
 
+    // Done and skipped share the list, so a skip is visible and has the same undo as a completion.
+    const completedItems = allMitzvot
+      .flatMap((mitzvah): CompletedItem[] => {
+        if (mitzvah.id === stampingId) return [];
+        const date = windowDays.get(mitzvah.id) ?? today;
+        const key = dateKey(date);
+        const done = completions[key]?.[mitzvah.id];
+        const timestamp = done ?? skipped[key]?.[mitzvah.id];
+        if (!timestamp) return [];
+        return [
+          {
+            id: mitzvah.id,
+            name: nameFor(mitzvah),
+            time: done ? clockOf(new Date(timestamp)) : t('state.skipped'),
+            timestamp,
+            wasSkipped: !done,
+            date,
+          },
+        ];
+      })
+      .sort((a, b) => b.timestamp - a.timestamp);
+
     return {
       current: currentItems,
       missed: missedItems,
       completed: completedItems,
       nextUp: upcomingItems[0] ?? null,
-      totalActive: applicable,
+      totalActive: windowDays.size,
       doneCount: completedItems.filter((item) => !item.wasSkipped).length,
       hebrewTitle: hebrew.hebrewDateStr,
       subtitle: subtitleText,
-      zmanimUnavailable: !ctx,
+      zmanimUnavailable: ZmanimService.getZmanim(locationNoon(today, location), location) === null,
       checkIn: openCheckIn,
       taharahCard:
         taharahEnabled && !quiet
           ? taharahCardFor(taharahEvents, taharahSettings, location, now, language, t, taharahLockEnabled)
           : null,
+      today,
+      windowDays,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- tick and tickedAt re-run the memo on purpose, it reads the clock itself; the completion maps are triggers too, checkInInput() reads them from the store
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tick and tickedAt re-run the memo on purpose, it reads the clock itself; checkIns is a trigger too, checkInInput() reads it from the store
   }, [
     allMitzvot,
     enabled,
     nameFor,
     checkInInput,
     settings,
-    doneMap,
-    skippedMap,
     completions,
     skipped,
     checkIns,
@@ -270,9 +274,11 @@ export default function HomeScreen() {
   // Persist first — the stamp is decoration. Deferring the write behind the 1.3s animation meant
   // leaving the screen mid-animation silently discarded the completion, and the `stampingId` gate
   // dropped every other card tapped during it. The card is held on screen while it animates.
-  const complete = async (id: string) => {
+  const dayFor = (id: string) => windowDays.get(id) ?? today;
+
+  const complete = async (id: string, date: Date) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    CompletionService.markDone(id).catch(() => {});
+    CompletionService.markDone(id, date).catch(() => {});
     setSelectedId(null);
     setStampingId(id);
     if (stampTimeoutRef.current) clearTimeout(stampTimeoutRef.current);
@@ -283,13 +289,13 @@ export default function HomeScreen() {
   };
 
   const skipToday = async (id: string) => {
-    await CompletionService.markSkipped(id).catch(() => {});
+    await CompletionService.markSkipped(id, dayFor(id)).catch(() => {});
     setSelectedId(null);
   };
 
-  const undoComplete = async (id: string) => {
+  const undoComplete = async (id: string, date: Date) => {
     Haptics.selectionAsync().catch(() => {});
-    await CompletionService.unmark(id).catch(() => {});
+    await CompletionService.unmark(id, date).catch(() => {});
   };
 
   const openProfileIntro = () => {
@@ -340,7 +346,8 @@ export default function HomeScreen() {
 
   const openText = (item: LiveItem) =>
     item.hasText
-      ? () => router.push({ pathname: '/siddur/[id]', params: { id: item.mitzvah.id, date: todayKey } })
+      ? () =>
+          router.push({ pathname: '/siddur/[id]', params: { id: item.mitzvah.id, date: dateKey(item.window.date) } })
       : undefined;
 
   const openDetail = (id: string) => {
@@ -410,7 +417,7 @@ export default function HomeScreen() {
                   pct={item.pct}
                   urgent={item.urgent}
                   stamping={stampingId === item.mitzvah.id}
-                  onComplete={() => complete(item.mitzvah.id)}
+                  onComplete={() => complete(item.mitzvah.id, item.window.date)}
                   onOpenText={openText(item)}
                   onPress={() => openDetail(item.mitzvah.id)}
                   onLongPress={() => setSelectedId(item.mitzvah.id)}
@@ -463,7 +470,7 @@ export default function HomeScreen() {
                     statusText={t('home.passedAt', { time: clockOf(item.window.end) })}
                     statusTone="urgent"
                     stamping={stampingId === item.mitzvah.id}
-                    onComplete={() => complete(item.mitzvah.id)}
+                    onComplete={() => complete(item.mitzvah.id, item.window.date)}
                     onOpenText={openText(item)}
                     onPress={() => openDetail(item.mitzvah.id)}
                     onLongPress={() => setSelectedId(item.mitzvah.id)}
@@ -484,7 +491,7 @@ export default function HomeScreen() {
                   name={item.name}
                   time={item.time}
                   onPress={() => openDetail(item.id)}
-                  onUndo={() => undoComplete(item.id)}
+                  onUndo={() => undoComplete(item.id, item.date)}
                   undoLabel={t('home.undo')}
                 />
               ))}

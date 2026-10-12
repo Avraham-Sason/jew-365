@@ -11,7 +11,7 @@ import {
   SiddurSegment,
   SiddurText,
 } from '@/types/siddur';
-import type { PrayerMode } from '@/stores/useUserStore';
+import type { MaritalStatus, PrayerMode } from '@/stores/useUserStore';
 
 const SHEHECHEYANU_DAYS: readonly (readonly [month: number, day: number])[] = [
   [months.TISHREI, 1],
@@ -263,6 +263,16 @@ export function resolveSiddurText(text: SiddurText, features: DayFeatures): Sidd
       ),
     )
     .filter((section) => section.segments.length > 0);
+}
+
+export function forMaritalStatus(sections: SiddurSection[], status: MaritalStatus | null): SiddurSection[] {
+  if (status !== 'single') return sections;
+  return sections.flatMap((section) => {
+    if (section.optional?.marriedOnly) return [];
+    const segments = section.segments.filter((segment) => !segment.optional?.marriedOnly);
+    if (!segments.length) return [];
+    return [segments.length === section.segments.length ? section : { ...section, segments }];
+  });
 }
 
 export type PickerEntry = { index: number; title: { he: string; en: string } };

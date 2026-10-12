@@ -135,6 +135,7 @@ import * as path from 'path';
 import type { ComponentType } from 'react';
 import { Text } from 'react-native';
 import { act, screen } from '@testing-library/react-native';
+import { DateTime } from 'luxon';
 import RootLayout from '../_layout';
 import RootIndex from '../index';
 import CheckInScreen from '../checkin';
@@ -227,8 +228,33 @@ const CUSTOM: CustomMitzvah = {
   createdAt: 1792000000000,
 };
 
+const NIGHT_CUSTOM_ID = 'custom_1800000000000_tikkun';
+const NIGHT_CUSTOM: CustomMitzvah = {
+  id: NIGHT_CUSTOM_ID,
+  name: 'תיקון חצות',
+  startHHMM: '00:30',
+  endHHMM: '01:30',
+  reminders: [],
+  skipOn: [],
+  contentBlocks: [{ type: 'text', he: 'שיר המעלות' }],
+  createdAt: 1800000000000,
+};
+const NIGHT_OF_THE_14TH = '2027-06-15T00:20';
+const SIVAN = {
+  9: { he: 'ט׳ סִיוָן תשפ״ז', en: '9th of Sivan, 5787' },
+  10: { he: 'י׳ סִיוָן תשפ״ז', en: '10th of Sivan, 5787' },
+  11: { he: 'י״א סִיוָן תשפ״ז', en: '11th of Sivan, 5787' },
+} as const;
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const text = (he: string | RegExp, en: string | RegExp) => async (language: Locale) =>
   screen.findAllByText(language === 'he' ? he : en);
+
+const readerShows = (day: keyof typeof SIVAN, notDay: keyof typeof SIVAN) => async (language: Locale) => {
+  await screen.findByText(new RegExp(escapeRegExp(SIVAN[day][language])));
+  expect(screen.queryByText(new RegExp(escapeRegExp(SIVAN[notDay][language])))).toBeNull();
+};
 
 const both =
   (first: (language: Locale) => Promise<unknown>, second: (language: Locale) => Promise<unknown>) =>
@@ -363,6 +389,32 @@ const CASES: SmokeCase[] = [
   },
   {
     file: 'day/[date]',
+    label: 'the evening before is still today between midnight and alot',
+    Screen: DayScreen,
+    params: { date: '2027-06-14' },
+    wallClock: NIGHT_OF_THE_14TH,
+    check: async (language) => {
+      await text('המצוות של היום', 'Day view')(language);
+      expect(screen.queryByText(/תצוגה עתידית|Future view/)).toBeNull();
+    },
+  },
+  {
+    file: 'day/[date]',
+    label: 'the new date is still the future between midnight and alot',
+    Screen: DayScreen,
+    params: { date: '2027-06-15' },
+    wallClock: NIGHT_OF_THE_14TH,
+    check: async (language) => {
+      await text(
+        'תצוגה עתידית — אפשר לסמן רק ביום עצמו',
+        'Future view — marking is available only on that day',
+      )(language);
+      expect(screen.queryByText('המצוות של היום')).toBeNull();
+      expect(screen.queryByText('Day view')).toBeNull();
+    },
+  },
+  {
+    file: 'day/[date]',
     label: 'a past day',
     Screen: DayScreen,
     params: { date: '2026-10-21' },
@@ -402,6 +454,18 @@ const CASES: SmokeCase[] = [
   { file: 'rosh-chodesh', label: 'default', Screen: RoshChodeshScreen, check: text('ראש חודש', 'Rosh Chodesh') },
   { file: 'schedule', label: 'default', Screen: ScheduleScreen, check: text('לוח זמנים', 'Schedule') },
   {
+    file: 'schedule',
+    label: 'opens on the evening before between midnight and alot',
+    Screen: ScheduleScreen,
+    wallClock: NIGHT_OF_THE_14TH,
+    check: async (language) => {
+      const evening = DateTime.fromObject({ year: 2027, month: 6, day: 14 })
+        .setLocale(language)
+        .toFormat(language === 'he' ? 'd LLLL yyyy' : 'LLL d, yyyy');
+      await screen.findByText(new RegExp(`^${escapeRegExp(evening)}`));
+    },
+  },
+  {
     file: 'siddur/[id]',
     label: 'a mitzvah text',
     Screen: SiddurReaderScreen,
@@ -410,6 +474,37 @@ const CASES: SmokeCase[] = [
       text('תפילת שחרית', 'Shacharit'),
       text('מוֹדֶה אֲנִי', /I give thanks to You living and everlasting King/),
     ),
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'maariv opened bare after midnight resolves for the evening that is still open',
+    Screen: SiddurReaderScreen,
+    params: { id: 'maariv' },
+    wallClock: NIGHT_OF_THE_14TH,
+    check: readerShows(10, 11),
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'shacharit opened bare before alot resolves for the coming morning',
+    Screen: SiddurReaderScreen,
+    params: { id: 'shacharit' },
+    wallClock: '2027-06-15T01:00',
+    check: readerShows(10, 9),
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'a custom text opened bare resolves for the day of its window',
+    Screen: SiddurReaderScreen,
+    params: { id: NIGHT_CUSTOM_ID },
+    wallClock: '2027-06-15T00:45',
+    setup: () => {
+      useCustomMitzvotStore.getState().add(NIGHT_CUSTOM);
+      useMitzvotStore.getState().setEnabled(NIGHT_CUSTOM_ID, true);
+    },
+    check: async (language) => {
+      await text('תיקון חצות', 'תיקון חצות')(language);
+      await readerShows(10, 9)(language);
+    },
   },
   {
     file: 'siddur/[id]',

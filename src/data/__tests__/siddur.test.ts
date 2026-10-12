@@ -38,6 +38,7 @@ import {
 import {
   aloneFolds,
   dayFeatures,
+  forMaritalStatus,
   liturgicalDay,
   matchesCondition,
   pickerEntries,
@@ -807,8 +808,11 @@ describe('tallit and tefillin in shacharit', () => {
   const TEFILLIN_HAND = /וצונו להניח תפלין/;
   const TEFILLIN_HEAD = /וצונו על מצות תפלין/;
   const BARUCH_SHEM = /ברוך שם כבוד מלכותו לעולם ועד/;
-  const TALLIT_KATAN_FOLD = 'הלובש טלית קטן בלי טלית גדול';
+  const TALLIT_KATAN_NOTE = 'הלובש טלית קטן בלי טלית גדול מברך';
+  const TALLIT_KATAN_NOTE_EN = 'One who wears a tallit katan without a tallit gadol says:';
   const TALLIT_KATAN_BLESSING = /וצונו על מצות ציצי?ת/;
+  const TALLIT_KATAN_SAID_SEGMENTS = { ashkenaz: 2, sefard: 2, chabad: 1 } as const;
+  const KATAN_NUSCHAOT = ['ashkenaz', 'sefard', 'chabad'] as const;
   const ASHKENAZ_NOTE = /בחול המועד המניחים תפילין מברכים בלחש/;
   const section = (nusach: Nusach, features: DayFeatures) =>
     resolveSiddurText(load(nusach, 'shacharit'), features).find((candidate) => candidate.title.he === TITLE);
@@ -922,7 +926,8 @@ describe('tallit and tefillin in shacharit', () => {
         resolveSiddurText(load(nusach, 'tefillin'), weekdayAbroad)
           .filter((candidate) => candidate.title.he === 'הנחת תפילין')
           .flatMap((candidate) => candidate.segments)
-          .filter((segment) => segment.optional?.he !== TALLIT_KATAN_FOLD)
+          .filter((segment) => segment.he.flat().some((run) => run.s !== 'n'))
+          .slice(nusach === 'edot_hamizrach' ? 0 : TALLIT_KATAN_SAID_SEGMENTS[nusach])
           .flatMap((segment) => segment.he.flat())
           .filter((run) => run.s !== 'n')
           .map((run) => run.t)
@@ -937,38 +942,79 @@ describe('tallit and tefillin in shacharit', () => {
     }
   });
 
-  it('opens the standalone tefillin text with the tallit katan blessing folded, where a source prints it', () => {
+  const noteIn = (segment: SiddurSegment) =>
+    letters(
+      segment.he
+        .flat()
+        .map((run) => run.t)
+        .join(' '),
+    );
+  const expectNoteThenBlessing = (segments: SiddurSegment[], nusach: (typeof KATAN_NUSCHAOT)[number]) => {
+    const [note, blessing] = segments;
+    expect(note.he.flat().every((run) => run.s === 'n')).toBe(true);
+    expect(noteIn(note)).toBe(TALLIT_KATAN_NOTE);
+    expect(note.en).toBe(TALLIT_KATAN_NOTE_EN);
+    expect(blessing.he.flat().some((run) => run.s !== 'n')).toBe(true);
+    expect(noteIn(blessing)).toMatch(TALLIT_KATAN_BLESSING);
+    for (const segment of segments.slice(0, TALLIT_KATAN_SAID_SEGMENTS[nusach] + 1)) {
+      expect(segment.optional).toBeUndefined();
+      expect(segment.minyan).toBeUndefined();
+    }
+  };
+
+  it('opens the standalone tefillin text with the tallit katan blessing unfolded under a line naming who says it, where a source prints it', () => {
     for (const features of [weekday, weekdayAbroad, cholHamoedPesachAbroad]) {
-      for (const nusach of ['ashkenaz', 'sefard', 'chabad'] as const) {
+      for (const nusach of KATAN_NUSCHAOT) {
         const [first] = resolveSiddurText(load(nusach, 'tefillin'), features);
-        const [fold, ...rest] = segmentBlocks(first.segments, 'optional');
-        const wordsOf = (segments: typeof first.segments) =>
-          letters(
-            segments
-              .flatMap((segment) => segment.he.flat())
-              .map((run) => run.t)
-              .join(' '),
-          );
         expect(first.title.he).toBe('הנחת תפילין');
-        expect(fold.start).toBe(0);
-        expect(fold.label?.he).toBe(TALLIT_KATAN_FOLD);
-        expect(wordsOf(fold.segments)).toMatch(TALLIT_KATAN_BLESSING);
-        expect(wordsOf(rest.flatMap((block) => block.segments))).not.toMatch(TALLIT_KATAN_BLESSING);
-        for (const mode of ['minyan', 'alone'] as const)
-          expect(aloneFolds(first, mode).blocks[0].openByDefault).toBe(false);
+        expectNoteThenBlessing(first.segments, nusach);
+        expect(first.segments.filter((segment) => TALLIT_KATAN_BLESSING.test(noteIn(segment)))).toHaveLength(1);
+        for (const mode of ['minyan', 'alone'] as const) {
+          const [opening] = aloneFolds(first, mode).blocks;
+          expect(opening.start).toBe(0);
+          expect(opening.label).toBeUndefined();
+          expect(opening.segments.length).toBeGreaterThan(TALLIT_KATAN_SAID_SEGMENTS[nusach]);
+        }
       }
       const edot = resolveSiddurText(load('edot_hamizrach', 'tefillin'), features).flatMap(
         (section) => section.segments,
       );
-      expect(edot.some((segment) => segment.optional?.he === TALLIT_KATAN_FOLD)).toBe(false);
-      expect(
-        letters(
-          edot
-            .flatMap((segment) => segment.he.flat())
-            .map((run) => run.t)
-            .join(' '),
-        ),
-      ).not.toMatch(TALLIT_KATAN_BLESSING);
+      expect(edot.map(noteIn).join(' ')).not.toMatch(/טלית קטן/);
+      expect(edot.map(noteIn).join(' ')).not.toMatch(TALLIT_KATAN_BLESSING);
+    }
+  });
+
+  it('folds nothing under the old tallit katan label anywhere in the tefillin or Shacharit texts', () => {
+    for (const nusach of NUSCHAOT) {
+      for (const id of ['tefillin', 'shacharit'] as const) {
+        const labels = load(nusach, id).sections.flatMap((candidate) =>
+          candidate.segments.map((segment) => segment.optional?.he ?? ''),
+        );
+        expect(labels.filter((label) => /טלית קטן/.test(label))).toEqual([]);
+      }
+    }
+  });
+
+  it('says the tallit katan blessing in Shacharit, unfolded and ahead of the tallit gadol blessing, in Ashkenaz, Sefard and Chabad only', () => {
+    for (const features of [weekday, weekdayAbroad, cholHamoedPesach, cholHamoedPesachAbroad]) {
+      for (const nusach of KATAN_NUSCHAOT) {
+        const segments = section(nusach, features)?.segments ?? [];
+        expectNoteThenBlessing(segments, nusach);
+        const said = saidIn(nusach, features);
+        expect(count(said, TALLIT_KATAN_BLESSING)).toBe(1);
+        expect(said.search(TALLIT_KATAN_BLESSING)).toBeLessThan(said.search(TALLIT));
+        expect(shownIn(nusach, features)).toContain(TALLIT_KATAN_NOTE);
+      }
+      expect(shownIn('edot_hamizrach', features)).not.toMatch(/טלית קטן/);
+      expect(saidIn('edot_hamizrach', features)).not.toMatch(TALLIT_KATAN_BLESSING);
+    }
+  });
+
+  it('leaves the tallit katan blessing out of Shacharit on Tisha B’Av with the rest of the section', () => {
+    for (const nusach of NUSCHAOT) {
+      expect(neighbours(nusach, tishaBav).titles).not.toContain(TITLE);
+      expect(shownOn(nusach, 'shacharit', tishaBav)).not.toMatch(/טלית קטן/);
+      expect(saidOn(nusach, 'shacharit', tishaBav)).not.toMatch(TALLIT_KATAN_BLESSING);
     }
   });
 
@@ -2600,6 +2646,41 @@ describe('kriat_shema_al_hamita', () => {
     expect(openText('chabad', weekday)).not.toMatch(/עטיפא בקיטפא/);
   });
 
+  it('flags the passage before marital relations as married-only, on that one label in every text', () => {
+    const flagged: string[] = [];
+    for (const nusach of NUSCHAOT) {
+      for (const id of TEXT_IDS) {
+        for (const candidate of load(nusach, id).sections) {
+          if (candidate.optional?.marriedOnly)
+            flagged.push(`${nusach}/${id}/${candidate.title.he}/${candidate.optional.he}`);
+          for (const segment of candidate.segments) {
+            for (const label of [segment.optional, segment.minyan]) {
+              if (label?.marriedOnly) flagged.push(`${nusach}/${id}/${candidate.title.he}#segment/${label.he}`);
+            }
+          }
+        }
+      }
+    }
+    expect(flagged).toEqual(['chabad/kriat_shema_al_hamita/לפני תשמיש המטה/בלילה שיש בו תשמיש המטה']);
+  });
+
+  it('hides that passage from a single reader and folds it for a married one or one who has not answered', () => {
+    const all = sections('chabad', weekday);
+    const titlesOf = (list: typeof all) => list.map((candidate) => candidate.title.he);
+    expect(titlesOf(all)).toContain('לפני תשמיש המטה');
+    const single = forMaritalStatus(all, 'single');
+    expect(titlesOf(single)).toEqual(titlesOf(all).filter((title) => title !== 'לפני תשמיש המטה'));
+    expect(JSON.stringify(single)).not.toMatch(/עטיפא בקיטפא/);
+    for (const status of ['married', null] as const) {
+      expect(forMaritalStatus(all, status)).toEqual(all);
+      expect(titlesOf(forMaritalStatus(all, status))).toContain('לפני תשמיש המטה');
+    }
+    for (const nusach of ['ashkenaz', 'sefard', 'edot_hamizrach'] as const) {
+      const others = sections(nusach, weekday);
+      expect(forMaritalStatus(others, 'single')).toEqual(others);
+    }
+  });
+
   it('shows nothing that is said only on Shabbat or Yom Tov', () => {
     for (const nusach of NUSCHAOT) {
       for (const features of [weekday, tenDays, roshChodesh, chanukah, purim, shabbat, motzaeiShabbat]) {
@@ -4151,6 +4232,8 @@ describe('English stays aligned with its Hebrew', () => {
     /in our every handiwork/,
     /sound of our supplication/,
     /Remember us for kindness/,
+    /grant us peace, kindness/,
+    /for a life of kindness/,
   ];
   const MAARIV_DEFECTS = [/in this case, the Pesukei Dezimrah/];
   const HEBREW_ONLY_NOTES: [Nusach, SiddurTextId, string][] = [
@@ -4260,6 +4343,28 @@ describe('English stays aligned with its Hebrew', () => {
         expect(segments.filter((segment) => /commanded us to count the Omer/.test(segment.en ?? ''))).toHaveLength(1);
       }
     }
+  });
+
+  it('corrects the one word the pinned translation gets wrong in two passages, and writes no translation where it has none', () => {
+    const [traveler] = startingWith(segmentsOf('ashkenaz', 'tefilat_haderech'), 'יהי רצון מלפניך');
+    expect(traveler.en).toContain(
+      'May You grant us grace, kindness, and mercy in your eyes and in the eyes of all who see us, because You are the God who hears prayer and supplications.',
+    );
+    expect(traveler.en).not.toMatch(/peace, kindness/);
+
+    const [tenDays] = startingWith(segmentsOf('chabad', 'mincha'), 'מי כמוך אב הרחמן');
+    expect(tenDays.en).toBe(
+      'During Ten Days of Repentance: Who is like You, Merciful Father, remember us with compassion for a life of mercy.',
+    );
+
+    const [edotTraveler] = startingWith(segmentsOf(EDOT, 'tefilat_haderech'), 'יהי רצון מלפניך');
+    expect(
+      edotTraveler.he
+        .flat()
+        .map((run) => run.t)
+        .join(''),
+    ).toMatch(/וְתִשְׁלַח בְּרָכָה בְּמַעֲשֵׂה יָדֵֽינוּ/);
+    expect(edotTraveler.en).not.toMatch(/handiwork|work of our hands|blessing in/i);
   });
 
   it("fixes the pinned translations' typos once per source", () => {

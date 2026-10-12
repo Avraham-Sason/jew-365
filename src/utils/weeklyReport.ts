@@ -5,7 +5,7 @@ import { dateKey } from '@/stores/useCompletionsStore';
 import type { HolyBlock, Location } from '@/types/zmanim';
 import { calendarDay, checkInFor } from '@/utils/checkIn';
 import { HistoryInput, addDays, computeStreak, judgeDay } from '@/utils/historyStats';
-import { locationNoon } from '@/utils/locationDay';
+import { appDay, locationNoon } from '@/utils/locationDay';
 import { civilHebrewDayAt } from '@/utils/taharah/onot';
 
 const WEEK_DAYS = 7;
@@ -51,7 +51,7 @@ export function weekEndOnOrBefore(day: Date, location: Location, now: Date): Dat
 }
 
 export function reportWeekEnd(requested: Date | null, location: Location, now: Date): Date | null {
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = appDay(now, location);
   const anchor = requested && requested.getTime() < today.getTime() ? requested : today;
   return weekEndOnOrBefore(anchor, location, now) ?? weekEndOnOrBefore(today, location, now);
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { I18nManager, Keyboard, Platform, StyleSheet } from 'react-native';
+import { I18nManager, Keyboard, Modal, Platform, StyleSheet } from 'react-native';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import { PICKER_HOURS, PICKER_MINUTES, TimeField, normalizeTimeInput } from '../TimeField';
 import { WHEEL_ITEM_HEIGHT } from '../WheelPicker';
@@ -396,5 +396,134 @@ describe('TimeField', () => {
       closeSheet();
       expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
     });
+  });
+});
+
+describe('TimeField inline', () => {
+  beforeEach(() => {
+    useUserStore.getState().reset();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  function renderInline(value: string, onChange = jest.fn()) {
+    const view = renderWithTheme(<TimeField inline label={LABEL} value={value} onChange={onChange} />);
+    return { onChange, ...view };
+  }
+
+  it('shows the label, the typing input and both wheels at once', () => {
+    renderInline('08:30');
+    expect(screen.getByText(LABEL)).toBeOnTheScreen();
+    expect(screen.getByText(t('custom.typeTime'))).toBeOnTheScreen();
+    expect(sheetInput()).toHaveDisplayValue('08:30');
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '30' });
+    expect(screen.getByText(':')).toBeOnTheScreen();
+    expect(screen.getAllByText(ROW_NAME)).toHaveLength(PICKER_HOURS.length + PICKER_MINUTES.length);
+  });
+
+  it('draws no pressable box and no sheet', () => {
+    renderInline('08:30');
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(screen.queryByText(t('common.close'))).toBeNull();
+    expect(screen.UNSAFE_queryAllByType(Modal)).toHaveLength(0);
+  });
+
+  it('never focuses the typing input by itself and limits it to five characters', () => {
+    renderInline('');
+    expect(sheetInput().props.autoFocus).toBeFalsy();
+    expect(sheetInput().props.maxLength).toBe(5);
+    expect(sheetInput().props.placeholder).toBe('HH:MM');
+  });
+
+  it('does not touch the keyboard when it mounts', () => {
+    const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {});
+    renderInline('08:30');
+    expect(dismiss).not.toHaveBeenCalled();
+  });
+
+  it('reports a full time once it is typed and keeps it in the input', () => {
+    const { onChange } = renderInline('');
+    fireEvent.changeText(sheetInput(), '0930');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('09:30');
+    expect(sheetInput()).toHaveDisplayValue('09:30');
+  });
+
+  it('reports nothing for a partial time and keeps what was typed', () => {
+    const { onChange } = renderInline('08:30');
+    fireEvent.changeText(sheetInput(), '093');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(sheetInput()).toHaveDisplayValue('09:3');
+  });
+
+  it.each(['2500', '0861'])('reports nothing for the impossible time %j', (typed) => {
+    const { onChange } = renderInline('08:30');
+    fireEvent.changeText(sheetInput(), typed);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('writes the time a wheel settles on and shows it in the typing input', () => {
+    const { onChange } = renderInline('08:30');
+    scrollWheelTo(hourWheel(), 9);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('09:30');
+    expect(sheetInput()).toHaveDisplayValue('09:30');
+  });
+
+  it('replaces a partial draft with the time a wheel settles on', () => {
+    renderInline('08:30');
+    fireEvent.changeText(sheetInput(), '1');
+    scrollWheelTo(minuteWheel(), 15);
+    expect(sheetInput()).toHaveDisplayValue('08:15');
+  });
+
+  it('starts the missing part of an empty value at 00, as the sheet does', () => {
+    const { onChange } = renderInline('');
+    scrollWheelTo(hourWheel(), 7);
+    expect(onChange).toHaveBeenCalledWith('07:00');
+  });
+
+  it('follows a value the caller changes, in the input and on the wheels', () => {
+    const { onChange, rerender } = renderInline('08:30');
+    rerender(<TimeField inline label={LABEL} value="21:15" onChange={onChange} />);
+    expect(sheetInput()).toHaveDisplayValue('21:15');
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '21' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '15' });
+  });
+
+  it('keeps a partial draft while the value stays the same', () => {
+    const { onChange, rerender } = renderInline('08:30');
+    fireEvent.changeText(sheetInput(), '09');
+    rerender(<TimeField inline label={LABEL} value="08:30" onChange={onChange} />);
+    expect(sheetInput()).toHaveDisplayValue('09');
+  });
+
+  it('moves the wheels to a time that was typed when the caller holds the value', () => {
+    const Controlled = () => {
+      const [value, setValue] = React.useState('08:30');
+      return <TimeField inline label={LABEL} value={value} onChange={setValue} />;
+    };
+    renderWithTheme(<Controlled />);
+    fireEvent.changeText(sheetInput(), '2145');
+    expect(hourWheel()).toHaveAccessibilityValue({ text: '21' });
+    expect(minuteWheel()).toHaveAccessibilityValue({ text: '45' });
+  });
+
+  it.each([
+    [true, [t('custom.pickMinute'), t('custom.pickHour')]],
+    [false, [t('custom.pickHour'), t('custom.pickMinute')]],
+  ])('puts the wheels in the order a native mirrored row (%s) gives', (isRTL, expected) => {
+    jest.replaceProperty(I18nManager, 'isRTL', isRTL);
+    renderInline('08:30');
+    expect(screen.getAllByRole('adjustable').map((wheel) => wheel.props.accessibilityLabel)).toEqual(expected);
+  });
+
+  it('keeps the default a field that opens a sheet', () => {
+    renderField('08:30');
+    expect(field()).toBeOnTheScreen();
+    expect(screen.queryByLabelText(t('custom.pickHour'))).toBeNull();
   });
 });

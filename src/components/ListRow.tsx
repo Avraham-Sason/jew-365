@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { IconTile } from '@/components/IconTile';
-import { MitzvahIcon, type IconName } from '@/components/MitzvahIcon';
+import { MitzvahIcon, forwardIcon, type IconName } from '@/components/MitzvahIcon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
@@ -61,12 +61,7 @@ export function ListRow({
       </View>
       {trailing ??
         (chevron ? (
-          <MitzvahIcon
-            name={language === 'he' ? 'chevronLeft' : 'chevronRight'}
-            size={16}
-            color={colors.textMuted}
-            strokeWidth={2.5}
-          />
+          <MitzvahIcon name={forwardIcon(language)} size={16} color={colors.textMuted} strokeWidth={2.5} />
         ) : null)}
     </Pressable>
   );
