@@ -68,11 +68,13 @@ const idSuffix = () => Math.random().toString(36).slice(2, 6).padEnd(4, '0');
 
 export const useTaharahStore = create<TaharahState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialData(),
       addEvent: (event) => {
         const recordedAt = Date.now();
-        const id = `taharah_${recordedAt}_${idSuffix()}`;
+        const taken = new Set(get().events.map((e) => e.id));
+        let id = `taharah_${recordedAt}_${idSuffix()}`;
+        while (taken.has(id)) id = `taharah_${recordedAt}_${idSuffix()}`;
         set((s) => ({ events: [...s.events, { ...event, id, recordedAt }] }));
         return id;
       },

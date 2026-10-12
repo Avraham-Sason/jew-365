@@ -55,6 +55,15 @@ describe('useTaharahStore', () => {
       expect(new Set(ids).size).toBe(200);
     });
 
+    it('draws a new suffix when the random one is already taken in the same millisecond', () => {
+      jest.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+      jest.spyOn(Math, 'random').mockReturnValueOnce(0.5).mockReturnValueOnce(0.5).mockReturnValueOnce(0.25);
+      const first = get().addEvent(onset);
+      const second = get().addEvent(hefsek);
+      expect(second).not.toBe(first);
+      expect(get().events.map((e) => e.id)).toEqual([first, second]);
+    });
+
     it('removeEvent removes only that id', () => {
       const first = get().addEvent(onset);
       const second = get().addEvent(hefsek);
