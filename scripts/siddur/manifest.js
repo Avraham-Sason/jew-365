@@ -1,3 +1,5 @@
+const { gematriya } = require('@hebcal/core');
+
 const SEFARIA = 'https://www.sefaria.org';
 
 const METSUDAH_ASHKENAZ = {
@@ -216,6 +218,16 @@ const SOURCES = {
       url: 'https://he.wikisource.org/w/index.php?oldid=1386519',
     },
   },
+  wikiAfterPsalms: {
+    wikisource: 'תהלים מנוקד ומפוסק/תפילה לאחר אמירת תהלים',
+    revision: 2917763,
+    lang: 'he',
+    credit: {
+      title: 'Prayer After Saying Psalms — Hebrew Wikisource',
+      license: 'CC-BY-SA',
+      url: 'https://he.wikisource.org/w/index.php?oldid=2917763',
+    },
+  },
 };
 
 const CONDITIONAL_INSTRUCTION = [
@@ -381,6 +393,8 @@ const T = {
   vihiNoamYoshev: { he: 'ויהי נועם ויושב בסתר', en: "Vihi No'am and Yoshev BeSeter" },
   tikkunBefore: { he: 'תפילה לפני התיקון', en: 'Prayer Before the Tikkun' },
   tikkunAfter: { he: 'תפילה אחרי התיקון', en: 'Prayer After the Tikkun' },
+  tehillimBefore: { he: 'תפילה לפני אמירת תהלים', en: 'Prayer Before Tehillim' },
+  tehillimAfter: { he: 'תפילה לאחר אמירת תהלים', en: 'Prayer After Tehillim' },
 };
 
 const NOT_TISHA_BAV = { none: ['tishaBav'] };
@@ -1376,6 +1390,57 @@ const TIKKUN_PSALMS = [
   [150, 'קנ'],
 ];
 
+// The weekly division: the first psalm of each day, which opens that day's picker entry.
+const TEHILLIM_WEEK = [
+  [1, { he: 'ליום ראשון', en: 'Sunday' }],
+  [30, { he: 'ליום שני', en: 'Monday' }],
+  [51, { he: 'ליום שלישי', en: 'Tuesday' }],
+  [73, { he: 'ליום רביעי', en: 'Wednesday' }],
+  [90, { he: 'ליום חמישי', en: 'Thursday' }],
+  [107, { he: 'ליום שישי', en: 'Friday' }],
+  [120, { he: 'ליום שבת', en: 'Shabbat' }],
+];
+
+// The last psalm of each of the five books, followed by that book's Yehi Ratzon.
+const TEHILLIM_BOOKS = [
+  [41, { he: 'יהי רצון לאחר ספר ראשון', en: 'After the First Book' }],
+  [72, { he: 'יהי רצון לאחר ספר שני', en: 'After the Second Book' }],
+  [89, { he: 'יהי רצון לאחר ספר שלישי', en: 'After the Third Book' }],
+  [106, { he: 'יהי רצון לאחר ספר רביעי', en: 'After the Fourth Book' }],
+  [150, { he: 'יהי רצון לאחר ספר חמישי', en: 'After the Fifth Book' }],
+];
+
+// The alternatives the prayer after a whole book prints, in book order: which book of Tehillim, and
+// the book of the Torah it stands for.
+const BOOK_ORDINALS = ['רִאשׁוֹן', 'שֵׁנִי', 'שְׁלִישִׁי', 'רְבִיעִי', 'חֲמִישִׁי'];
+const BOOK_CHUMASHIM = ['בְּרֵאשִׁית', 'שְׁמוֹת', 'וַיִּקְרָא', 'בַּמִּדְבָּר', 'דְּבָרִים'];
+
+// Psalm 119's 22 stanzas of eight verses, each opening with its letter.
+const PSALM_119_STANZAS = [
+  ['א', 'Aleph'],
+  ['ב', 'Bet'],
+  ['ג', 'Gimel'],
+  ['ד', 'Dalet'],
+  ['ה', 'He'],
+  ['ו', 'Vav'],
+  ['ז', 'Zayin'],
+  ['ח', 'Chet'],
+  ['ט', 'Tet'],
+  ['י', 'Yod'],
+  ['כ', 'Kaf'],
+  ['ל', 'Lamed'],
+  ['מ', 'Mem'],
+  ['נ', 'Nun'],
+  ['ס', 'Samech'],
+  ['ע', 'Ayin'],
+  ['פ', 'Pe'],
+  ['צ', 'Tsadi'],
+  ['ק', 'Kof'],
+  ['ר', 'Resh'],
+  ['ש', 'Shin'],
+  ['ת', 'Tav'],
+];
+
 const MINYAN_ONLY_TITLES = [
   T.halfKaddish,
   T.kaddish,
@@ -1779,12 +1844,8 @@ const TEXTS = {
     edot_hamizrach: edotChanukahCandles(),
     chabad: chabadChanukahCandles(),
   },
-  tikkun_haklali: {
-    ashkenaz: tikkunHaklali(),
-    sefard: tikkunHaklali(),
-    edot_hamizrach: tikkunHaklali(),
-    chabad: tikkunHaklali(),
-  },
+  tikkun_haklali: { shared: tikkunHaklali() },
+  tehillim: { shared: tehillim() },
 };
 
 function chabadMincha() {
@@ -5412,31 +5473,91 @@ function sefardName(html) {
   return html.replace(/\u05D9\u05B0\u05D4\u05D5\u05B8\u05B9\u05D4/g, '\u05D9\u05B0\u05D4\u05B9\u05D5\u05B8\u05D4');
 }
 
+// The qere replaces the unpointed ketiv before it. A qere may span two bracketed words ("חלכאים [חֵיל]
+// [כָּאִים׃]"), and a ketiv joined by a maqaf keeps the qere joined to the next word.
 function tanachReading(html) {
   return html
-    .replace(/[א-ת]+ \[([^\]]+)\]/g, '$1')
+    .replace(/(^|\s|־)[א-ת]+־? ?((?:\[[^\]]+\] ?)+)/g, (_, lead, qere) => {
+      const words = [...qere.matchAll(/\[([^\]]+)\]/g)].map(([, word]) => word.trim()).join(' ');
+      return lead + words + (qere.endsWith(' ') && !words.endsWith('־') ? ' ' : '');
+    })
     .replace(/‍/g, '')
     .replace(/(יְ?)ה(וָה)/g, '$1הֹ$2');
+}
+
+function psalmVerses(title, chapter, range) {
+  return { he: 'tanachNikkudHe', title, path: String(chapter - 1), ...range, transform: tanachReading };
 }
 
 function tikkunHaklali() {
   const wikisource = { he: 'wikiTikkunHaklali', transform: ashkenazName };
   const opening = { ...wikisource, title: T.tikkunBefore, path: '# יהי רצון קודם אמירת תהלים .. # עשרת המזמורים' };
-  const verses = (title, chapter, range) => ({
-    he: 'tanachNikkudHe',
-    title,
-    path: String(chapter - 1),
-    ...range,
-    transform: tanachReading,
-  });
   return [
     { ...opening, to: 1, drop: [0], at: { 1: NOT_SHABBAT_YOM_TOV } },
-    verses(T.tikkunBefore, 95, { from: 0, to: 2 }),
+    psalmVerses(T.tikkunBefore, 95, { from: 0, to: 2 }),
     { ...opening, from: 2 },
-    ...TIKKUN_PSALMS.map(([number, numeral]) => verses({ he: `מזמור ${numeral}`, en: `Psalm ${number}` }, number)),
-    verses(T.tikkunAfter, 14, { from: 6, to: 6 }),
-    verses(T.tikkunAfter, 37, { from: 38, to: 39 }),
+    ...TIKKUN_PSALMS.map(([number, numeral]) => psalmVerses({ he: `מזמור ${numeral}`, en: `Psalm ${number}` }, number)),
+    psalmVerses(T.tikkunAfter, 14, { from: 6, to: 6 }),
+    psalmVerses(T.tikkunAfter, 37, { from: 38, to: 39 }),
     { ...wikisource, title: T.tikkunAfter, path: '# תפילה שנהגו לומר לאחר אמירת התיקון .. # ראו גם' },
+  ];
+}
+
+function tehillimPsalm(number) {
+  const title = { he: `פרק ${gematriya(number).replace(/[׳״]/g, '')}`, en: `Psalm ${number}` };
+  if (number === 119) {
+    return PSALM_119_STANZAS.map(([letter, name], index) =>
+      psalmVerses({ he: `${title.he} · ${letter}`, en: `${title.en} · ${name}` }, number, {
+        from: index * 8,
+        to: index * 8 + 7,
+      }),
+    );
+  }
+  const day = TEHILLIM_WEEK.find(([first]) => first === number)?.[1];
+  return [{ ...psalmVerses(title, number), ...(day ? { chapter: day } : {}) }];
+}
+
+function tehillimBookPrayer(book, title) {
+  return {
+    he: 'wikiAfterPsalms',
+    title,
+    path: 'יהר"מ | שתכפר',
+    transform: ashkenazName,
+    edits: [
+      { seg: 0, from: BOOK_ORDINALS.join(' • '), to: BOOK_ORDINALS[book] },
+      { seg: 2, from: BOOK_CHUMASHIM.join(' • '), to: BOOK_CHUMASHIM[book] },
+    ],
+    groups: [[0, 3]],
+  };
+}
+
+function tehillim() {
+  const psalms = Array.from({ length: 150 }, (_, index) => index + 1).flatMap((number) => {
+    const book = TEHILLIM_BOOKS.findIndex(([last]) => last === number);
+    return book === -1
+      ? tehillimPsalm(number)
+      : [...tehillimPsalm(number), tehillimBookPrayer(book, TEHILLIM_BOOKS[book][1])];
+  });
+  return [
+    {
+      he: 'wikiBeforePsalms',
+      title: T.tehillimBefore,
+      chapter: T.tehillimBefore,
+      path: '*',
+      transform: ashkenazName,
+      drop: [0],
+      at: { 1: NOT_SHABBAT_YOM_TOV },
+    },
+    psalmVerses(T.tehillimBefore, 95, { from: 0, to: 2 }),
+    ...psalms,
+    {
+      he: 'wikiAfterPsalms',
+      title: T.tehillimAfter,
+      chapter: T.tehillimAfter,
+      path: 'מי יתן | מזמורי | שתכפר',
+      transform: ashkenazName,
+      groups: [[1, 2]],
+    },
   ];
 }
 
@@ -5626,7 +5747,7 @@ function chabadChanukahCandles() {
   ];
 }
 
-const HEBREW_ONLY_TEXTS = ['tikkun_haklali'];
+const HEBREW_ONLY_TEXTS = ['tikkun_haklali', 'tehillim'];
 
 module.exports = {
   SOURCES,

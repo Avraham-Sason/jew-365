@@ -43,6 +43,7 @@
   "home.nextAt": "%{name} · %{time}",
   "more.title": "More",
   "more.scheduleCaption": "Day, week and month",
+  "more.tehillimCaption": "Divided by the days of the week",
   "chok.title": "Chok LeYisrael",
   "chok.parashaOf": "Parashat %{name}",
   "chok.nothingToday": "No portion today",

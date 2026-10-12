@@ -195,6 +195,7 @@ const WIKI_TEMPLATES = {
   נוא: ([text], named) => `(<small>${named['הוראה']}</small> ${text})`,
   צ: ([text]) => text,
   ממס: () => '',
+  רווח: () => ' ',
   'רקע אפור': () => '',
   סוף: () => '',
 };
@@ -260,7 +261,8 @@ async function wikisourceSegments(key, nodePath, used) {
   for (const part of nodePath.split(' | ')) {
     const [after, before] = part.split(' .. ');
     let raw;
-    if (part.startsWith('#')) raw = headingText(wikitext, part, key);
+    if (part === '*') raw = wikitext;
+    else if (part.startsWith('#')) raw = headingText(wikitext, part, key);
     else raw = before === undefined ? labeledText(wikitext, part, key) : textBetween(wikitext, after, before, key);
     const html = await wikiToHtml(raw, key, used);
     segments.push(
@@ -972,17 +974,51 @@ function applyMemoryEdits(sections) {
   }
 }
 
-function assetMapSource(built) {
+const SHARED_DIR = 'shared';
+
+function assetMapSource(built, shared) {
   const lines = ['export const SIDDUR_ASSETS = {'];
   for (const nusach of NUSCHAOT) {
     lines.push(`  ${nusach}: {`);
     for (const id of built[nusach] ?? []) {
-      lines.push(`    ${id}: require('../../assets/siddur/${nusach}/${id}.siddur'),`);
+      const folder = shared.includes(id) ? SHARED_DIR : nusach;
+      lines.push(`    ${id}: require('../../assets/siddur/${folder}/${id}.siddur'),`);
     }
     lines.push('  },');
   }
   lines.push('} as const;', '');
+  lines.push(`export const SHARED_SIDDUR_TEXT_IDS = [${shared.map((id) => `'${id}'`).join(', ')}] as const;`, '');
   return lines.join('\n');
+}
+
+// A text whose manifest entry is `shared` is the same in every nusach: it is built once, into the
+// shared folder, and carries no nusach.
+async function buildText(textId, specs, nusach, run) {
+  const { memory, report, outputs, unreviewed, minyanOnlyTitles } = run;
+  const credits = new Set();
+  const ctx = { nusach: nusach ?? SHARED_DIR, textId, credits, unreviewed, minyanOnlyTitles };
+  const parts = [];
+  for (const spec of specs) parts.push(await buildSection(spec, ctx));
+  const sections = mergeSameTitledSections(parts);
+  const filled = HEBREW_ONLY_TEXTS.includes(textId) ? 0 : fillTranslations(sections, memory, credits);
+  applyMemoryEdits(sections);
+  const segments = sections.flatMap((s) => s.segments);
+  for (const segment of segments) {
+    delete segment.enDropped;
+    delete segment.fromMemory;
+    delete segment.memoryEdits;
+  }
+  const translated = segments.filter((s) => s.en).length;
+  report.push(
+    `${ctx.nusach}/${textId}: ${segments.length} segments, ${translated} translated (${filled} via exact match)`,
+  );
+  const text = {
+    ...(nusach ? { nusach } : {}),
+    id: textId,
+    sections,
+    credits: [...new Map([...credits].map((key) => [SOURCES[key].credit.title, SOURCES[key].credit])).values()],
+  };
+  outputs.set(path.join(OUT_DIR, ctx.nusach, `${textId}.siddur`), JSON.stringify(text));
 }
 
 async function main() {
@@ -992,38 +1028,22 @@ async function main() {
   const built = {};
   const report = [];
   const outputs = new Map();
+  const run = { memory, report, outputs, unreviewed, minyanOnlyTitles };
+  const shared = Object.keys(TEXTS).filter((textId) => TEXTS[textId].shared);
   for (const nusach of NUSCHAOT) {
     built[nusach] = [];
     for (const [textId, byNusach] of Object.entries(TEXTS)) {
+      if (byNusach.shared) {
+        built[nusach].push(textId);
+        continue;
+      }
       const specs = byNusach[nusach];
       if (!specs) continue;
-      const credits = new Set();
-      const ctx = { nusach, textId, credits, unreviewed, minyanOnlyTitles };
-      const parts = [];
-      for (const spec of specs) parts.push(await buildSection(spec, ctx));
-      const sections = mergeSameTitledSections(parts);
-      const filled = HEBREW_ONLY_TEXTS.includes(textId) ? 0 : fillTranslations(sections, memory, credits);
-      applyMemoryEdits(sections);
-      const segments = sections.flatMap((s) => s.segments);
-      for (const segment of segments) {
-        delete segment.enDropped;
-        delete segment.fromMemory;
-        delete segment.memoryEdits;
-      }
-      const translated = segments.filter((s) => s.en).length;
-      report.push(
-        `${nusach}/${textId}: ${segments.length} segments, ${translated} translated (${filled} via exact match)`,
-      );
-      const text = {
-        nusach,
-        id: textId,
-        sections,
-        credits: [...new Map([...credits].map((key) => [SOURCES[key].credit.title, SOURCES[key].credit])).values()],
-      };
-      outputs.set(path.join(OUT_DIR, nusach, `${textId}.siddur`), JSON.stringify(text));
+      await buildText(textId, specs, nusach, run);
       built[nusach].push(textId);
     }
   }
+  for (const textId of shared) await buildText(textId, TEXTS[textId].shared, null, run);
   if (unreviewed.length) {
     throw new Error(`conditional instructions without a condition or review:\n${unreviewed.join('\n')}`);
   }
@@ -1031,7 +1051,7 @@ async function main() {
   if (unused.length) throw new Error(`manifest rules that never matched:\n${unused.join('\n')}`);
   const missing = MINYAN_ONLY_TITLES.filter((title) => !minyanOnlyTitles.has(title));
   if (missing.length) throw new Error(`minyan-only titles that no section carries:\n${missing.join('\n')}`);
-  outputs.set(ASSET_MAP, assetMapSource(built));
+  outputs.set(ASSET_MAP, assetMapSource(built, shared));
   writeOutputs(outputs);
   console.log(report.join('\n'));
 }

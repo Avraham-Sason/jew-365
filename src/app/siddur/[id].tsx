@@ -846,6 +846,7 @@ export default function SiddurScreen() {
           keyExtractor={(section) => section.title.he}
           initialNumToRender={4}
           windowSize={renderingAll ? Number.POSITIVE_INFINITY : undefined}
+          maxToRenderPerBatch={renderingAll ? sections.length : undefined}
           viewabilityConfig={SECTION_VIEWABILITY}
           onViewableItemsChanged={onViewableSectionsChanged}
           contentContainerStyle={styles.content}

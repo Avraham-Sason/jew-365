@@ -21,7 +21,7 @@ import {
   standaloneTextsIn,
 } from '../siddur';
 import { HebcalService } from '@/services/HebcalService';
-import { SIDDUR_ASSETS } from '../siddurAssets.generated';
+import { SHARED_SIDDUR_TEXT_IDS, SIDDUR_ASSETS } from '../siddurAssets.generated';
 import { findMitzvah } from '../mitzvot';
 import { Mitzvah, Nusach } from '@/types/mitzvah';
 import {
@@ -46,6 +46,7 @@ import {
   segmentBlocks,
 } from '@/utils/siddur';
 import { keepsCholHamoed } from '@/utils/skipRules';
+import { readSiddurText, siddurAssetFolder } from '@/testing/siddur';
 
 const NUSCHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
 const TEXT_IDS = SIDDUR_TEXT_IDS;
@@ -54,7 +55,7 @@ const STANDALONE_IDS = Object.keys(STANDALONE_TEXTS) as StandaloneTextId[];
 const ASSET_DIR = path.join(__dirname, '..', '..', '..', 'assets', 'siddur');
 
 function load(nusach: Nusach, id: SiddurTextId): SiddurText {
-  return JSON.parse(fs.readFileSync(path.join(ASSET_DIR, nusach, `${id}.siddur`), 'utf8'));
+  return readSiddurText(nusach, id);
 }
 
 function letters(text: string): string {
@@ -119,7 +120,8 @@ describe('siddur content', () => {
       for (const id of TEXT_IDS) {
         expect((SIDDUR_ASSETS[nusach] as Record<string, unknown>)[id]).toBeDefined();
         const text = load(nusach, id);
-        expect(text.nusach).toBe(nusach);
+        if (siddurAssetFolder(nusach, id) === 'shared') expect(text.nusach).toBeUndefined();
+        else expect(text.nusach).toBe(nusach);
         expect(text.id).toBe(id);
         expect(text.sections.length).toBeGreaterThan(0);
         expect(text.credits.length).toBeGreaterThan(0);
@@ -133,6 +135,19 @@ describe('siddur content', () => {
           if (segment.en) expect(segment.en).toMatch(/[A-Za-z]{3,}/);
         }
       }
+    }
+  });
+
+  it('keeps a text that every nusach shares in one shared asset, which the map gives every nusach', () => {
+    expect([...SHARED_SIDDUR_TEXT_IDS]).toEqual(['tikkun_haklali', 'tehillim']);
+    const map = fs.readFileSync(path.join(__dirname, '..', 'siddurAssets.generated.ts'), 'utf8');
+    for (const id of SHARED_SIDDUR_TEXT_IDS) {
+      expect(fs.existsSync(path.join(ASSET_DIR, 'shared', `${id}.siddur`))).toBe(true);
+      for (const nusach of NUSCHAOT) {
+        expect(fs.existsSync(path.join(ASSET_DIR, nusach, `${id}.siddur`))).toBe(false);
+        expect(siddurAssetFolder(nusach, id)).toBe('shared');
+      }
+      expect(map.split(`${id}: require('../../assets/siddur/shared/${id}.siddur')`)).toHaveLength(NUSCHAOT.length + 1);
     }
   });
 
@@ -1788,6 +1803,7 @@ describe('standalone texts', () => {
     }
     expect(standaloneTextsIn('general')).toEqual([
       'tikkun_haklali',
+      'tehillim',
       'kriat_shema_al_hamita',
       'tefilat_haderech',
       'asher_yatzar',
@@ -3861,6 +3877,25 @@ describe('chanukah_candles', () => {
   });
 });
 
+function wordsOf(segments: SiddurSegment[], keep: (run: Run) => boolean): string {
+  return letters(
+    segments
+      .flatMap((segment) =>
+        segment.he.map((runs) =>
+          runs
+            .filter(keep)
+            .map((run) => run.t)
+            .join(''),
+        ),
+      )
+      .join(' '),
+  ).trim();
+}
+
+function said(section: SiddurSection): string {
+  return wordsOf(section.segments, (run) => run.s !== 'n');
+}
+
 describe('tikkun_haklali', () => {
   const ID = 'tikkun_haklali';
   const weekday = day(3, months.CHESHVAN, 5787);
@@ -3880,20 +3915,6 @@ describe('tikkun_haklali', () => {
     { title: 'מזמור קנ', verses: 6, begins: 'הללו יה הללו אל בקדשו', ends: 'כל הנשמה תהלל יה הללו יה' },
   ];
   const sections = (nusach: Nusach, features: DayFeatures) => resolveSiddurText(load(nusach, ID), features);
-  const wordsOf = (segments: SiddurText['sections'][number]['segments'], keep: (run: Run) => boolean) =>
-    letters(
-      segments
-        .flatMap((segment) =>
-          segment.he.map((runs) =>
-            runs
-              .filter(keep)
-              .map((run) => run.t)
-              .join(''),
-          ),
-        )
-        .join(' '),
-    ).trim();
-  const said = (section: SiddurText['sections'][number]) => wordsOf(section.segments, (run) => run.s !== 'n');
   const section = (nusach: Nusach, title: string, features = weekday) =>
     sections(nusach, features).find((candidate) => candidate.title.he === title)!;
 
@@ -4074,6 +4095,190 @@ describe('tikkun_haklali', () => {
   });
 });
 
+describe('tehillim', () => {
+  const ID = 'tehillim';
+  const weekday = day(3, months.CHESHVAN, 5787);
+  const shabbat = civilDay(new Date(2026, 9, 17));
+  const BEFORE = 'תפילה לפני אמירת תהלים';
+  const AFTER = 'תפילה לאחר אמירת תהלים';
+  const WEEK = [
+    [1, 'ליום ראשון', 'Sunday'],
+    [30, 'ליום שני', 'Monday'],
+    [51, 'ליום שלישי', 'Tuesday'],
+    [73, 'ליום רביעי', 'Wednesday'],
+    [90, 'ליום חמישי', 'Thursday'],
+    [107, 'ליום שישי', 'Friday'],
+    [120, 'ליום שבת', 'Shabbat'],
+  ] as const;
+  const BOOKS = [
+    [41, 'יהי רצון לאחר ספר ראשון', 'ראשון', 'בראשית'],
+    [72, 'יהי רצון לאחר ספר שני', 'שני', 'שמות'],
+    [89, 'יהי רצון לאחר ספר שלישי', 'שלישי', 'ויקרא'],
+    [106, 'יהי רצון לאחר ספר רביעי', 'רביעי', 'במדבר'],
+    [150, 'יהי רצון לאחר ספר חמישי', 'חמישי', 'דברים'],
+  ] as const;
+  const LETTERS_119 = [...'אבגדהוזחטיכלמנסעפצקרשת'];
+  const psalmTitle = (number: number) => `פרק ${gematriya(number).replace(/[׳״]/g, '')}`;
+  const psalmTitles = (number: number) =>
+    number === 119 ? LETTERS_119.map((letter) => `${psalmTitle(119)} · ${letter}`) : [psalmTitle(number)];
+  const sections = (features = weekday) => resolveSiddurText(load('ashkenaz', ID), features);
+  const section = (title: string, features = weekday) =>
+    sections(features).find((candidate) => candidate.title.he === title)!;
+  const isNote = (segment: SiddurSegment) => segment.he.flat().every((run) => run.s === 'n');
+  const saidIn = (segments: SiddurSegment[]) => wordsOf(segments, (run) => run.s !== 'n');
+
+  it('falls on the days its fixtures claim', () => {
+    expect(shabbat.flags.has('shabbat')).toBe(true);
+    for (const flag of ['shabbat', 'yomTov', 'yomKippur'] as const) expect(weekday.flags.has(flag)).toBe(false);
+  });
+
+  it('is filed in the general group right after Tikkun HaKlali, and offered in every nusach on every day', () => {
+    expect(STANDALONE_TEXTS[ID]).toMatchObject({ name: { he: 'תהילים', en: 'Tehillim' }, group: 'general' });
+    expect(STANDALONE_TEXTS[ID].evening).toBeUndefined();
+    expect(STANDALONE_TEXTS[ID].available).toBeUndefined();
+    expect(standaloneTextsIn('general').slice(0, 2)).toEqual(['tikkun_haklali', ID]);
+    for (const nusach of NUSCHAOT) {
+      for (const features of [weekday, shabbat]) expect(hasStandaloneText(ID, nusach, features)).toBe(true);
+    }
+  });
+
+  it('is one text for every nusach, in Hebrew only', () => {
+    expect(SHARED_SIDDUR_TEXT_IDS).toContain(ID);
+    const text = load('ashkenaz', ID);
+    expect(text.nusach).toBeUndefined();
+    expect(text.sections.flatMap((entry) => entry.segments).every((segment) => segment.en === undefined)).toBe(true);
+  });
+
+  it('lists in its picker the prayer before, the seven days of the weekly division and the prayer after, and nothing else', () => {
+    const shown = sections();
+    const entries = pickerEntries(shown);
+    expect(entries.map((entry) => entry.title.he)).toEqual([BEFORE, ...WEEK.map(([, he]) => he), AFTER]);
+    expect(entries.map((entry) => entry.title.en)).toEqual([
+      'Prayer Before Tehillim',
+      ...WEEK.map(([, , en]) => en),
+      'Prayer After Tehillim',
+    ]);
+    expect(entries.map((entry) => shown[entry.index].title.he)).toEqual([
+      BEFORE,
+      ...WEEK.map(([first]) => psalmTitle(first)),
+      AFTER,
+    ]);
+  });
+
+  it('gives all 150 psalms in order, with each book’s Yehi Ratzon right after its last psalm', () => {
+    const titles = Array.from({ length: 150 }, (_, index) => index + 1).flatMap((number) => {
+      const book = BOOKS.find(([last]) => last === number);
+      return book ? [...psalmTitles(number), book[1]] : psalmTitles(number);
+    });
+    expect(sections().map((entry) => entry.title.he)).toEqual([BEFORE, ...titles, AFTER]);
+    expect(sections(shabbat).map((entry) => entry.title.he)).toEqual([BEFORE, ...titles, AFTER]);
+    expect(section(psalmTitle(1)).title.en).toBe('Psalm 1');
+    expect(section(psalmTitle(150)).title.en).toBe('Psalm 150');
+    expect(psalmTitle(15)).toBe('פרק טו');
+    expect(psalmTitle(116)).toBe('פרק קטז');
+  });
+
+  it('says each psalm verse by verse, from its first verse to its last, and nothing else inside it', () => {
+    const psalms = sections().filter((entry) => entry.title.he.startsWith('פרק '));
+    expect(psalms).toHaveLength(149 + 22);
+    const verses = psalms.flatMap((entry) => entry.segments);
+    expect(verses).toHaveLength(2527);
+    expect(verses.some(isNote)).toBe(false);
+    expect(verses.every((segment) => !segment.optional && !segment.minyan && !segment.when)).toBe(true);
+    expect(section(psalmTitle(1)).segments).toHaveLength(6);
+    expect(section(psalmTitle(23)).segments).toHaveLength(6);
+    expect(section(psalmTitle(117)).segments).toHaveLength(2);
+    expect(said(section(psalmTitle(1)))).toMatch(/^אשרי האיש אשר לא הלך בעצת רשעים/);
+    expect(said(section(psalmTitle(3)))).toMatch(/^מזמור לדוד בברחו מפני אבשלום בנו/);
+    expect(said(section(psalmTitle(150)))).toMatch(/כל הנשמה תהלל יה הללו יה$/);
+  });
+
+  it('gives Psalm 119 as its 22 stanzas, each titled with the letter its eight verses open with', () => {
+    const stanzas = sections().filter((entry) => entry.title.he.startsWith(`${psalmTitle(119)} · `));
+    expect(stanzas.map((entry) => entry.title.he)).toEqual(psalmTitles(119));
+    expect(stanzas[0].title.en).toBe('Psalm 119 · Aleph');
+    expect(stanzas[21].title.en).toBe('Psalm 119 · Tav');
+    stanzas.forEach((stanza, index) => {
+      expect(stanza.segments).toHaveLength(8);
+      expect(stanza.segments.every((verse) => wordsOf([verse], () => true).startsWith(LETTERS_119[index]))).toBe(true);
+    });
+    expect(said(stanzas[0])).toMatch(/^אשרי תמימי דרך ההלכים בתורת יהוה/);
+    expect(said(stanzas[21])).toMatch(/כי מצותיך לא שכחתי$/);
+  });
+
+  it('reads each psalm as it is read aloud: every qere in place of its ketiv, no joiners, the divine name spelled as the siddur does', () => {
+    const pointed = load('ashkenaz', ID)
+      .sections.flatMap((entry) => entry.segments.flatMap((segment) => segment.he.flat().map((run) => run.t)))
+      .join(' ');
+    expect(pointed).not.toMatch(/\[|\]|‍/);
+    expect(pointed).not.toMatch(/יְ?הוָה/);
+    expect(pointed).toMatch(/יְהֹוָה/);
+    expect(said(section(psalmTitle(100)))).toMatch(/הוא עשנו ולו אנחנו עמו/);
+    expect(said(section(psalmTitle(10)))).toMatch(/ונפל בעצומיו חיל כאים/);
+    expect(said(section(psalmTitle(55)))).toMatch(/ישי מות עלימו ירדו שאול חיים/);
+    expect(JSON.stringify(section(psalmTitle(30)).segments)).toMatch(/מִיָּרְדִי־בוֹר/);
+    expect(JSON.stringify(section(psalmTitle(21)).segments)).toMatch(/מַה־יָּגֶל מְאֹד/);
+    expect(JSON.stringify(section(psalmTitle(89)).segments)).toMatch(/לְעוֹלָם אֶשְׁמָר־לוֹ חַסְדִּי/);
+  });
+
+  it('opens with the Yehi Ratzon before Tehillim on a weekday, and with Lechu Neranena on every day', () => {
+    const lechu =
+      'לכו נרננה ליהוה נריעה לצור ישענו נקדמה פניו בתודה בזמרות נריע לו כי אל גדול יהוה ומלך גדול על כל אלהים';
+    const onWeekday = said(section(BEFORE));
+    expect(onWeekday).toMatch(/^יהי רצון מלפניך יהוה אלהינו ואלהי אבותינו הבוחר בדוד עבדו/);
+    expect(onWeekday.endsWith(lechu)).toBe(true);
+    expect(said(section(BEFORE, shabbat))).toBe(lechu);
+    for (const features of [weekday, shabbat]) {
+      expect(wordsOf(section(BEFORE, features).segments, () => true)).not.toMatch(/אין אומרים/);
+    }
+  });
+
+  it('closes each book with its own Yehi Ratzon, naming the book and the book of the Torah it stands for', () => {
+    for (const [, title, ordinal, chumash] of BOOKS) {
+      const prayer = section(title);
+      expect(prayer.segments).toHaveLength(1);
+      expect(said(prayer)).toMatch(
+        new RegExp(
+          `^יהי רצון מלפניך יהוה אלהינו ואלהי אבותינו בזכות ספר ${ordinal} שבתהלים שקראנו לפניך שהוא כנגד ספר ${chumash} בזכות מזמוריו ובזכות פסוקיו ובזכות תבותיו`,
+        ),
+      );
+      expect(said(prayer)).toMatch(/שתכפר לנו על כל חטאתינו/);
+      expect(said(prayer)).toMatch(/ברוך יהוה לעולם אמן ואמן$/);
+      expect(said(prayer)).not.toMatch(/•/);
+    }
+  });
+
+  it('ends with the three verses after Tehillim, then the Yehi Ratzon after a few psalms', () => {
+    const closing = section(AFTER);
+    expect(closing.segments).toHaveLength(2);
+    expect(wordsOf(closing.segments.slice(0, 1), (run) => run.s === 'n')).toBe('אחר שסיים תהלים יאמר ג פסוקים אלו');
+    expect(saidIn(closing.segments.slice(0, 1))).toBe(
+      'מי יתן מציון ישועת ישראל בשוב יהוה שבות עמו יגל יעקב ישמח ישראל ותשועת צדיקים מיהוה מעוזם בעת צרה ויעזרם יהוה ויפלטם יפלטם מרשעים ויושיעם כי חסו בו',
+    );
+    const prayer = saidIn(closing.segments.slice(1));
+    expect(prayer).toMatch(
+      /^יהי רצון מלפניך יהוה אלהינו ואלהי אבותינו בזכות מזמורי תהלים שקראתי לפניך ובזכות פסוקיהם ובזכות תבותיהם שתכפר לנו/,
+    );
+    expect(prayer).toMatch(/ברוך יהוה לעולם אמן ואמן$/);
+  });
+
+  it('credits the pinned Wikisource pages and the Psalms version, and nothing else', () => {
+    expect(load('ashkenaz', ID).credits).toEqual([
+      {
+        title: 'Prayer Before Saying Psalms — Hebrew Wikisource',
+        license: 'CC-BY-SA',
+        url: 'https://he.wikisource.org/w/index.php?oldid=1386519',
+      },
+      { title: 'Psalms — Tanach with Nikkud', license: 'Public Domain', url: 'https://www.sefaria.org/Psalms' },
+      {
+        title: 'Prayer After Saying Psalms — Hebrew Wikisource',
+        license: 'CC-BY-SA',
+        url: 'https://he.wikisource.org/w/index.php?oldid=2917763',
+      },
+    ]);
+  });
+});
+
 describe('shacharit chapters', () => {
   // The section picker lists a long text's chapters, not every section: the user's division of
   // Shacharit (2026-10-10), with the Rosh Chodesh and Chol HaMoed additions as their own stops.
@@ -4198,9 +4403,9 @@ describe('shacharit chapters', () => {
     }
   });
 
-  it('no other text carries chapters, so their pickers keep listing every section', () => {
+  it('no text but Shacharit and Tehillim carries chapters, so the other pickers keep listing every section', () => {
     for (const nusach of NUSCHAOT) {
-      for (const id of TEXT_IDS.filter((candidate) => candidate !== 'shacharit')) {
+      for (const id of TEXT_IDS.filter((candidate) => candidate !== 'shacharit' && candidate !== 'tehillim')) {
         expect(load(nusach, id).sections.some((section) => section.chapter)).toBe(false);
       }
     }

@@ -60,13 +60,9 @@ jest.mock('expo-keep-awake', () => ({
   deactivateKeepAwake: () => Promise.resolve(),
 }));
 jest.mock('@/services/SiddurService', () => {
-  const fs = require('fs');
-  const path = require('path');
+  const { readSiddurText } = require('@/testing/siddur');
   return {
-    loadSiddurText: (nusach: string, id: string) =>
-      Promise.resolve(
-        JSON.parse(fs.readFileSync(path.join(process.cwd(), 'assets', 'siddur', nusach, `${id}.siddur`), 'utf8')),
-      ),
+    loadSiddurText: (nusach: string, id: string) => Promise.resolve(readSiddurText(nusach, id)),
     loadChokParasha: () => Promise.reject(new Error('no chok text in a smoke render')),
   };
 });
@@ -512,6 +508,13 @@ const CASES: SmokeCase[] = [
     Screen: SiddurReaderScreen,
     params: { id: 'birkat_hamazon' },
     check: both(text('ברכת המזון', 'Grace After Meals'), text('לפני ברכת המזון', 'Before Grace')),
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'Tehillim, a text shared by every nusach',
+    Screen: SiddurReaderScreen,
+    params: { id: 'tehillim' },
+    check: both(text('תהילים', 'Tehillim'), text('תפילה לפני אמירת תהלים', 'Prayer Before Tehillim')),
   },
   {
     file: 'siddur/index',

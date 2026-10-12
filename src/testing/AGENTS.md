@@ -8,6 +8,7 @@
 
 - [zmanim.ts](zmanim.ts) resolves zmanim for a fixture and throws when they are unavailable, so a bad fixture fails loudly instead of returning `null` into an assertion.
 - [zmanim.ts](zmanim.ts) also owns `at(location, wallClock)`, the instant a clock at the location shows, so a fixture means the same moment under every device zone. It throws on an unparseable wall clock.
+- [siddur.ts](siddur.ts) owns `readSiddurText(nusach, id)`, a built siddur asset read from disk, and `siddurAssetFolder(nusach, id)`, the folder it comes from: the nusach's, or `shared` for a text listed in `SHARED_SIDDUR_TEXT_IDS`, as the generated map does. The siddur content suite, its dump tool and the screens smoke test read assets through it.
 - [render.tsx](render.tsx) owns `renderWithTheme(ui)`: React Native Testing Library's `render` with `ThemeProvider` as the wrapper, so a component that calls `useTheme()` or `useI18n()` renders as it does in the app. The theme and the language come from `useUserStore`; a test picks them with `useUserStore.setState({ theme, language })` and resets with `useUserStore.getState().reset()` in `beforeEach`. It also owns `findBackdrop()`, the press target behind a dialog or sheet, which has no role to query by.
 
 ## Local Contracts

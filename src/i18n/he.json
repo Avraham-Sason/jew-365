@@ -43,6 +43,7 @@
   "home.nextAt": "%{name} · %{time}",
   "more.title": "עוד",
   "more.scheduleCaption": "יום, שבוע וחודש",
+  "more.tehillimCaption": "מחולק לפי ימי השבוע",
   "chok.title": "חק לישראל",
   "chok.parashaOf": "פרשת %{name}",
   "chok.nothingToday": "אין לימוד היום",

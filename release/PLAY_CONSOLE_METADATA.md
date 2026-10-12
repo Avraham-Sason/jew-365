@@ -26,7 +26,7 @@ Mitzvot, on time
 - Hebrew calendar, parasha, holidays and halachic opinions, set for Israel or the Diaspora
 
 A siddur in four nusachim
-The prayer text for each mitzvah, plus 13 more blessings and prayers: Grace After Meals, Me'ein Shalosh, Borei Nefashot, the Traveler's Prayer, Asher Yatzar, blessings on food and fragrance, blessings on sights and sounds, the bedtime Shema, Kiddush Levana, affixing a mezuzah, Sheva Berachot, Chanukah candle lighting and Tikkun HaKlali. Ashkenaz, Sefard, Edot HaMizrach or Chabad, adjusted to the day, with auto-scroll so you can read without touching the screen.
+The prayer text for each mitzvah, plus 14 more texts: Grace After Meals, Me'ein Shalosh, Borei Nefashot, the Traveler's Prayer, Asher Yatzar, blessings on food and fragrance, blessings on sights and sounds, the bedtime Shema, Kiddush Levana, affixing a mezuzah, Sheva Berachot, Chanukah candle lighting, Tikkun HaKlali and the whole of Tehillim, with a jump to each day of the week's portion. Ashkenaz, Sefard, Edot HaMizrach or Chabad, adjusted to the day, with auto-scroll so you can read without touching the screen.
 
 Shabbat and Yom Tov
 The app rests on Shabbat and Yom Tov: no notifications and a quiet screen. When it ends, mark what you did so your streak holds. An hour before it begins, a notice gives candle-lighting and exit times.
@@ -62,7 +62,7 @@ Hebrew:
 - לוח עברי, פרשת השבוע, חגים ודעות הלכתיות, לפי ישראל או חוץ לארץ
 
 סידור בארבעה נוסחים
-נוסח התפילה של כל מצווה, ועוד 13 ברכות ותפילות: ברכת המזון, ברכה מעין שלוש, בורא נפשות, תפילת הדרך, אשר יצר, ברכות הנהנין, ברכות הראייה, קריאת שמע על המיטה, קידוש לבנה, קביעת מזוזה, שבע ברכות, הדלקת נרות חנוכה ותיקון הכללי. אשכנז, ספרד, עדות המזרח או חב״ד, מותאם ליום, עם גלילה אוטומטית לקריאה בלי לגעת במסך.
+נוסח התפילה של כל מצווה, ועוד 14 נוסחים: ברכת המזון, ברכה מעין שלוש, בורא נפשות, תפילת הדרך, אשר יצר, ברכות הנהנין, ברכות הראייה, קריאת שמע על המיטה, קידוש לבנה, קביעת מזוזה, שבע ברכות, הדלקת נרות חנוכה, תיקון הכללי וספר תהילים השלם, עם קפיצה לחלק של כל יום בשבוע. אשכנז, ספרד, עדות המזרח או חב״ד, מותאם ליום, עם גלילה אוטומטית לקריאה בלי לגעת במסך.
 
 שבת וחג
 האפליקציה נחה בשבת וביום טוב: אין התראות והמסך שקט. בצאת השבת או החג תוכל לסמן מה עשית, כדי שהרצף לא יישבר. שעה לפני הכניסה תגיע התראה עם זמני הדלקת הנרות והיציאה.

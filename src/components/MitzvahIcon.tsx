@@ -22,6 +22,7 @@ export const ICON_NAMES = [
   'occasions',
   'calendar',
   'chok',
+  'tehillim',
   'chevronLeft',
   'chevronRight',
   'sparkle',
@@ -207,6 +208,17 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Line x1={5.5} y1={13.5} x2={9.5} y2={13.5} />
       <Line x1={14.5} y1={10} x2={18.5} y2={10} />
       <Line x1={14.5} y1={13.5} x2={18.5} y2={13.5} />
+    </>
+  ),
+  tehillim: ({ fill }) => (
+    <>
+      <Path d="M7,17.5H17V19Q17,21 15,21H9Q7,21 7,19Z" fill={fill} />
+      <Path d="M8,17.5C4,14 4.5,8 7,3.5" />
+      <Path d="M16,17.5C20,14 19.5,8 17,3.5" />
+      <Line x1={5.7} y1={7} x2={18.3} y2={7} />
+      <Line x1={10} y1={7} x2={10} y2={17.5} />
+      <Line x1={12} y1={7} x2={12} y2={17.5} />
+      <Line x1={14} y1={7} x2={14} y2={17.5} />
     </>
   ),
   chevronLeft: () => <Path d="M15,6L9,12L15,18" />,

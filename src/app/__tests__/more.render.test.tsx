@@ -1,21 +1,22 @@
 const mockPush = jest.fn();
-const mockHasContent = jest.fn(() => true);
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/data/chok', () => ({
   CHOK_TEXT_ID: 'chok_leyisrael',
   chokAsset: () => undefined,
-  hasChokContent: () => mockHasContent(),
+  hasChokContent: jest.fn(() => true),
 }));
 
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import MoreScreen from '../(tabs)/more';
+import { hasChokContent } from '@/data/chok';
 import { CITIES } from '@/data/cities';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import { useUserStore } from '@/stores/useUserStore';
 
 const JERUSALEM = CITIES[0];
+const mockHasContent = jest.mocked(hasChokContent);
 const ONLY_DATE = [
   'nextTick',
   'queueMicrotask',
@@ -73,5 +74,26 @@ describe('More tab', () => {
     renderAt('2026-11-16T12:00');
     expect(screen.queryByText('חק לישראל')).toBeNull();
     expect(screen.getByText('לוח זמנים')).toBeOnTheScreen();
+  });
+
+  it('lists Tehillim last, with or without Chok LeYisrael, and opens it in the reader', () => {
+    for (const chok of [true, false]) {
+      mockHasContent.mockReturnValue(chok);
+      const { unmount } = renderAt('2026-11-16T12:00');
+      const rows = screen.getAllByRole('button');
+      expect(rows).toHaveLength(chok ? 3 : 2);
+      expect(within(rows[rows.length - 1]).getByText('תהילים')).toBeOnTheScreen();
+      expect(within(rows[rows.length - 1]).getByText('מחולק לפי ימי השבוע')).toBeOnTheScreen();
+      fireEvent.press(screen.getByText('תהילים'));
+      expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/siddur/[id]', params: { id: 'tehillim' } });
+      unmount();
+    }
+  });
+
+  it('names Tehillim in English', () => {
+    useUserStore.setState({ language: 'en' });
+    renderAt('2026-11-16T12:00');
+    expect(screen.getByText('Tehillim')).toBeOnTheScreen();
+    expect(screen.getByText('Divided by the days of the week')).toBeOnTheScreen();
   });
 });

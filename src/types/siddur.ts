@@ -142,7 +142,8 @@ export type StandaloneTextId =
   | 'mezuzah'
   | 'sheva_berachot'
   | 'chanukah_candles'
-  | 'tikkun_haklali';
+  | 'tikkun_haklali'
+  | 'tehillim';
 
 export type SiddurTextId = MitzvahTextId | StandaloneTextId;
 

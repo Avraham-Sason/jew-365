@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ListRow } from '@/components/ListRow';
 import { NavBar } from '@/components/NavBar';
 import { CHOK_TEXT_ID, hasChokContent } from '@/data/chok';
+import { STANDALONE_TEXTS } from '@/data/siddur';
 import { useNow } from '@/hooks/useNow';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -46,6 +47,13 @@ export default function MoreScreen() {
               onPress={() => router.push({ pathname: '/siddur/[id]', params: { id: CHOK_TEXT_ID } })}
             />
           ) : null}
+          <ListRow
+            icon="tehillim"
+            title={STANDALONE_TEXTS.tehillim.name[language]}
+            caption={t('more.tehillimCaption')}
+            chevron
+            onPress={() => router.push({ pathname: '/siddur/[id]', params: { id: 'tehillim' } })}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
