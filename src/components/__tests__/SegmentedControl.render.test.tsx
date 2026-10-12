@@ -67,6 +67,46 @@ describe('SegmentedControl', () => {
   });
 });
 
+describe('SegmentedControl web accessibility state', () => {
+  beforeEach(() => {
+    useUserStore.getState().reset();
+  });
+
+  // react-native-web 0.21 maps only the aria-* props to the DOM and ignores accessibilityState,
+  // so the selected option must reach the Pressable as aria-checked to be more than visual on the web.
+  function ariaCheckedOf(label: string) {
+    let node: ReturnType<typeof screen.getByRole> | null = screen.getByRole('radio', { name: label }).parent;
+    while (node && node.props['aria-checked'] === undefined) node = node.parent;
+    return node?.props['aria-checked'];
+  }
+
+  it('hands aria-checked true to the selected option and false to the others', () => {
+    renderWithTheme(<SegmentedControl options={OPTIONS} value="en" onChange={jest.fn()} />);
+    expect(ariaCheckedOf('English')).toBe(true);
+    expect(ariaCheckedOf('עברית')).toBe(false);
+  });
+
+  it('moves aria-checked with the value prop', () => {
+    const { rerender } = renderWithTheme(<SegmentedControl options={OPTIONS} value="he" onChange={jest.fn()} />);
+    expect(ariaCheckedOf('עברית')).toBe(true);
+    rerender(<SegmentedControl options={OPTIONS} value="en" onChange={jest.fn()} />);
+    expect(ariaCheckedOf('English')).toBe(true);
+    expect(ariaCheckedOf('עברית')).toBe(false);
+  });
+
+  it('keeps the native accessibility state: selected and checked on the chosen option only', () => {
+    renderWithTheme(<SegmentedControl options={OPTIONS} value="he" onChange={jest.fn()} />);
+    expect(screen.getByRole('radio', { name: 'עברית' }).props.accessibilityState).toMatchObject({
+      selected: true,
+      checked: true,
+    });
+    expect(screen.getByRole('radio', { name: 'English' }).props.accessibilityState).toMatchObject({
+      selected: false,
+      checked: false,
+    });
+  });
+});
+
 describe('SegmentedControl accessibility label', () => {
   beforeEach(() => {
     useUserStore.getState().reset();

@@ -7,7 +7,7 @@ import { Location, Zmanim } from '@/types/zmanim';
 const JERUSALEM_CANDLE_MINUTES = 40;
 
 export function isJerusalem(location: Location): boolean {
-  return location.nameEn === 'Jerusalem';
+  return location.cityId === 'jerusalem';
 }
 
 export function candleLightingMinutes(location: Location): number {

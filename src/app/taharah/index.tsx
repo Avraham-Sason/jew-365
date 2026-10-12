@@ -7,6 +7,7 @@ import { Banner } from '@/components/Banner';
 import { BottomSheet } from '@/components/BottomSheet';
 import { ChipRow } from '@/components/ChipRow';
 import { formatDayLine } from '@/components/DayStepper';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useNow } from '@/hooks/useNow';
@@ -31,6 +32,7 @@ type BedikaTarget = { day: number; slot: BedikaSlot };
 
 const UPCOMING_LIMIT = 6;
 const RECENT_LIMIT = 8;
+const TASK_DONE_ICON_SIZE = 18;
 const BEDIKA_SLOTS: BedikaSlot[] = ['morning', 'evening'];
 const BEDIKA_RESULTS: BedikaResult[] = ['clean', 'notClean', 'doubtful'];
 
@@ -392,7 +394,10 @@ function TaskRow({ task, last, onPress }: { task: TaharahTask; last: boolean; on
         ) : null}
       </View>
       {task.done ? (
-        <Text style={[typography.captionBold, { color: colors.safe }]}>✓ {t('taharah.task.done')}</Text>
+        <View style={styles.doneMark}>
+          <MitzvahIcon name="check" size={TASK_DONE_ICON_SIZE} color={colors.safe} />
+          <Text style={[typography.captionBold, { color: colors.safe }]}>{t('taharah.task.done')}</Text>
+        </View>
       ) : (
         <View
           style={[
@@ -437,7 +442,7 @@ function CleanDayCell({
       style={[
         styles.cleanCell,
         {
-          backgroundColor: current ? `${colors.gold}18` : colors.surface,
+          backgroundColor: current ? colors.goldWashStrong : colors.surface,
           borderColor: current ? colors.gold : colors.border,
           opacity: enabled ? 1 : 0.55,
         },
@@ -579,6 +584,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
+  },
+  doneMark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   undoBtn: {
     borderRadius: radius.full,

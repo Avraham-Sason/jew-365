@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,9 +13,13 @@ import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { fontFamilies, typography } from '@/theme/typography';
 import { durations, radius, spacing } from '@/theme/tokens';
 import { IconTile } from './IconTile';
-import type { IconName } from './MitzvahIcon';
+import { MitzvahIcon, type IconName } from './MitzvahIcon';
 import { TimeRibbon } from './TimeRibbon';
 import { useI18n } from '@/i18n';
+
+const TILE_SIZE = 38;
+const BUTTON_SIZE = 30;
+const DONE_LINE_ICON_SIZE = 14;
 
 type Props = {
   name: string;
@@ -80,6 +84,8 @@ export function MitzvahCard({
   const bdr = done ? colors.border : urgent ? colors.urgentBorder : colors.border;
   const statusColor = statusTone === 'urgent' ? colors.urgent : statusTone === 'safe' ? colors.safe : colors.textMuted;
   const canComplete = !readOnly && !done && Boolean(onComplete);
+  const buttonCount = (onOpenText ? 1 : 0) + (canComplete || done ? 1 : 0);
+  const [rowHeight, setRowHeight] = useState(TILE_SIZE);
 
   const stampOpacity = useSharedValue(0);
   const stampScale = useSharedValue(2.8);
@@ -109,113 +115,127 @@ export function MitzvahCard({
   }));
 
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      // Disabled only when nothing on the card responds: react-native-web turns a disabled
-      // Pressable into pointer-events none, which also swallows the check and text buttons inside.
-      disabled={!onPress && !onLongPress && !canComplete && !onOpenText}
-      accessible
-      accessibilityRole="button"
-      accessibilityLabel={[name, statusText, done ? t('state.completed') : timeLeft].filter(Boolean).join(', ')}
-      // Without this the long-press menu — the only way to skip a mitzvah for the day without
-      // falsely marking it done — is unreachable with a screen reader.
-      accessibilityActions={onLongPress ? [{ name: 'longpress', label: t('home.quick.title') }] : undefined}
-      onAccessibilityAction={onLongPress ? () => onLongPress() : undefined}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.card,
-        {
-          backgroundColor: bg,
-          borderColor: bdr,
-          opacity: done ? 0.55 : pressed && onPress ? 0.85 : 1,
-        },
+        { backgroundColor: bg, borderColor: bdr, opacity: done ? 0.55 : 1 },
         shadowStyle(colors.shadow, shadowPresets.card),
       ]}
     >
-      <View style={styles.row}>
-        <IconTile name={icon} tone={done ? 'done' : 'accent'} />
-        <View style={styles.meta}>
-          <Text
-            style={[
-              typography.bodyBold,
-              {
-                color: done ? colors.textSub : colors.text,
-                textDecorationLine: done ? 'line-through' : 'none',
-              },
-            ]}
-            numberOfLines={1}
-          >
-            {name}
-          </Text>
-          {done && (
-            <Text
-              style={[typography.micro, { color: colors.safe, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 }]}
-            >
-              ✓ {t('state.completed')}
-            </Text>
-          )}
-          {!done && statusText ? (
-            <Text
-              style={[typography.micro, { color: statusColor, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 }]}
-            >
-              {statusText}
-            </Text>
-          ) : null}
-          {urgent && !done && !statusText && (
+      <Pressable
+        onPress={onPress}
+        onLongPress={onLongPress}
+        disabled={!onPress && !onLongPress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={[name, statusText, done ? t('state.completed') : timeLeft].filter(Boolean).join(', ')}
+        // Without this the long-press menu — the only way to skip a mitzvah for the day without
+        // falsely marking it done — is unreachable with a screen reader.
+        accessibilityActions={onLongPress ? [{ name: 'longpress', label: t('home.quick.title') }] : undefined}
+        onAccessibilityAction={onLongPress ? () => onLongPress() : undefined}
+        style={({ pressed }) => [styles.body, { opacity: !done && pressed && onPress ? 0.85 : 1 }]}
+      >
+        <View
+          style={[styles.row, { paddingEnd: buttonCount * (BUTTON_SIZE + spacing.md) }]}
+          onLayout={(event) => setRowHeight(event.nativeEvent.layout.height)}
+        >
+          <IconTile name={icon} tone={done ? 'done' : 'accent'} size={TILE_SIZE} />
+          <View style={styles.meta}>
             <Text
               style={[
-                typography.micro,
-                { color: colors.urgent, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
+                typography.bodyBold,
+                {
+                  color: done ? colors.textSub : colors.text,
+                  textDecorationLine: done ? 'line-through' : 'none',
+                },
               ]}
+              numberOfLines={1}
             >
-              ⚠ {t('state.urgentSoon')}
+              {name}
             </Text>
-          )}
-          {readOnly && !done && !statusText && (
-            <Text
-              style={[
-                typography.micro,
-                { color: colors.textMuted, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
-              ]}
-            >
-              {t('state.readOnly')}
-            </Text>
-          )}
-        </View>
-        {onOpenText ? (
-          <Pressable
-            onPress={onOpenText}
-            accessibilityRole="button"
-            accessibilityLabel={t('siddur.open')}
-            hitSlop={8}
-            style={[styles.checkBtn, { borderColor: urgent ? colors.urgent : colors.border }]}
-          >
-            <OpenBook color={urgent ? colors.urgent : colors.textMuted} />
-          </Pressable>
-        ) : null}
-        {canComplete ? (
-          <Pressable
-            onPress={onComplete}
-            onLongPress={onLongPress}
-            accessibilityRole="button"
-            accessibilityLabel={t('state.completeAction', { name })}
-            hitSlop={8}
-            style={[
-              styles.checkBtn,
-              {
-                borderColor: urgent ? colors.urgent : colors.border,
-              },
-            ]}
-          >
-            <Checkmark color={urgent ? colors.urgent : colors.textMuted} />
-          </Pressable>
-        ) : done ? (
-          <View style={[styles.checkBtn, { backgroundColor: colors.gold, borderColor: colors.gold }]}>
-            <Checkmark color={colors.onGold} />
+            {done && (
+              <View style={styles.doneLine}>
+                <MitzvahIcon name="check" size={DONE_LINE_ICON_SIZE} color={colors.safe} />
+                <Text style={[typography.micro, { color: colors.safe, fontFamily: fontFamilies.heebo.semibold }]}>
+                  {t('state.completed')}
+                </Text>
+              </View>
+            )}
+            {!done && statusText ? (
+              <Text
+                style={[
+                  typography.micro,
+                  { color: statusColor, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
+                ]}
+              >
+                {statusText}
+              </Text>
+            ) : null}
+            {urgent && !done && !statusText && (
+              <Text
+                style={[
+                  typography.micro,
+                  { color: colors.urgent, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
+                ]}
+              >
+                ⚠ {t('state.urgentSoon')}
+              </Text>
+            )}
+            {readOnly && !done && !statusText && (
+              <Text
+                style={[
+                  typography.micro,
+                  { color: colors.textMuted, fontFamily: fontFamilies.heebo.semibold, marginTop: 2 },
+                ]}
+              >
+                {t('state.readOnly')}
+              </Text>
+            )}
           </View>
-        ) : null}
-      </View>
-      {!done && !hideProgress ? <TimeRibbon pct={pct} timeLeft={timeLeft} /> : null}
+        </View>
+        {!done && !hideProgress ? <TimeRibbon pct={pct} timeLeft={timeLeft} /> : null}
+      </Pressable>
+      {buttonCount > 0 ? (
+        // The buttons are siblings of the body, laid over its reserved end padding: a button inside the
+        // body's button is invalid DOM on the web and unreachable to a screen reader on native.
+        <View pointerEvents="box-none" style={[styles.actions, { height: rowHeight }]}>
+          {onOpenText ? (
+            <Pressable
+              onPress={onOpenText}
+              accessibilityRole="button"
+              accessibilityLabel={t('siddur.open')}
+              hitSlop={8}
+              style={[styles.checkBtn, { borderColor: urgent ? colors.urgent : colors.border }]}
+            >
+              <OpenBook color={urgent ? colors.urgent : colors.textMuted} />
+            </Pressable>
+          ) : null}
+          {canComplete ? (
+            <Pressable
+              onPress={onComplete}
+              onLongPress={onLongPress}
+              accessibilityRole="button"
+              accessibilityLabel={t('state.completeAction', { name })}
+              hitSlop={8}
+              style={[
+                styles.checkBtn,
+                {
+                  borderColor: urgent ? colors.urgent : colors.border,
+                },
+              ]}
+            >
+              <Checkmark color={urgent ? colors.urgent : colors.textMuted} />
+            </Pressable>
+          ) : done ? (
+            <View
+              pointerEvents="none"
+              style={[styles.checkBtn, { backgroundColor: colors.gold, borderColor: colors.gold }]}
+            >
+              <Checkmark color={colors.onGold} />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {stamping && (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <View style={[styles.stampOverlay, { backgroundColor: bg + 'BB' }]}>
@@ -234,7 +254,7 @@ export function MitzvahCard({
           </View>
         </View>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -242,15 +262,24 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    padding: spacing.lg,
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
+  body: { padding: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   meta: { flex: 1, minWidth: 0 },
+  doneLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
+  actions: {
+    position: 'absolute',
+    top: spacing.lg,
+    end: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   checkBtn: {
-    width: 30,
-    height: 30,
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
     borderRadius: radius.md,
     borderWidth: 2,
     alignItems: 'center',

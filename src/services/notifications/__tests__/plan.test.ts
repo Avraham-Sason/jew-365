@@ -250,16 +250,13 @@ describe('buildPlan', () => {
       id: `bulk_${index}`,
       contentBlocks: undefined,
       defaultReminders: [{ anchor: 'start', offsetMin: 0, label: 'x' }],
-      computeWindow: () => ({
-        start: new Date(minutes(TUESDAY, index + 1)),
-        end: new Date(minutes(TUESDAY, 600)),
+      computeWindow: ({ zmanim }) => ({
+        start: new Date(minutes(zmanim.netzHaChama, index + 1)),
+        end: new Date(minutes(zmanim.netzHaChama, 600)),
       }),
     });
     const many = Array.from({ length: 70 }, (_, index) => bulk(index));
-    const earliest = Array.from({ length: PENDING_LIMIT / 2 }, (_, index) => [
-      `bulk_${index}__2026-10-13__0`,
-      `bulk_${index}__2026-10-14__0`,
-    ]).flat();
+    const earliest = Array.from({ length: PENDING_LIMIT }, (_, index) => `bulk_${index}__2026-10-13__0`);
 
     it('keeps the soonest reminders and warns about the rest', () => {
       const plan = buildPlan(planInput({ mitzvot: many }));

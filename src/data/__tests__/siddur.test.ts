@@ -1136,6 +1136,51 @@ describe('passages only some say', () => {
     }
   });
 
+  it('folds the Sefard Shacharit prayer for sustenance without its instruction, keeping the Shema Koleinu chatimah said', () => {
+    const { before, folded, after } = blockAround(
+      blocksOf('sefard', 'shacharit', weekday, 'תפילת העמידה'),
+      'יש מוסיפים תפילה על הפרנסה',
+    );
+    expect(before.label).toBeNull();
+    expect(before.text).toMatch(/אב הרחמן שמע קולנו .* חננו ועננו ושמע תפלתנו$/);
+    expect(folded.text).toMatch(/^אתה הוא \S+ האלהים הזן ומפרנס .* והוא יכלכך$/);
+    expect(shownOn('sefard', 'shacharit', weekday)).not.toMatch(/תפלה שיתפלל על מזונו/);
+    expect(folded.text).not.toMatch(/כי אתה שומע/);
+    expect(after.label).toBeNull();
+    expect(after.text).toMatch(/^כי אתה שומע תפלת כל פה עמך ישראל ברחמים ברוך אתה \S+ שומע תפלה/);
+  });
+
+  it('shows the Sefard chatimah of Shema Koleinu outside any fold, with its own English, in every weekday service', () => {
+    for (const id of ['shacharit', 'mincha', 'maariv'] as const) {
+      const segments = sections('sefard', id, weekday).flatMap((section) => section.segments);
+      const holding = segments.filter((segment) =>
+        letters(
+          segment.he
+            .flat()
+            .map((run) => run.t)
+            .join(' '),
+        ).includes('כי אתה שומע תפלת כל פה'),
+      );
+      expect(holding).toHaveLength(1);
+      expect(holding[0].optional).toBeUndefined();
+      expect(holding[0].en).toMatch(
+        /for You hear the prayers of every mouth of Your people, Israel, with compassion\. Blessed are You, Adonoy, Who hears prayers\.$/,
+      );
+    }
+    const shacharit = sections('sefard', 'shacharit', weekday).flatMap((section) => section.segments);
+    const prayer = shacharit.filter((segment) =>
+      letters(
+        segment.he
+          .flat()
+          .map((run) => run.t)
+          .join(' '),
+      ).includes('הזן ומפרנס'),
+    );
+    expect(prayer).toHaveLength(1);
+    expect(prayer[0].optional?.he).toBe('יש מוסיפים תפילה על הפרנסה');
+    expect(prayer[0].en).toBeUndefined();
+  });
+
   it('folds Rav’s prayer after Yihyu LeRatzon in Edot HaMizrach, keeping Yihyu LeRatzon and Oseh Shalom said', () => {
     for (const id of ['shacharit', 'mincha', 'maariv'] as const) {
       const { before, folded } = blockAround(
@@ -1696,14 +1741,14 @@ describe('standalone texts', () => {
       expect(STANDALONE_TEXTS[id].group).toBe('general');
     }
     expect(standaloneTextsIn('general')).toEqual([
+      'tikkun_haklali',
+      'kriat_shema_al_hamita',
+      'tefilat_haderech',
       'asher_yatzar',
       'birchot_hanehenin',
       'birchot_hareiya',
       'mezuzah',
-      'tefilat_haderech',
-      'kriat_shema_al_hamita',
       'kiddush_levana',
-      'tikkun_haklali',
     ]);
     expect(standaloneTextsIn('meals')).toEqual(['birkat_hamazon', 'al_hamichya', 'borei_nefashot']);
     expect(standaloneTextsIn('occasions')).toEqual(['sheva_berachot', 'chanukah_candles']);
@@ -3776,11 +3821,11 @@ describe('tikkun_haklali', () => {
     for (const flag of ['shabbat', 'yomTov', 'yomKippur'] as const) expect(weekday.flags.has(flag)).toBe(false);
   });
 
-  it('is filed in the general group, last, and offered in every nusach on every day', () => {
+  it('is filed in the general group, first, and offered in every nusach on every day', () => {
     expect(STANDALONE_TEXTS[ID]).toMatchObject({ name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'general' });
     expect(STANDALONE_TEXTS[ID].evening).toBeUndefined();
     expect(STANDALONE_TEXTS[ID].available).toBeUndefined();
-    expect(standaloneTextsIn('general').slice(-1)).toEqual([ID]);
+    expect(standaloneTextsIn('general').slice(0, 1)).toEqual([ID]);
     for (const nusach of NUSCHAOT) {
       for (const features of [weekday, shabbat]) expect(hasStandaloneText(ID, nusach, features)).toBe(true);
     }
@@ -4179,6 +4224,15 @@ describe('English stays aligned with its Hebrew', () => {
     expect(hashkiveinu.en).not.toMatch(/Jerusalem/);
     expect(startingWith(maariv, 'וחוזר החזן יהוה אלהיכם אמת')[0].en).toMatch(/The L-rd, Your G-d is True/);
     expect(startingWith(maariv, 'ויאמר')[0].en).not.toMatch(/Repeat/);
+  });
+
+  it('trims the translation memory’s English of the Edot HaMizrach maariv Half-Kaddish to its one sentence', () => {
+    const shemaBlessings = resolveSiddurText(load(EDOT, 'maariv'), day(9, months.CHESHVAN, 5787)).find(
+      (section) => section.title.he === 'קריאת שמע וברכותיה',
+    )!;
+    const halfKaddish = shemaBlessings.segments.filter((segment) => hebrewOf(segment) === 'ואומר החזן חצי קדיש');
+    expect(halfKaddish).toHaveLength(1);
+    expect(halfKaddish[0].en).toBe('The Half-Kaddish is recited by the Chazzan.');
   });
 
   it('keeps Metsudah editorial notes Hebrew-only where their English is a different note', () => {

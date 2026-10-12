@@ -162,6 +162,9 @@ describe('custom mitzvah category', () => {
   it.each([
     ['08:00', '12:00', 'daily-morning'],
     ['06:00', '20:00', 'daily-allday'],
+    ['23:00', '01:00', 'daily-evening'],
+    ['22:00', '08:00', 'daily-allday'],
+    ['08:00', '08:00', 'daily-allday'],
   ])('%s to %s is derived as %s', (startHHMM, endHHMM, expected) => {
     const mitzvah = customToMitzvah(customMitzvah({ startHHMM, endHHMM }));
     expect(mitzvah.category).toBe(expected);
@@ -220,5 +223,110 @@ describe('custom mitzvah active days', () => {
 
   it('never has a window with an empty list', () => {
     expect(WEEK.some((day) => windowOn(customMitzvah({ activeDays: [] }), day) !== null)).toBe(false);
+  });
+});
+
+describe('custom mitzvah windows across midnight', () => {
+  const JERUSALEM = CITIES[0];
+  const LOS_ANGELES = CITIES.find((city) => city.tz === 'America/Los_Angeles')!;
+  const SETTINGS: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
+  const windowOn = (custom: CustomMitzvah, date: Date, location = JERUSALEM) =>
+    customToMitzvah(custom).computeWindow({
+      date,
+      location,
+      settings: SETTINGS,
+      zmanim: zmanimFor(date, location),
+    });
+  const minutesBetween = (window: NonNullable<ReturnType<typeof windowOn>>) =>
+    (window.end.getTime() - window.start.getTime()) / 60_000;
+
+  it('ends an overnight window the next calendar day at the end clock of the location', () => {
+    const window = windowOn(customMitzvah({ startHHMM: '22:00', endHHMM: '01:00' }), new Date(2026, 10, 11));
+    expect(window?.start.getTime()).toBe(at(JERUSALEM, '2026-11-11T22:00').getTime());
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, '2026-11-12T01:00').getTime());
+    expect(minutesBetween(window!)).toBe(180);
+  });
+
+  it.each([
+    ['a month end', new Date(2026, 9, 31), '2026-10-31T22:00', '2026-11-01T01:00'],
+    ['a year end', new Date(2026, 11, 31), '2026-12-31T22:00', '2027-01-01T01:00'],
+  ])('rolls an overnight window over %s', (_name, day, startClock, endClock) => {
+    const window = windowOn(customMitzvah({ startHHMM: '22:00', endHHMM: '01:00' }), day);
+    expect(window?.start.getTime()).toBe(at(JERUSALEM, startClock).getTime());
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, endClock).getTime());
+  });
+
+  it('reads an overnight window on the clock of the location, not of the device', () => {
+    const window = windowOn(
+      customMitzvah({ startHHMM: '23:30', endHHMM: '00:15' }),
+      new Date(2026, 10, 11),
+      LOS_ANGELES,
+    );
+    expect(window?.start.getTime()).toBe(at(LOS_ANGELES, '2026-11-11T23:30').getTime());
+    expect(window?.end.getTime()).toBe(at(LOS_ANGELES, '2026-11-12T00:15').getTime());
+  });
+
+  it.each([
+    ['08:00', '08:00', '2026-11-11T08:00', '2026-11-12T08:00'],
+    ['00:00', '00:00', '2026-11-11T00:00', '2026-11-12T00:00'],
+    ['23:59', '23:59', '2026-11-11T23:59', '2026-11-12T23:59'],
+  ])('lasts 24 hours from %s to %s on a normal day', (startHHMM, endHHMM, startClock, endClock) => {
+    const window = windowOn(customMitzvah({ startHHMM, endHHMM }), new Date(2026, 10, 11));
+    expect(window?.start.getTime()).toBe(at(JERUSALEM, startClock).getTime());
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, endClock).getTime());
+    expect(minutesBetween(window!)).toBe(1440);
+  });
+
+  it('keeps a same-day window on its own day', () => {
+    const window = windowOn(customMitzvah({ startHHMM: '00:00', endHHMM: '23:59' }), new Date(2026, 10, 11));
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, '2026-11-11T23:59').getTime());
+    expect(minutesBetween(window!)).toBe(1439);
+  });
+
+  it('judges the active days on the day the window starts', () => {
+    const sundayToThursday = customMitzvah({ startHHMM: '22:00', endHHMM: '01:00', activeDays: [0, 1, 2, 3, 4] });
+    const thursday = new Date(2026, 9, 15);
+    const friday = new Date(2026, 9, 16);
+    const saturday = new Date(2026, 9, 17);
+    expect([thursday.getDay(), friday.getDay(), saturday.getDay()]).toEqual([4, 5, 6]);
+    const window = windowOn(sundayToThursday, thursday);
+    expect(window?.end.getTime()).toBe(at(JERUSALEM, '2026-10-16T01:00').getTime());
+    expect(windowOn(sundayToThursday, friday)).toBeNull();
+    expect(windowOn(sundayToThursday, saturday)).toBeNull();
+  });
+
+  it.each([
+    ['Jerusalem, spring forward', JERUSALEM, new Date(2026, 2, 26), '22:00', '06:00', '2026-03-27T06:00', 420],
+    ['Jerusalem, fall back', JERUSALEM, new Date(2026, 9, 24), '22:00', '06:00', '2026-10-25T06:00', 540],
+    ['Los Angeles, spring forward', LOS_ANGELES, new Date(2026, 2, 7), '22:00', '06:00', '2026-03-08T06:00', 420],
+    ['Los Angeles, fall back', LOS_ANGELES, new Date(2026, 9, 31), '22:00', '06:00', '2026-11-01T06:00', 540],
+    [
+      'Jerusalem, full day over the spring change',
+      JERUSALEM,
+      new Date(2026, 2, 26),
+      '08:00',
+      '08:00',
+      '2026-03-27T08:00',
+      1380,
+    ],
+    [
+      'Los Angeles, full day over the fall change',
+      LOS_ANGELES,
+      new Date(2026, 9, 31),
+      '08:00',
+      '08:00',
+      '2026-11-01T08:00',
+      1500,
+    ],
+  ])('%s: ends at the wall clock of the next day', (_name, location, day, startHHMM, endHHMM, endClock, minutes) => {
+    const window = windowOn(customMitzvah({ startHHMM, endHHMM }), day, location);
+    expect(window?.end.getTime()).toBe(at(location, endClock).getTime());
+    expect(minutesBetween(window!)).toBe(minutes);
+  });
+
+  it('keeps the configured length when a spring-forward gap swallows the start', () => {
+    const window = windowOn(customMitzvah({ startHHMM: '02:30', endHHMM: '03:00' }), new Date(2026, 2, 27));
+    expect(window).not.toBeNull();
+    expect(minutesBetween(window!)).toBe(30);
   });
 });

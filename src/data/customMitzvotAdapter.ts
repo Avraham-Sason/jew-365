@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import { CustomMitzvah, Mitzvah, MitzvahWindow, Nusach, Weekday } from '@/types/mitzvah';
 import { MITZVOT, findMitzvah as findStaticMitzvah } from '@/data/mitzvot';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
-import { categoryForWindow, isActiveOn } from '@/utils/customMitzvah';
+import { categoryForWindow, isActiveOn, windowMinutes } from '@/utils/customMitzvah';
 
 const ALL_NUSCHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
 
@@ -43,11 +43,12 @@ export function customToMitzvah(c: CustomMitzvah): Mitzvah {
       );
       if (!isActiveOn(c.activeDays, (base.weekday % 7) as Weekday)) return null;
       const start = base.set({ hour: sh, minute: sm, second: 0, millisecond: 0 });
-      let end = base.set({ hour: eh, minute: em, second: 0, millisecond: 0 });
+      const endsNextDay = eh * 60 + em <= sh * 60 + sm;
+      let end = (endsNextDay ? base.plus({ days: 1 }) : base).set({ hour: eh, minute: em, second: 0, millisecond: 0 });
       // On a DST spring-forward day both endpoints can collapse onto the same instant, which used
       // to make the mitzvah silently not exist that day. Preserve the configured duration instead.
       if (end <= start) {
-        end = start.plus({ minutes: eh * 60 + em - (sh * 60 + sm) });
+        end = start.plus({ minutes: windowMinutes(c.startHHMM, c.endHHMM) });
       }
       return buildWindow(start.toJSDate(), end.toJSDate());
     },

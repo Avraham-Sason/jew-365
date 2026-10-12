@@ -20,7 +20,7 @@ import { APP_FONTS, fontFamilies, typography } from '../typography';
 import he from '@/i18n/he.json';
 import en from '@/i18n/en.json';
 
-const COLOR = /^(#[0-9A-F]{6}|rgba\(.*\))$/i;
+const COLOR = /^(#[0-9A-F]{6}(?:[0-9A-F]{2})?|rgba\(.*\))$/i;
 
 const READABLE_PAIRS: readonly (readonly [keyof ThemeColors, keyof ThemeColors, number])[] = [
   ['text', 'bg', 4.5],
@@ -78,6 +78,11 @@ describe('Theme', () => {
         .map(([token]) => token);
       expect({ name, invalid }).toEqual({ name, invalid: [] });
     }
+  });
+
+  it.each(THEME_NAMES)('the %s gold washes are the accent with a 09 and an 18 alpha suffix', (name) => {
+    const { gold, goldWash, goldWashStrong } = THEMES[name];
+    expect({ goldWash, goldWashStrong }).toEqual({ goldWash: `${gold}09`, goldWashStrong: `${gold}18` });
   });
 
   it('dark and plum are the dark palettes', () => {

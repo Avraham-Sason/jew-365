@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { Banner } from '@/components/Banner';
 import { ChipRow } from '@/components/ChipRow';
 import { DayStepper, formatDayLine } from '@/components/DayStepper';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useNow } from '@/hooks/useNow';
@@ -37,6 +38,7 @@ const TYPE_LABEL: Record<LogType, string> = {
 };
 
 const SAVED_DELAY_MS = 700;
+const SAVED_ICON_SIZE = 24;
 const ONAH_KINDS: OnahKind[] = ['day', 'night'];
 const BEDIKA_RESULTS: BedikaResult[] = ['clean', 'notClean', 'doubtful'];
 const PAUSE_REASONS: PauseReason[] = ['pregnancy', 'postpartum', 'menopause', 'other'];
@@ -325,9 +327,12 @@ export default function TaharahLog() {
           accessibilityRole="button"
           style={[styles.saveBtn, { backgroundColor: colors.gold, opacity: canSave || saved ? 1 : 0.45 }]}
         >
-          <Text style={[typography.heading, { color: colors.onGold }]}>
-            {saved ? `✓ ${t('taharah.log.saved')}` : t('common.save')}
-          </Text>
+          <View style={styles.saveLabel}>
+            {saved ? <MitzvahIcon name="check" size={SAVED_ICON_SIZE} color={colors.onGold} /> : null}
+            <Text style={[typography.heading, { color: colors.onGold }]}>
+              {saved ? t('taharah.log.saved') : t('common.save')}
+            </Text>
+          </View>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -383,5 +388,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.lg,
     paddingVertical: spacing.lg,
+  },
+  saveLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

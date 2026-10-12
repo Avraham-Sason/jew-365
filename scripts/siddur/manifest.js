@@ -716,7 +716,6 @@ const SEFARD_SHOMEA_TEFILLAH_CLOSING_EN =
 const SEFARD_SHOMEA_TEFILLAH_STAR_EN = { from: 'our prayer*', to: 'our prayer' };
 const SEFARD_PARNASSA_BEFORE_SHOMEA_TEFILLAH = [
   { seg: 78, from: `* ${SEFARD_SHOMEA_TEFILLAH_CLOSING}`, to: '' },
-  { seg: 79, from: '* ', to: '' },
   { seg: 80, from: 'יְכַלכְּךָ:</small>', to: `יְכַלכְּךָ:</small><br>${SEFARD_SHOMEA_TEFILLAH_CLOSING}` },
 ];
 
@@ -729,6 +728,7 @@ const SOME_SAY = {
   einKelokeinu: { he: 'יש נוהגים בארץ ישראל לומר אין כאלהינו', en: 'In the Land of Israel, some say Ein Keloheinu' },
   shirLamaalot: { he: 'יש נוהגים בארץ ישראל לומר שיר למעלות', en: 'In the Land of Israel, some say Shir LaMaalot' },
   forTheSick: { he: 'מי שרוצה מתפלל כאן על חולה', en: 'A prayer for the sick, for whoever wishes' },
+  sustenance: { he: 'יש מוסיפים תפילה על הפרנסה', en: 'Some add a prayer for sustenance' },
   ravsPrayer: { he: 'יש אומרים תפילת רב', en: "Some say Rav's prayer" },
   barchiNafshi: {
     he: 'בליל ראש חודש יש נוהגים לומר ברכי נפשי',
@@ -2708,10 +2708,7 @@ function sefardShacharit() {
       path: at('Amidah'),
       edits: SEFARD_PARNASSA_BEFORE_SHOMEA_TEFILLAH,
       enMoves: [{ seg: 78, text: SEFARD_SHOMEA_TEFILLAH_CLOSING_EN, to: 80 }],
-      enEdits: [
-        { seg: 78, ...SEFARD_SHOMEA_TEFILLAH_STAR_EN },
-        { seg: 79, from: '*One may add', to: 'One may add' },
-      ],
+      enEdits: [{ seg: 78, ...SEFARD_SHOMEA_TEFILLAH_STAR_EN }],
       at: {
         ...each(3, 5, IN_AYT),
         ...each(9, 10, SUMMER),
@@ -2736,9 +2733,10 @@ function sefardShacharit() {
         ...each(117, 119, IN_AYT),
       },
       reviewed: [51, 80, 95, 114],
-      drop: [19, 20, 50, 107],
+      drop: [19, 20, 50, 79, 107],
       optionalParts: [
         { from: 51, label: SOME_SAY.forTheSick },
+        { from: 80, until: 1, label: SOME_SAY.sustenance, englishOutside: true },
         { from: 108, to: 112, label: NO_KOHANIM_IN_ISRAEL },
         { from: 113, to: 114, label: WHEN_SAID.kohanimBless },
       ],
@@ -3594,8 +3592,13 @@ function edotMaariv() {
           to: '',
         },
         { seg: 10, from: 'And guard us,', to: 'And guard us.' },
+        {
+          seg: 11,
+          memory: true,
+          from: ' Here, as elsewhere in the Liturgy, the Half-Kaddish marks the end of a distinct section of the prayers, in this case, the Pesukei Dezimrah. It is called the Half-Kaddish, the final three verses of the complete Kaddish having been omitted.',
+          to: '',
+        },
       ],
-      enDrop: [11],
       minyanParts: [
         { from: 8, paragraph: 1, label: SAID_BY.chazzan, en: '(Repeat & Say) The L-rd, Your G-d is True.' },
         { from: 11, to: 12, label: SAID_BY.chazzan },

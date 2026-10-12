@@ -48,20 +48,14 @@ Found after the audit:
     day could be the wrong one (no spices on a plain motzaei Shabbat). It now steps by the
     location's dates and keys each reminder by its own day.
 
-Still open, deliberately:
-
-- **§2.11 / the second half of §2.8** — completions and notification identifiers still key off the
-  device's civil date rather than a halachic day. Changing that key format rewrites every stored
-  completion and invalidates every already-scheduled notification id, so it needs a migration
-  rather than an edit. The zmanim half of §2.8 is fixed.
-- **§7.6** — names are aligned across app.json, the store metadata and the privacy policy, but the
-  support/marketing/privacy URLs are still placeholders. No URL can be invented here.
-- **§1.4** — a root `ErrorBoundary` now exists, and since 2026-10-09 the consequential failures
-  reach the user through the error channel (`src/services/errors.ts` and the banner on home) and
-  Sentry (`src/services/crashReporting.native.ts`). The cosmetic `.catch(() => {})` sites still
-  swallow, by design.
-- **§8.8** — no screen-render tests. That needs `@testing-library/react-native`, which is not
-  installed and would need a network install.
+Still open, tracked in [not-close.md](not-close.md) with every other open item: §2.11 with the
+completion-key half of §2.8 (Bugs). Closed since
+the first open list: §7.6 (live store URLs, 2026-09-01) and the rendering gap of §8.8
+(`@testing-library/react-native` and render tests since 2026-10-09, per-screen smoke renders
+since 2026-10-12). §1.4
+stays partial by design: the consequential failures reach the user through the error channel
+(`src/services/errors.ts` and the banner on home) and Sentry, while the cosmetic
+`.catch(() => {})` sites still swallow.
 
 ## How to read this
 
@@ -430,7 +424,9 @@ Headless is exactly how Android delivers a MARK_DONE tap when the app process is
 
 ## 4. State and persistence
 
-### 4.1 No `version` / `migrate` on any persisted store **[verified]** — ✅ FIXED (migrate added 2026-10-09)
+### 4.1 No `version` / `migrate` on any persisted store **[verified]** — ✅ FIXED (migrate added 2026-10-09; city snapshot fixed 2026-10-12)
+
+> **City half fixed 2026-10-12.** Every `CITIES` entry has a stable `cityId` and `mergeSavedUserState` re-resolves the saved location from `CITIES` on every hydrate (`refreshSavedLocation()` in `src/data/cities.ts`), so a corrected city value reaches installs that already picked it, with no `STORE_VERSION` bump.
 
 > **Re-opened 2026-10-09.** `version` and `merge` existed, `migrate` did not: zustand drops the whole
 > persisted state when the stored version differs and no `migrate` is given, so the first bump would
@@ -848,7 +844,7 @@ Fix: pin `TZ=UTC` in a `globalSetup`, build fixtures from explicit local compone
 - **6.7 (PENDING_LIMIT) is vacuous one run in seven** (`:166`) — it uses `tefillin`, which has `skipOn: ['shabbat']`, and `Date.now()+1000`. On a Friday the assertion is satisfied by the Shabbat skip, not the guard. Remove the guard entirely and land the PR on a Friday: green.
 - **11.4 accepts an empty array** (`mitzvotExtras.test.ts:24`) — *"every mitzvah has at least one defaultReminder"* only asserts `Array.isArray`. A mitzvah with `defaultReminders: []` passes and never notifies.
 - **The response-handler suite tests its own parser** (`notificationResponseHandler.test.ts:16`) — it mocks `@/services/NotificationScheduler` *and* supplies its own `pendingNotificationMetaFromContent`, which differs from the real one (no `isRecord` guard, no try/catch around `JSON.parse`). The shipped parser is never exercised on the tap path. On Android, where the payload arrives as `dataString`, a regression there would break both navigation and mark-done with a green suite.
-- **Zero rendering coverage** (`routes.test.ts:6`) — it walks the filesystem with `readdirSync` and asserts filenames; `@testing-library/react-native` is not a devDependency, so no screen is ever mounted. One smoke render per screen would have caught §1.1 outright.
+- **Zero rendering coverage** (`routes.test.ts:6`) — it walks the filesystem with `readdirSync` and asserts filenames; `@testing-library/react-native` is not a devDependency, so no screen is ever mounted. One smoke render per screen would have caught §1.1 outright. **Done 2026-10-12:** `src/app/__tests__/screens.smoke.render.test.tsx` mounts every route, layout and redirect under `src/app` in Hebrew and English and fails on a screen that throws or a screen file without a case.
 - **The web shim is unreachable by Jest** — `jest-expo` inherits `defaultPlatform: 'ios'`, so `NotificationScheduler.web.ts` is never resolved. It is **already out of parity**: it lacks `pickBodyForReminder` and `shouldSuppressForCompletion`, and its `PendingNotificationMeta` omits `skipIfDone`. Adding a scheduler export consumed by a shared screen produces a runtime `undefined is not a function` on web with a fully green `pnpm test`.
 - **`customMitzvotAdapter` has zero tests** — no test file references `customToMitzvah`, `getAllMitzvot`, `findAnyMitzvah` or `useCustomMitzvotStore`, the code path behind the entire user-created-mitzvah feature.
 - **`--passWithNoTests`** (`package.json:16`) — a typo'd CI path filter exits 0 with `Tests: 0 total`. The repo has 22 suites; there is no empty-project case to accommodate.

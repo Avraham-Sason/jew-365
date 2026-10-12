@@ -22,6 +22,8 @@ import { WheelPicker } from './WheelPicker';
 export const PICKER_HOURS: readonly number[] = Array.from({ length: 24 }, (_, hour) => hour);
 export const PICKER_MINUTES: readonly number[] = Array.from({ length: 60 }, (_, minute) => minute);
 
+const PLACEHOLDER = 'HH:MM';
+
 const pad = (value: number) => String(value).padStart(2, '0');
 
 export function normalizeTimeInput(raw: string): string {
@@ -42,6 +44,7 @@ export function TimeField({ label, value, onChange, style }: Props) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
   const [picking, setPicking] = useState(false);
+  const [draft, setDraft] = useState(value);
   const valid = TIME_PATTERN.test(value);
   const hour = valid ? Number(value.slice(0, 2)) : null;
   const minute = valid ? Number(value.slice(3)) : null;
@@ -49,14 +52,24 @@ export function TimeField({ label, value, onChange, style }: Props) {
   const rowMirrored = Platform.OS === 'web' ? language === 'he' : I18nManager.isRTL;
   const openPicker = () => {
     Keyboard.dismiss();
+    setDraft(value);
     setPicking(true);
+  };
+  const pick = (next: string) => {
+    setDraft(next);
+    onChange(next);
+  };
+  const type = (raw: string) => {
+    const next = normalizeTimeInput(raw);
+    setDraft(next);
+    if (TIME_PATTERN.test(next)) onChange(next);
   };
   const hourWheel = (
     <WheelPicker
       key="hour"
       values={PICKER_HOURS}
       selected={hour ?? 0}
-      onChange={(picked) => onChange(`${pad(picked)}:${pad(minute ?? 0)}`)}
+      onChange={(picked) => pick(`${pad(picked)}:${pad(minute ?? 0)}`)}
       renderLabel={pad}
       accessibilityLabel={t('custom.pickHour')}
       style={styles.wheel}
@@ -72,7 +85,7 @@ export function TimeField({ label, value, onChange, style }: Props) {
       key="minute"
       values={PICKER_MINUTES}
       selected={minute ?? 0}
-      onChange={(picked) => onChange(`${pad(hour ?? 0)}:${pad(picked)}`)}
+      onChange={(picked) => pick(`${pad(hour ?? 0)}:${pad(picked)}`)}
       renderLabel={pad}
       accessibilityLabel={t('custom.pickMinute')}
       style={styles.wheel}
@@ -82,28 +95,35 @@ export function TimeField({ label, value, onChange, style }: Props) {
   return (
     <View style={style}>
       <Text style={[typography.captionBold, styles.label, { color: colors.textSub }]}>{label}</Text>
-      <View style={styles.row}>
+      <Pressable
+        onPress={openPicker}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityValue={{ text: value }}
+        style={[styles.box, { backgroundColor: colors.surface2, borderColor: colors.border }]}
+      >
+        <Text style={[styles.valueText, { color: value ? colors.text : colors.textMuted }]}>
+          {value || PLACEHOLDER}
+        </Text>
+      </Pressable>
+      <BottomSheet visible={picking} title={label} onClose={() => setPicking(false)}>
+        <Text style={[typography.captionBold, styles.typeLabel, { color: colors.textSub }]}>
+          {t('custom.typeTime')}
+        </Text>
         <TextInput
-          value={value}
-          onChangeText={(raw) => onChange(normalizeTimeInput(raw))}
-          accessibilityLabel={label}
-          placeholder="HH:MM"
+          value={draft}
+          onChangeText={type}
+          accessibilityLabel={t('custom.typeTime')}
+          placeholder={PLACEHOLDER}
           placeholderTextColor={colors.textMuted}
           keyboardType="numbers-and-punctuation"
           maxLength={5}
-          style={[styles.input, { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border }]}
+          style={[
+            styles.box,
+            styles.valueText,
+            { backgroundColor: colors.surface2, color: colors.text, borderColor: colors.border },
+          ]}
         />
-        <Pressable
-          onPress={openPicker}
-          accessibilityRole="button"
-          accessibilityLabel={t('custom.pickTime')}
-          hitSlop={6}
-          style={[styles.pickBtn, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-        >
-          <Text style={[typography.captionBold, { color: colors.textSub }]}>{t('custom.pickTime')}</Text>
-        </Pressable>
-      </View>
-      <BottomSheet visible={picking} title={label} onClose={() => setPicking(false)}>
         <View style={styles.wheels}>
           {rowMirrored ? [minuteWheel, colon, hourWheel] : [hourWheel, colon, minuteWheel]}
         </View>
@@ -116,33 +136,26 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  typeLabel: {
+    marginBottom: spacing.sm,
   },
-  input: {
-    flex: 1,
-    minWidth: 0,
+  box: {
     borderRadius: radius.md,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+  },
+  valueText: {
     fontSize: 16,
     textAlign: 'center',
     writingDirection: 'ltr',
-  },
-  pickBtn: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   wheels: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   wheel: {
     width: 96,

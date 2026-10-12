@@ -111,8 +111,6 @@ export default function CheckInRoute() {
                         pct={0}
                         hideProgress
                         statusText={t('checkin.pending')}
-                        // The whole card marks it too: screen readers reach only the card, not the
-                        // check button inside it.
                         onPress={() => mark(item.mitzvah.id, day.date)}
                         onComplete={() => mark(item.mitzvah.id, day.date)}
                       />

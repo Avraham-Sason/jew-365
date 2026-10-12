@@ -6,7 +6,7 @@ import { STORE_VERSION, migrate, onRehydrateStorage } from './persistOptions';
 import { Nusach, HalachicOpinion } from '@/types/mitzvah';
 import { Location } from '@/types/zmanim';
 import { ChokDoubleChoice } from '@/types/chok';
-import { CITIES } from '@/data/cities';
+import { CITIES, refreshSavedLocation } from '@/data/cities';
 import type { LocationSource, LocationStatus } from '@/services/LocationService';
 import { THEME_NAMES, ThemeName } from '@/theme/colors';
 
@@ -94,6 +94,8 @@ const mergeSavedUserState = (persisted: unknown, current: UserState): UserState 
   const { theme, ...saved } = (persisted ?? {}) as PersistedUserState;
   const merged = { ...current, ...saved, theme: theme === undefined ? current.theme : savedThemeName(theme) };
   if (merged.taharahEnabled && merged.maritalStatus == null) merged.maritalStatus = 'married';
+  merged.location = refreshSavedLocation(merged.location, merged.locationSource);
+  merged.inIsrael = merged.location.inIsrael;
   return merged;
 };
 

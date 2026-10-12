@@ -251,7 +251,7 @@ function DayCell({ cell, onPress }: { cell: Cell; onPress: () => void }) {
       style={[
         styles.cell,
         {
-          backgroundColor: isToday ? `${colors.gold}18` : colors.surface,
+          backgroundColor: isToday ? colors.goldWashStrong : colors.surface,
           borderColor: clean !== null ? colors.safe : colors.border,
           borderWidth: clean !== null ? 2 : 1,
           opacity: cell.inMonth ? 1 : 0.45,

@@ -1,5 +1,6 @@
-import { I18nManager, Keyboard, Platform } from 'react-native';
-import { fireEvent, screen } from '@testing-library/react-native';
+import React from 'react';
+import { I18nManager, Keyboard, Platform, StyleSheet } from 'react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import { PICKER_HOURS, PICKER_MINUTES, TimeField, normalizeTimeInput } from '../TimeField';
 import { WHEEL_ITEM_HEIGHT } from '../WheelPicker';
 import { renderWithTheme } from '@/testing/render';
@@ -15,8 +16,12 @@ function renderField(value: string, onChange = jest.fn()) {
   return onChange;
 }
 
+const field = () => screen.getByRole('button', { name: LABEL });
+const sheetInput = () => screen.getByLabelText(t('custom.typeTime'));
+const closeSheet = () => fireEvent.press(screen.getByRole('button', { name: t('common.close') }));
+
 function openPicker() {
-  fireEvent.press(screen.getByRole('button', { name: t('custom.pickTime') }));
+  fireEvent.press(field());
 }
 
 const hourWheel = () => screen.getByLabelText(t('custom.pickHour'));
@@ -117,153 +122,279 @@ describe('TimeField', () => {
     useUserStore.getState().reset();
   });
 
-  it('shows the label and the current value in a text input named by the label', () => {
-    renderField('08:30');
-    expect(screen.getByText(LABEL)).toBeOnTheScreen();
-    expect(screen.getByLabelText(LABEL)).toHaveDisplayValue('08:30');
-  });
-
-  it('reports typed letters as an empty value', () => {
-    const onChange = renderField('');
-    fireEvent.changeText(screen.getByLabelText(LABEL), 'abc');
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('');
-  });
-
-  it('inserts the colon after the second digit of what is typed', () => {
-    const onChange = renderField('');
-    fireEvent.changeText(screen.getByLabelText(LABEL), '0930');
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('09:30');
-  });
-
-  it('limits the input to five characters', () => {
-    renderField('');
-    expect(screen.getByLabelText(LABEL).props.maxLength).toBe(5);
-  });
-
-  it('dismisses the keyboard when the pick button opens the picker', () => {
-    const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {});
-    try {
+  describe('the field', () => {
+    it('shows the label above one button named by it that holds the current value', () => {
       renderField('08:30');
-      expect(dismiss).not.toHaveBeenCalled();
+      expect(screen.getByText(LABEL)).toBeOnTheScreen();
+      expect(field()).toHaveAccessibilityValue({ text: '08:30' });
+      expect(within(field()).getByText('08:30')).toBeOnTheScreen();
+      expect(screen.getAllByRole('button')).toHaveLength(1);
+    });
+
+    it('draws no text input until the sheet is open', () => {
+      renderField('08:30');
+      expect(screen.queryByLabelText(t('custom.typeTime'))).toBeNull();
+      expect(screen.queryByDisplayValue('08:30')).toBeNull();
+    });
+
+    it('shows the placeholder for an empty value', () => {
+      renderField('');
+      expect(within(field()).getByText('HH:MM')).toBeOnTheScreen();
+      expect(field().props.accessibilityValue).toEqual({ text: '' });
+    });
+
+    it('draws a value in the text colour and the placeholder in a different one', () => {
+      const first = renderWithTheme(<TimeField label={LABEL} value="08:30" onChange={jest.fn()} />);
+      const valueColor = StyleSheet.flatten(within(field()).getByText('08:30').props.style).color;
+      first.unmount();
+      renderWithTheme(<TimeField label={LABEL} value="" onChange={jest.fn()} />);
+      const placeholderColor = StyleSheet.flatten(within(field()).getByText('HH:MM').props.style).color;
+      expect(placeholderColor).not.toBe(valueColor);
+    });
+
+    it('dismisses the keyboard and opens the sheet when it is pressed', () => {
+      const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {});
+      try {
+        renderField('08:30');
+        expect(dismiss).not.toHaveBeenCalled();
+        expect(screen.queryByLabelText(t('custom.pickHour'))).toBeNull();
+        openPicker();
+        expect(dismiss).toHaveBeenCalledTimes(1);
+        expect(hourWheel()).toBeOnTheScreen();
+      } finally {
+        dismiss.mockRestore();
+      }
+    });
+
+    it('keeps the picker closed until the field is pressed', () => {
+      renderField('08:30');
+      expect(screen.queryByLabelText(t('custom.pickHour'))).toBeNull();
+      expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
       openPicker();
-      expect(dismiss).toHaveBeenCalledTimes(1);
       expect(hourWheel()).toBeOnTheScreen();
-    } finally {
-      dismiss.mockRestore();
-    }
+      expect(minuteWheel()).toBeOnTheScreen();
+    });
+
+    it('titles the sheet with the field label', () => {
+      renderField('08:30');
+      expect(screen.getAllByText(LABEL)).toHaveLength(1);
+      openPicker();
+      expect(screen.getAllByText(LABEL)).toHaveLength(2);
+    });
   });
 
-  it('keeps the picker closed until the pick button is pressed', () => {
-    renderField('08:30');
-    expect(screen.queryByLabelText(t('custom.pickHour'))).toBeNull();
-    expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
-    openPicker();
-    expect(hourWheel()).toBeOnTheScreen();
-    expect(minuteWheel()).toBeOnTheScreen();
+  describe('typing in the sheet', () => {
+    it('starts the sheet input at the current value', () => {
+      renderField('08:30');
+      openPicker();
+      expect(sheetInput()).toHaveDisplayValue('08:30');
+    });
+
+    it('starts the sheet input empty, with the placeholder, for an empty value', () => {
+      renderField('');
+      openPicker();
+      expect(sheetInput()).toHaveDisplayValue('');
+      expect(sheetInput().props.placeholder).toBe('HH:MM');
+    });
+
+    it('captions the sheet input with the typing label', () => {
+      renderField('08:30');
+      openPicker();
+      expect(screen.getByText(t('custom.typeTime'))).toBeOnTheScreen();
+    });
+
+    it('inserts the colon after the second digit and reports the full time once', () => {
+      const onChange = renderField('');
+      openPicker();
+      fireEvent.changeText(sheetInput(), '0930');
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('09:30');
+      expect(sheetInput()).toHaveDisplayValue('09:30');
+    });
+
+    it('reports nothing for a partial time and keeps what was typed in the input', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      fireEvent.changeText(sheetInput(), '09');
+      expect(onChange).not.toHaveBeenCalled();
+      expect(sheetInput()).toHaveDisplayValue('09');
+      fireEvent.changeText(sheetInput(), '093');
+      expect(onChange).not.toHaveBeenCalled();
+      expect(sheetInput()).toHaveDisplayValue('09:3');
+    });
+
+    it('reports nothing for letters', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      fireEvent.changeText(sheetInput(), 'abc');
+      expect(onChange).not.toHaveBeenCalled();
+      expect(sheetInput()).toHaveDisplayValue('');
+    });
+
+    it.each(['2500', '0861'])('reports nothing for the impossible time %j', (typed) => {
+      const onChange = renderField('08:30');
+      openPicker();
+      fireEvent.changeText(sheetInput(), typed);
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('limits the sheet input to five characters', () => {
+      renderField('');
+      openPicker();
+      expect(sheetInput().props.maxLength).toBe(5);
+    });
+
+    it('never focuses the sheet input by itself', () => {
+      renderField('');
+      openPicker();
+      expect(sheetInput().props.autoFocus).toBeFalsy();
+    });
+
+    it('shows the time a wheel settles on in the sheet input', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      scrollWheelTo(hourWheel(), 9);
+      expect(onChange).toHaveBeenCalledWith('09:30');
+      expect(sheetInput()).toHaveDisplayValue('09:30');
+    });
+
+    it('replaces a partial draft with the time a wheel settles on', () => {
+      renderField('08:30');
+      openPicker();
+      fireEvent.changeText(sheetInput(), '1');
+      scrollWheelTo(minuteWheel(), 15);
+      expect(sheetInput()).toHaveDisplayValue('08:15');
+    });
+
+    it('shows the current value again when the sheet reopens after a partial draft', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      fireEvent.changeText(sheetInput(), '09');
+      closeSheet();
+      expect(onChange).not.toHaveBeenCalled();
+      openPicker();
+      expect(sheetInput()).toHaveDisplayValue('08:30');
+    });
+
+    it('opens on a value the caller changed while the sheet was closed', () => {
+      const onChange = jest.fn();
+      const { rerender } = renderWithTheme(<TimeField label={LABEL} value="08:30" onChange={onChange} />);
+      openPicker();
+      closeSheet();
+      rerender(<TimeField label={LABEL} value="21:15" onChange={onChange} />);
+      openPicker();
+      expect(sheetInput()).toHaveDisplayValue('21:15');
+    });
+
+    it('moves the wheels and the field to a time that was typed', () => {
+      const Controlled = () => {
+        const [value, setValue] = React.useState('08:30');
+        return <TimeField label={LABEL} value={value} onChange={setValue} />;
+      };
+      renderWithTheme(<Controlled />);
+      openPicker();
+      fireEvent.changeText(sheetInput(), '2145');
+      expect(hourWheel()).toHaveAccessibilityValue({ text: '21' });
+      expect(minuteWheel()).toHaveAccessibilityValue({ text: '45' });
+      expect(within(field()).getByText('21:45')).toBeOnTheScreen();
+    });
   });
 
-  it('draws one row per hour and one per minute', () => {
-    renderField('');
-    openPicker();
-    expect(screen.getAllByText(ROW_NAME)).toHaveLength(PICKER_HOURS.length + PICKER_MINUTES.length);
-  });
+  describe('the wheels', () => {
+    it('draws one row per hour and one per minute', () => {
+      renderField('');
+      openPicker();
+      expect(screen.getAllByText(ROW_NAME)).toHaveLength(PICKER_HOURS.length + PICKER_MINUTES.length);
+    });
 
-  it('draws the colon between the two wheels', () => {
-    renderField('08:30');
-    openPicker();
-    expect(screen.getByText(':')).toBeOnTheScreen();
-  });
+    it('draws the colon between the two wheels', () => {
+      renderField('08:30');
+      openPicker();
+      expect(screen.getByText(':')).toBeOnTheScreen();
+    });
 
-  it('writes the hour the hour wheel settles on and keeps the current minute', () => {
-    const onChange = renderField('08:30');
-    openPicker();
-    scrollWheelTo(hourWheel(), 9);
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('09:30');
-  });
+    it('writes the hour the hour wheel settles on and keeps the current minute', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      scrollWheelTo(hourWheel(), 9);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('09:30');
+    });
 
-  it('writes the minute the minute wheel settles on and keeps the current hour', () => {
-    const onChange = renderField('08:30');
-    openPicker();
-    scrollWheelTo(minuteWheel(), 45);
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('08:45');
-  });
+    it('writes the minute the minute wheel settles on and keeps the current hour', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      scrollWheelTo(minuteWheel(), 45);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('08:45');
+    });
 
-  it('writes a minute that is not a multiple of five', () => {
-    const onChange = renderField('08:30');
-    openPicker();
-    scrollWheelTo(minuteWheel(), 59);
-    expect(onChange).toHaveBeenCalledWith('08:59');
-  });
+    it('writes a minute that is not a multiple of five', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      scrollWheelTo(minuteWheel(), 59);
+      expect(onChange).toHaveBeenCalledWith('08:59');
+    });
 
-  it('starts the minute at 00 when it picks an hour for an empty value', () => {
-    const onChange = renderField('');
-    openPicker();
-    scrollWheelTo(hourWheel(), 7);
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('07:00');
-  });
+    it('starts the minute at 00 when it picks an hour for an empty value', () => {
+      const onChange = renderField('');
+      openPicker();
+      scrollWheelTo(hourWheel(), 7);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('07:00');
+    });
 
-  it('starts the hour at 00 when it picks a minute for an empty value', () => {
-    const onChange = renderField('');
-    openPicker();
-    scrollWheelTo(minuteWheel(), 45);
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('00:45');
-  });
+    it('starts the hour at 00 when it picks a minute for an empty value', () => {
+      const onChange = renderField('');
+      openPicker();
+      scrollWheelTo(minuteWheel(), 45);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('00:45');
+    });
 
-  it('keeps the minute of a value that is not a multiple of five when it picks an hour', () => {
-    const onChange = renderField('08:33');
-    openPicker();
-    scrollWheelTo(hourWheel(), 9);
-    expect(onChange).toHaveBeenCalledWith('09:33');
-  });
+    it('keeps the minute of a value that is not a multiple of five when it picks an hour', () => {
+      const onChange = renderField('08:33');
+      openPicker();
+      scrollWheelTo(hourWheel(), 9);
+      expect(onChange).toHaveBeenCalledWith('09:33');
+    });
 
-  it('writes the hour of a tapped row', () => {
-    const onChange = renderField('08:30');
-    openPicker();
-    fireEvent.press(screen.getAllByText('21')[0]);
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('21:30');
-  });
+    it('writes the hour of a tapped row', () => {
+      const onChange = renderField('08:30');
+      openPicker();
+      fireEvent.press(screen.getAllByText('21')[0]);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('21:30');
+    });
 
-  it('centres the hour and the minute of the current value', () => {
-    renderField('08:30');
-    openPicker();
-    expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
-    expect(minuteWheel()).toHaveAccessibilityValue({ text: '30' });
-  });
+    it('centres the hour and the minute of the current value', () => {
+      renderField('08:30');
+      openPicker();
+      expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
+      expect(minuteWheel()).toHaveAccessibilityValue({ text: '30' });
+    });
 
-  it('centres a minute that is not a multiple of five', () => {
-    renderField('08:33');
-    openPicker();
-    expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
-    expect(minuteWheel()).toHaveAccessibilityValue({ text: '33' });
-  });
+    it('centres a minute that is not a multiple of five', () => {
+      renderField('08:33');
+      openPicker();
+      expect(hourWheel()).toHaveAccessibilityValue({ text: '08' });
+      expect(minuteWheel()).toHaveAccessibilityValue({ text: '33' });
+    });
 
-  it.each(['', '8:3', '25:00', '08:61'])('centres 00 on both wheels for the invalid value %j', (value) => {
-    renderField(value);
-    openPicker();
-    expect(hourWheel()).toHaveAccessibilityValue({ text: '00' });
-    expect(minuteWheel()).toHaveAccessibilityValue({ text: '00' });
-  });
+    it.each(['', '8:3', '25:00', '08:61'])('centres 00 on both wheels for the invalid value %j', (value) => {
+      renderField(value);
+      openPicker();
+      expect(hourWheel()).toHaveAccessibilityValue({ text: '00' });
+      expect(minuteWheel()).toHaveAccessibilityValue({ text: '00' });
+    });
 
-  it('stays open after a pick and closes with the sheet Close button', () => {
-    renderField('08:30');
-    openPicker();
-    scrollWheelTo(hourWheel(), 9);
-    expect(minuteWheel()).toBeOnTheScreen();
-    fireEvent.press(screen.getByRole('button', { name: t('common.close') }));
-    expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
-  });
-
-  it('titles the sheet with the field label', () => {
-    renderField('08:30');
-    expect(screen.getAllByText(LABEL)).toHaveLength(1);
-    openPicker();
-    expect(screen.getAllByText(LABEL)).toHaveLength(2);
+    it('stays open after a pick and closes with the sheet Close button', () => {
+      renderField('08:30');
+      openPicker();
+      scrollWheelTo(hourWheel(), 9);
+      expect(minuteWheel()).toBeOnTheScreen();
+      closeSheet();
+      expect(screen.queryByLabelText(t('custom.pickMinute'))).toBeNull();
+    });
   });
 });

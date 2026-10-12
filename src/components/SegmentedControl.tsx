@@ -29,6 +29,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, t
             accessibilityRole="radio"
             accessibilityLabel={option.accessibilityLabel}
             accessibilityState={{ selected, checked: selected }}
+            aria-checked={selected}
             hitSlop={6}
             style={[styles.option, { backgroundColor: selected ? fill : 'transparent' }]}
           >

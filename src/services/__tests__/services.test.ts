@@ -84,6 +84,38 @@ describe('Services', () => {
     expect(r.source).toBe('gps');
     expect(r.location!.lat).toBeCloseTo(31.7);
     expect(r.location!.inIsrael).toBe(true);
+    expect(r.location!.cityId).toBe('jerusalem');
+  });
+
+  it('5.3b GPS near a city keeps its own coordinates and carries that city id, elevation and name', async () => {
+    mockGetForeground.mockResolvedValue({ granted: true, canAskAgain: true });
+    mockGetCurrentPosition.mockResolvedValue({ coords: { latitude: 32.1, longitude: 34.8 } });
+    const r = await LocationService.getCurrentLocation();
+    expect(r.location).toMatchObject({
+      cityId: 'tel-aviv',
+      name: 'תל אביב',
+      nameEn: 'Tel Aviv',
+      lat: 32.1,
+      lng: 34.8,
+      tz: 'Asia/Jerusalem',
+      inIsrael: true,
+      elevation: 5,
+    });
+  });
+
+  it("5.3c GPS near a city takes that city's candle-lighting minutes when it has them", async () => {
+    mockGetForeground.mockResolvedValue({ granted: true, canAskAgain: true });
+    mockGetCurrentPosition.mockResolvedValue({ coords: { latitude: 32.1, longitude: 34.8 } });
+    const telAviv = CITIES[1];
+    try {
+      telAviv.candleLightingMinutes = 30;
+      const r = await LocationService.getCurrentLocation();
+      expect(r.location!.cityId).toBe('tel-aviv');
+      expect(r.location!.candleLightingMinutes).toBe(30);
+    } finally {
+      delete telAviv.candleLightingMinutes;
+    }
+    expect((await LocationService.getCurrentLocation()).location!.candleLightingMinutes).toBeUndefined();
   });
 
   // Was "denied → fallback CITIES[0]". Returning a real city on failure is what let a denied or
@@ -105,6 +137,8 @@ describe('Services', () => {
     // would just encode the test machine's own timezone.
     expect(r.location!.tz).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
     expect(r.location!.elevation).toBeUndefined();
+    expect(r.location!.cityId).toBeUndefined();
+    expect(r.location!.candleLightingMinutes).toBeUndefined();
     expect(r.location!.name).not.toBe(CITIES[0].name);
   });
 

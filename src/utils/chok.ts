@@ -27,8 +27,11 @@ export type ChokTextOptions = {
   choice: ChokDoubleChoice;
   variant: HaftarahVariant;
   kindNames: Readonly<Record<ChokSectionKind, string>>;
+  variantNames: Readonly<Record<HaftarahVariant, string>>;
   makeUps?: readonly ChokMakeUpFold[];
 };
+
+type ChokTitles = Pick<ChokTextOptions, 'variant' | 'kindNames' | 'variantNames'>;
 
 export const CHOK_SLOTS: readonly ChokSlot[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri'];
 
@@ -210,22 +213,21 @@ export function chokSlotSections(asset: ChokAsset, slot: ChokSlot, variant: Haft
   return (asset.slots[slot] ?? []).filter((section) => !section.variant || section.variant === variant);
 }
 
-function slotText(
-  chosen: readonly ChokAsset[],
-  slot: ChokSlot,
-  variant: HaftarahVariant,
-  kindNames: Readonly<Record<ChokSectionKind, string>>,
-): SiddurSection[] {
+function slotText(chosen: readonly ChokAsset[], slot: ChokSlot, titles: ChokTitles): SiddurSection[] {
+  const { variant, kindNames, variantNames } = titles;
   const prefixed = chosen.length > 1;
   return chosen.flatMap((asset) => {
     const he = chokParashaName(asset.parasha, 'he');
-    return chokSlotSections(asset, slot, variant).map((section, index): SiddurSection => ({
-      title: prefixed
-        ? { he: `${he} · ${section.heading}`, en: `${asset.parasha} · ${kindNames[section.kind]}` }
-        : { he: section.heading, en: kindNames[section.kind] },
-      ...(prefixed && index === 0 ? { chapter: { he, en: asset.parasha } } : {}),
-      segments: section.segments,
-    }));
+    return chokSlotSections(asset, slot, variant).map((section, index): SiddurSection => {
+      const kind = section.variant ? variantNames[section.variant] : kindNames[section.kind];
+      return {
+        title: prefixed
+          ? { he: `${he} · ${section.heading}`, en: `${asset.parasha} · ${kind}` }
+          : { he: section.heading, en: kind },
+        ...(prefixed && index === 0 ? { chapter: { he, en: asset.parasha } } : {}),
+        segments: section.segments,
+      };
+    });
   });
 }
 
@@ -241,11 +243,11 @@ function makeUpSection(sections: readonly SiddurSection[], label: ChokMakeUpFold
 }
 
 export function chokText(assets: readonly ChokAsset[], options: ChokTextOptions): SiddurText {
-  const { slot, choice, variant, kindNames, makeUps = [] } = options;
+  const { slot, choice, makeUps = [], ...titles } = options;
   const chosen = assets.length < 2 || choice === 'both' ? assets : [assets[choice === 'first' ? 0 : 1]];
   const sections = [
-    ...makeUps.map((makeUp) => makeUpSection(slotText(chosen, makeUp.slot, variant, kindNames), makeUp.label)),
-    ...slotText(chosen, slot, variant, kindNames),
+    ...makeUps.map((makeUp) => makeUpSection(slotText(chosen, makeUp.slot, titles), makeUp.label)),
+    ...slotText(chosen, slot, titles),
   ];
   const credits = [...new Map(chosen.map((asset) => [asset.credit.title, asset.credit])).values()];
   const dedication = chosen.find((asset) => asset.dedication)?.dedication;

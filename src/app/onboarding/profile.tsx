@@ -33,26 +33,30 @@ export default function ProfileScreen() {
       </Text>
       <ScrollView contentContainerStyle={styles.list}>
         <Text style={[typography.captionBold, { color: colors.textSub }]}>{t('profile.gender')}</Text>
-        {GENDERS.map((option) => (
-          <ChoiceRow
-            key={option}
-            label={t(`profile.gender.${option}`)}
-            selected={gender === option}
-            onPress={() => chooseGender(option)}
-          />
-        ))}
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('profile.gender')} style={styles.group}>
+          {GENDERS.map((option) => (
+            <ChoiceRow
+              key={option}
+              label={t(`profile.gender.${option}`)}
+              selected={gender === option}
+              onPress={() => chooseGender(option)}
+            />
+          ))}
+        </View>
 
         <Text style={[typography.captionBold, { color: colors.textSub, marginTop: spacing.md }]}>
           {t('profile.maritalStatus')}
         </Text>
-        {MARITAL_STATUSES.map((option) => (
-          <ChoiceRow
-            key={option}
-            label={t(`profile.maritalStatus.${option}.${gender ?? 'neutral'}`)}
-            selected={maritalStatus === option}
-            onPress={() => chooseMaritalStatus(option)}
-          />
-        ))}
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('profile.maritalStatus')} style={styles.group}>
+          {MARITAL_STATUSES.map((option) => (
+            <ChoiceRow
+              key={option}
+              label={t(`profile.maritalStatus.${option}.${gender ?? 'neutral'}`)}
+              selected={maritalStatus === option}
+              onPress={() => chooseMaritalStatus(option)}
+            />
+          ))}
+        </View>
 
         {taharahOffered({ gender, maritalStatus }) ? (
           <View style={[styles.card, { backgroundColor: colors.goldLight, borderColor: colors.gold }]}>
@@ -104,6 +108,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     gap: spacing.sm,
     flexGrow: 1,
+  },
+  group: {
+    gap: spacing.sm,
   },
   card: {
     borderRadius: radius.lg,

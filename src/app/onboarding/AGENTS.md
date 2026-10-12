@@ -25,7 +25,7 @@
 
 - Keep permission explanations accurate to [../../../app.json](../../../app.json) native permission strings and actual local/offline behavior.
 - Do not assume Expo Go can verify native notification/MMKV behavior.
-- A selectable option on a step is [ChoiceRow](../../components/ChoiceRow.tsx), as the profile and nusach steps use it; the location step's city picker is [ChipRow](../../components/ChipRow.tsx). No step hand-rolls either.
+- A selectable option on a step is [ChoiceRow](../../components/ChoiceRow.tsx), as the profile and nusach steps use it, each set inside a `radiogroup` view named by its heading (`profile.gender`, `profile.maritalStatus`, `onboarding.nusachTitle`); the location step's city picker is [ChipRow](../../components/ChipRow.tsx). No step hand-rolls either.
 
 ## Verification
 

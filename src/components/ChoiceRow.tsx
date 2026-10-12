@@ -3,6 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
+import { MitzvahIcon } from './MitzvahIcon';
+
+const TICK_ICON_SIZE = 14;
 
 type Props = {
   label: string;
@@ -15,8 +18,9 @@ export function ChoiceRow({ label, selected, onPress }: Props) {
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityRole="radio"
+      accessibilityState={{ selected, checked: selected }}
+      aria-checked={selected}
       style={[
         styles.row,
         {
@@ -28,7 +32,7 @@ export function ChoiceRow({ label, selected, onPress }: Props) {
       <Text style={[typography.bodyBold, { color: selected ? colors.goldText : colors.text }]}>{label}</Text>
       {selected ? (
         <View style={[styles.tick, { backgroundColor: colors.gold }]}>
-          <Text style={[typography.micro, { color: colors.onGold }]}>✓</Text>
+          <MitzvahIcon name="check" size={TICK_ICON_SIZE} color={colors.onGold} />
         </View>
       ) : null}
     </Pressable>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { ChoiceRow } from '@/components/ChoiceRow';
@@ -27,14 +27,16 @@ export default function NusachScreen() {
         {t('onboarding.nusachBody')}
       </Text>
       <ScrollView contentContainerStyle={styles.list}>
-        {OPTIONS.map((option) => (
-          <ChoiceRow
-            key={option}
-            label={t(`nusach.${option}`)}
-            selected={selected === option}
-            onPress={() => chooseNusach(option)}
-          />
-        ))}
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('onboarding.nusachTitle')} style={styles.group}>
+          {OPTIONS.map((option) => (
+            <ChoiceRow
+              key={option}
+              label={t(`nusach.${option}`)}
+              selected={selected === option}
+              onPress={() => chooseNusach(option)}
+            />
+          ))}
+        </View>
       </ScrollView>
       <OnboardingDots step={2} total={ONBOARDING_STEPS} style={styles.dots} />
       <Pressable
@@ -58,8 +60,10 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingTop: spacing.lg,
-    gap: spacing.sm,
     flexGrow: 1,
+  },
+  group: {
+    gap: spacing.sm,
   },
   dots: {
     marginBottom: spacing.md,

@@ -23,6 +23,18 @@ type ViewMode = (typeof VIEW_MODES)[number];
 
 const EMPTY_COMPLETIONS = Object.freeze({}) as Completions;
 
+const TIME_COLUMN_WIDTH = 40;
+const DOT_COLUMN_WIDTH = 14;
+const TIMELINE_DOT_SIZE = 9;
+const DONE_BOX_SIZE = 24;
+const DONE_CHECK_SIZE = 12;
+const WEEK_CARD_WIDTH = 120;
+const WEEK_CARD_MIN_HEIGHT = 160;
+const WEEK_DOT_SIZE = 8;
+const MONTH_CELL_MIN_HEIGHT = 64;
+const MONTH_BADGE_SIZE = 16;
+const HOLIDAY_PING_SIZE = 7;
+
 export default function ScheduleScreen() {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -186,7 +198,7 @@ export default function ScheduleScreen() {
                 style={[
                   styles.timelineRow,
                   {
-                    backgroundColor: highlight ? `${colors.gold}09` : colors.surface,
+                    backgroundColor: highlight ? colors.goldWash : colors.surface,
                     borderBottomColor: colors.border,
                   },
                 ]}
@@ -259,7 +271,7 @@ export default function ScheduleScreen() {
                       },
                     ]}
                   >
-                    {item.done ? <MitzvahIcon name="check" size={12} color={colors.onGold} /> : null}
+                    {item.done ? <MitzvahIcon name="check" size={DONE_CHECK_SIZE} color={colors.onGold} /> : null}
                   </View>
                 ) : null}
               </Pressable>
@@ -338,7 +350,7 @@ export default function ScheduleScreen() {
                   style={[
                     styles.monthCell,
                     {
-                      backgroundColor: cell.day.hasSame(DateTime.now(), 'day') ? `${colors.gold}18` : colors.surface,
+                      backgroundColor: cell.day.hasSame(DateTime.now(), 'day') ? colors.goldWashStrong : colors.surface,
                       borderColor: colors.border,
                       opacity: cell.inMonth ? 1 : 0.45,
                     },
@@ -404,15 +416,15 @@ const styles = StyleSheet.create({
     height: 2,
   },
   timeCol: {
-    width: 40,
+    width: TIME_COLUMN_WIDTH,
   },
   dotCol: {
-    width: 14,
+    width: DOT_COLUMN_WIDTH,
     alignItems: 'center',
   },
   dot: {
-    width: 9,
-    height: 9,
+    width: TIMELINE_DOT_SIZE,
+    height: TIMELINE_DOT_SIZE,
     borderRadius: radius.full,
     borderWidth: 1.5,
   },
@@ -427,8 +439,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
   },
   trailing: {
-    width: 24,
-    height: 24,
+    width: DONE_BOX_SIZE,
+    height: DONE_BOX_SIZE,
     borderRadius: radius.sm,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -441,8 +453,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   weekCard: {
-    width: 120,
-    minHeight: 160,
+    width: WEEK_CARD_WIDTH,
+    minHeight: WEEK_CARD_MIN_HEIGHT,
     borderRadius: radius.xl,
     borderWidth: 1,
     padding: spacing.lg,
@@ -464,8 +476,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   weekDot: {
-    width: 8,
-    height: 8,
+    width: WEEK_DOT_SIZE,
+    height: WEEK_DOT_SIZE,
     borderRadius: radius.full,
   },
   weekPreview: {
@@ -492,26 +504,26 @@ const styles = StyleSheet.create({
   },
   monthCell: {
     flex: 1,
-    minHeight: 64,
+    minHeight: MONTH_CELL_MIN_HEIGHT,
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: spacing.xs,
   },
   monthBadgeRow: {
-    height: 16,
+    height: MONTH_BADGE_SIZE,
     alignItems: 'flex-end',
   },
   monthBadge: {
-    minWidth: 16,
-    height: 16,
+    minWidth: MONTH_BADGE_SIZE,
+    height: MONTH_BADGE_SIZE,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xs,
   },
   ping: {
-    width: 7,
-    height: 7,
+    width: HOLIDAY_PING_SIZE,
+    height: HOLIDAY_PING_SIZE,
     borderRadius: radius.full,
     marginTop: 'auto',
   },

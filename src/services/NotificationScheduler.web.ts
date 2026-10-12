@@ -67,6 +67,8 @@ export function buildTriggerTime(
   return new Date(anchor.getTime() + reminder.offsetMin * 60_000);
 }
 
+export { nextReminderAt } from '@/services/notifications/planners/mitzvot';
+
 export function setSchedulingSuspended(_value: boolean): void {}
 
 export async function markDoneFromNotificationData(_data?: unknown, _notificationId?: string): Promise<boolean> {

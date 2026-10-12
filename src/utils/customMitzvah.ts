@@ -8,15 +8,22 @@ export type DraftBlock = ContentBlock | { type: 'siddur'; he: string; en?: strin
 
 export const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 export const ALL_DAY_MIN = 480;
+export const NIGHT_END_MIN = 4 * 60;
 
+const DAY_MIN = 24 * 60;
 const NOON_MIN = 12 * 60;
 const AFTERNOON_END_MIN = 17 * 60;
 
+export function windowMinutes(startHHMM: string, endHHMM: string): number {
+  const span = timeToMinutes(endHHMM) - timeToMinutes(startHHMM);
+  return span > 0 ? span : span + DAY_MIN;
+}
+
 export function categoryForWindow(startHHMM: string, endHHMM: string): MitzvahCategory {
-  const start = timeToMinutes(startHHMM);
-  const end = timeToMinutes(endHHMM);
-  if (end - start >= ALL_DAY_MIN) return 'daily-allday';
-  const midpoint = (start + end) / 2;
+  const duration = windowMinutes(startHHMM, endHHMM);
+  if (duration >= ALL_DAY_MIN) return 'daily-allday';
+  const midpoint = (timeToMinutes(startHHMM) + duration / 2) % DAY_MIN;
+  if (midpoint < NIGHT_END_MIN) return 'daily-evening';
   if (midpoint < NOON_MIN) return 'daily-morning';
   return midpoint < AFTERNOON_END_MIN ? 'daily-afternoon' : 'daily-evening';
 }
@@ -34,10 +41,11 @@ export function reminderClock(
 ): string | null {
   if (!TIME_PATTERN.test(startHHMM) || !TIME_PATTERN.test(endHHMM)) return null;
   const start = timeToMinutes(startHHMM);
-  const end = timeToMinutes(endHHMM);
-  const trigger = (reminder.anchor === 'start' ? start : end) + reminder.offsetMin;
-  if (!(trigger >= start && trigger <= end)) return null;
-  return `${pad(Math.floor(trigger / 60))}:${pad(trigger % 60)}`;
+  const duration = windowMinutes(startHHMM, endHHMM);
+  const trigger = (reminder.anchor === 'start' ? start : start + duration) + reminder.offsetMin;
+  if (!(trigger >= start && trigger - start <= duration)) return null;
+  const clock = trigger % DAY_MIN;
+  return `${pad(Math.floor(clock / 60))}:${pad(clock % 60)}`;
 }
 
 export function siddurTextName(id: string, language: 'he' | 'en'): string | null {

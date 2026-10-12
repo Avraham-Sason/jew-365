@@ -1,5 +1,5 @@
 import * as ExpoLocation from 'expo-location';
-import { CITIES } from '@/data/cities';
+import { CITIES, City } from '@/data/cities';
 import { Location } from '@/types/zmanim';
 
 export type LocationStatus = 'ready' | 'denied' | 'timeout' | 'missing';
@@ -28,7 +28,7 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): num
   return 6371 * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q));
 }
 
-function nearestCity(lat: number, lng: number): Location {
+function nearestCity(lat: number, lng: number): City {
   return CITIES.reduce((best, city) => {
     const nextDistance = distanceKm(lat, lng, city.lat, city.lng);
     const bestDistance = distanceKm(lat, lng, best.lat, best.lng);
@@ -59,6 +59,7 @@ function resolvedLocation(lat: number, lng: number): Location {
   const closeEnough = distanceKm(lat, lng, nearest.lat, nearest.lng) <= NEAREST_CITY_KM;
   const deviceTz = deviceTimeZone();
   return {
+    cityId: closeEnough ? nearest.cityId : undefined,
     name: closeEnough ? nearest.name : CURRENT_LOCATION_NAME.he,
     nameEn: closeEnough ? nearest.nameEn : CURRENT_LOCATION_NAME.en,
     lat,
@@ -66,6 +67,7 @@ function resolvedLocation(lat: number, lng: number): Location {
     tz: closeEnough ? nearest.tz : deviceTz,
     inIsrael: closeEnough ? nearest.inIsrael : isInIsrael(lat, lng),
     elevation: closeEnough ? nearest.elevation : undefined,
+    candleLightingMinutes: closeEnough ? nearest.candleLightingMinutes : undefined,
   };
 }
 

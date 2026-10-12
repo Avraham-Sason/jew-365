@@ -142,7 +142,7 @@ describe('the Chok LeYisrael reader with the mitzvah switched on', () => {
   it('shows a day already marked as done', async () => {
     useCompletionsStore.setState({ completions: { '2026-11-18': { chok_leyisrael: 1 } } });
     await openAt('2026-11-18T12:00');
-    expect(screen.getByText('סומן כבוצע ✓')).toBeOnTheScreen();
+    expect(screen.getByText('סומן כבוצע')).toBeOnTheScreen();
     expect(screen.queryByText('סיימתי')).toBeNull();
   });
 

@@ -7,7 +7,7 @@
 ## Ownership
 
 - [icon.png](icon.png), [adaptive-icon.png](adaptive-icon.png), [splash.png](splash.png), [favicon.png](favicon.png), and [notification-icon.png](notification-icon.png) are release-facing assets.
-- [README.md](README.md) records expected asset names and dimensions.
+- [README.md](README.md) records expected asset names and dimensions, and how [icon.png](icon.png), [adaptive-icon.png](adaptive-icon.png) and [splash.png](splash.png) are rendered from [AppLogo](../src/components/AppLogo.tsx) (logo variant ב, approved 2026-10-09; redrawn 2026-10-12). They are native assets: a change reaches users only with the next build.
 - [siddur/](siddur) holds the generated nusach texts, one JSON file per nusach and text. The build in [../scripts/siddur/AGENTS.md](../scripts/siddur/AGENTS.md) owns them; never edit them here.
 - A chok folder beside siddur holds the generated Chok LeYisrael texts, built by [../scripts/chok/AGENTS.md](../scripts/chok/AGENTS.md). It is gitignored until the source's owner gives written permission, so a clean checkout has none; never commit it before then.
 

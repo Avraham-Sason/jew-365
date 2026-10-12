@@ -10,6 +10,8 @@ export type ThemeColors = {
   onGold: string;
   goldLight: string;
   goldText: string;
+  goldWash: string;
+  goldWashStrong: string;
   urgent: string;
   onUrgent: string;
   urgentBg: string;
@@ -50,6 +52,8 @@ export const T_LIGHT: ThemeColors = {
   goldLight: '#FDF0D8',
   // Gold reads 2.75:1 on white, so it is never a text colour; this is the accent dark enough for text.
   goldText: '#7F5A0F',
+  goldWash: '#C9922A09',
+  goldWashStrong: '#C9922A18',
   urgent: '#D63030',
   onUrgent: '#FFFFFF',
   urgentBg: '#FEF2F2',
@@ -83,6 +87,8 @@ export const T_PINK: ThemeColors = {
   onGold: '#FFFFFF',
   goldLight: '#FDE7EF',
   goldText: '#B4214F',
+  goldWash: '#C92B6309',
+  goldWashStrong: '#C92B6318',
   urgent: '#D63030',
   onUrgent: '#FFFFFF',
   urgentBg: '#FEF2F2',
@@ -116,6 +122,8 @@ export const T_PURPLE: ThemeColors = {
   onGold: '#FFFFFF',
   goldLight: '#EDE4FF',
   goldText: '#7538E0',
+  goldWash: '#7538E009',
+  goldWashStrong: '#7538E018',
   urgent: '#D63030',
   onUrgent: '#FFFFFF',
   urgentBg: '#FEF2F2',
@@ -149,6 +157,8 @@ export const T_BLUE: ThemeColors = {
   onGold: '#FFFFFF',
   goldLight: '#DEE9FB',
   goldText: '#1F5FD0',
+  goldWash: '#1F5FD009',
+  goldWashStrong: '#1F5FD018',
   urgent: '#D63030',
   onUrgent: '#FFFFFF',
   urgentBg: '#FEF2F2',
@@ -182,6 +192,8 @@ export const T_DARK: ThemeColors = {
   onGold: '#12202F',
   goldLight: '#2A2010',
   goldText: '#D4A030',
+  goldWash: '#D4A03009',
+  goldWashStrong: '#D4A03018',
   urgent: '#EF4444',
   onUrgent: '#0D1925',
   urgentBg: '#2A1515',
@@ -215,6 +227,8 @@ export const T_PLUM: ThemeColors = {
   onGold: '#2A0F20',
   goldLight: '#3C2238',
   goldText: '#F48FBC',
+  goldWash: '#F48FBC09',
+  goldWashStrong: '#F48FBC18',
   urgent: '#FF6B6B',
   onUrgent: '#1A1026',
   urgentBg: '#3A1A24',

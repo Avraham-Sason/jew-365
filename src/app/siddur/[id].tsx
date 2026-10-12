@@ -61,6 +61,7 @@ import {
 import { useTheme } from '@/theme/ThemeProvider';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
 import { ChokWeekControls } from '@/components/ChokWeekControls';
+import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { HEADER_PILL_BG, ScreenHeader } from '@/components/ScreenHeader';
 import { ScrollSpeedStepper } from '@/components/ScrollSpeedStepper';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -68,7 +69,7 @@ import { useQuietBlock } from '@/components/ShabbatScreen';
 import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies, typography } from '@/theme/typography';
-import { ChokAsset, ChokDoubleChoice, ChokSectionKind, ChokSlot } from '@/types/chok';
+import { ChokAsset, ChokDoubleChoice, ChokSectionKind, ChokSlot, HaftarahVariant } from '@/types/chok';
 import { PassageLabel, Run, SiddurSection, SiddurSegment, SiddurText } from '@/types/siddur';
 import {
   OptionalBlock,
@@ -111,6 +112,7 @@ const AUTO_SCROLL_START_MS = 1000;
 const AUTO_SCROLL_RESUME_MS = 700;
 const AUTO_SCROLL_DRIFT_PX = 24;
 const AUTO_SCROLL_MAX_FRAME_MS = 100;
+const DONE_ICON_SIZE = 18;
 const PIXEL_RATIO = PixelRatio.get();
 const PILL_BORDER = 'rgba(255,255,255,0.18)';
 const PLAY_PATH = 'M8 5v14l11-7z';
@@ -119,6 +121,10 @@ const PRAYER_MODES = ['minyan', 'alone'] as const;
 const CHOK_KIND_NAMES = Object.fromEntries(
   CHOK_SECTION_KINDS.map((kind) => [kind, translate(`chok.kind.${kind}`, undefined, 'en')]),
 ) as Record<ChokSectionKind, string>;
+const CHOK_VARIANT_NAMES: Record<HaftarahVariant, string> = {
+  sephardi: translate('chok.haftarahVariant.sephardi', undefined, 'en'),
+  ashkenazi: translate('chok.haftarahVariant.ashkenazi', undefined, 'en'),
+};
 // iOS reports every non-animated scrollTo as the end of a fling, and the JS ScrollView then counts
 // itself as animating and swallows the next tap. Moving the contentOffset prop scrolls without that.
 const SCROLLS_BY_PROP = Platform.OS === 'ios';
@@ -464,6 +470,7 @@ export default function SiddurScreen() {
       choice: doubleChoice ?? 'first',
       variant: HAFTARAH_VARIANT[nusach],
       kindNames: CHOK_KIND_NAMES,
+      variantNames: CHOK_VARIANT_NAMES,
       makeUps: makeUpFolds,
     });
   }, [load, shownSlot, doubleChoice, nusach, makeUpFolds]);
@@ -851,9 +858,10 @@ export default function SiddurScreen() {
             <>
               {doneTarget ? (
                 doneTarget.done ? (
-                  <Text style={[typography.bodyBold, styles.doneText, { color: colors.safe }]}>
-                    {t('siddur.doneAlready')}
-                  </Text>
+                  <View style={styles.doneRow}>
+                    <MitzvahIcon name="check" size={DONE_ICON_SIZE} color={colors.safe} />
+                    <Text style={[typography.bodyBold, { color: colors.safe }]}>{t('siddur.doneAlready')}</Text>
+                  </View>
                 ) : (
                   <Pressable
                     onPress={() => finish(doneTarget.id, doneTarget.date)}
@@ -1221,8 +1229,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     marginTop: spacing.xs,
   },
-  doneText: {
-    textAlign: 'center',
+  doneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     paddingVertical: spacing.lg,
   },
   dedication: {

@@ -1,11 +1,44 @@
+import { Pressable, StyleSheet, View } from 'react-native';
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { MitzvahCard } from '../MitzvahCard';
 import { IconTile } from '../IconTile';
+import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
+import { spacing } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 
 const BASE = { name: 'תפילין', timeLeft: '2 שעות', pct: 0.8 };
+const BODY_NAME = 'תפילין, 2 שעות';
+const CHECK_LABEL = 'סמן תפילין כהושלם';
+const OPEN_TEXT_LABEL = 'פתח נוסח';
+const BUTTON_STEP = 30 + spacing.md;
+
+type Node = ReturnType<typeof screen.getByRole>;
+
+function buttonsInsideButtons(): string[] {
+  const buttons = screen.getAllByRole('button');
+  return buttons
+    .filter((button) => {
+      for (let node: Node | null = button.parent; node; node = node.parent) {
+        if (buttons.includes(node)) return true;
+      }
+      return false;
+    })
+    .map((button) => String(button.props.accessibilityLabel));
+}
+
+function cardOf(body: Node): Node {
+  let current: Node | null = body.parent;
+  while (current && !(typeof current.type === 'string' && StyleSheet.flatten(current.props.style)?.backgroundColor)) {
+    current = current.parent;
+  }
+  return current as Node;
+}
+
+function hostsWith(prop: string): Node[] {
+  return screen.UNSAFE_root.findAll((node: Node) => typeof node.type === 'string' && node.props[prop] !== undefined);
+}
 
 describe('MitzvahCard', () => {
   beforeEach(() => {
@@ -88,7 +121,26 @@ describe('MitzvahCard', () => {
       expect(screen.queryByLabelText('סמן תפילין כהושלם')).toBeNull();
       expect(screen.queryByText('עד הנץ')).toBeNull();
       expect(screen.queryByText('נותר: 2 שעות')).toBeNull();
-      expect(screen.getByText('✓ בוצע')).toBeOnTheScreen();
+      expect(screen.getByText('בוצע')).toBeOnTheScreen();
+    });
+
+    it('draws the completed line with the check icon in the safe colour, never a text glyph', () => {
+      renderWithTheme(<MitzvahCard {...BASE} done onPress={jest.fn()} />);
+      const checks = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check');
+      expect(checks).toHaveLength(1);
+      expect(checks[0].props.color).toBe(THEMES.gold.safe);
+      expect(screen.getByText('בוצע')).toHaveStyle({ color: THEMES.gold.safe });
+      expect(screen.queryByText(/✓/)).toBeNull();
+    });
+
+    it('draws no check icon on an open card', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onPress={jest.fn()} onComplete={jest.fn()} />);
+      expect(screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check')).toHaveLength(0);
+    });
+
+    it('exposes only the body as a button on a done card: no enabled check button', () => {
+      renderWithTheme(<MitzvahCard {...BASE} done onComplete={jest.fn()} onPress={jest.fn()} />);
+      expect(screen.getAllByRole('button')).toHaveLength(1);
     });
 
     it('swaps the time left for the completed state in the accessible name', () => {
@@ -104,10 +156,14 @@ describe('MitzvahCard', () => {
 
     it('dims the card and paints it on the surface2 fill', () => {
       renderWithTheme(<MitzvahCard {...BASE} done onPress={jest.fn()} />);
-      expect(screen.getByRole('button', { name: 'תפילין, בוצע' })).toHaveStyle({
-        opacity: 0.55,
-        backgroundColor: THEMES.gold.surface2,
-      });
+      const card = cardOf(screen.getByRole('button', { name: 'תפילין, בוצע' }));
+      expect(card).toHaveStyle({ opacity: 0.55, backgroundColor: THEMES.gold.surface2 });
+    });
+
+    it('keeps the done mark out of the way of a tap: it is not a touch target, so the body below takes it', () => {
+      renderWithTheme(<MitzvahCard {...BASE} done onPress={jest.fn()} />);
+      expect(hostsWith('pointerEvents').map((node) => node.props.pointerEvents)).toContain('none');
+      expect(screen.getAllByRole('button')).toHaveLength(1);
     });
   });
 
@@ -128,6 +184,20 @@ describe('MitzvahCard', () => {
   });
 
   describe('card taps', () => {
+    it('fires onPress once from a tap on the time ribbon: the body covers it', async () => {
+      const onPress = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onPress={onPress} />);
+      await userEvent.setup().press(screen.getByText('נותר: 2 שעות'));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires onPress once from a tap on the name', async () => {
+      const onPress = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onPress={onPress} />);
+      await userEvent.setup().press(screen.getByText('תפילין'));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
     it('fires onPress once from the card', async () => {
       const onPress = jest.fn();
       renderWithTheme(<MitzvahCard {...BASE} onPress={onPress} />);
@@ -176,25 +246,134 @@ describe('MitzvahCard', () => {
     });
   });
 
-  describe('disabled outer button', () => {
+  describe('buttons are siblings, never nested', () => {
+    it('reports a button inside a button, so the check below can fail', () => {
+      renderWithTheme(
+        <Pressable accessibilityRole="button" accessibilityLabel="outer">
+          <View>
+            <Pressable accessibilityRole="button" accessibilityLabel="inner" />
+          </View>
+        </Pressable>,
+      );
+      expect(buttonsInsideButtons()).toEqual(['inner']);
+    });
+
+    it.each([
+      [
+        'an open home card',
+        { onPress: jest.fn(), onLongPress: jest.fn(), onComplete: jest.fn(), onOpenText: jest.fn() },
+      ],
+      ['a done card with a text', { done: true, onPress: jest.fn(), onOpenText: jest.fn() }],
+      ['a check-in card', { onComplete: jest.fn() }],
+      ['a read-only card', { readOnly: true, onPress: jest.fn(), onComplete: jest.fn() }],
+      ['a stamping card', { stamping: true, onPress: jest.fn(), onComplete: jest.fn() }],
+    ])('%s has no button inside another button', (_label, handlers) => {
+      renderWithTheme(<MitzvahCard {...BASE} {...handlers} />);
+      expect(buttonsInsideButtons()).toEqual([]);
+    });
+
+    it('lists the body, the open-text button and the check button as three separate buttons', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onPress={jest.fn()} onComplete={jest.fn()} onOpenText={jest.fn()} />);
+      expect(screen.getAllByRole('button')).toHaveLength(3);
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: OPEN_TEXT_LABEL })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: CHECK_LABEL })).toBeOnTheScreen();
+    });
+
+    it('presses the check button without pressing the body', async () => {
+      const onPress = jest.fn();
+      const onComplete = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onPress={onPress} onComplete={onComplete} />);
+      await userEvent.setup().press(screen.getByLabelText(CHECK_LABEL));
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onPress).not.toHaveBeenCalled();
+    });
+
+    it('presses the open-text button without pressing the body', async () => {
+      const onPress = jest.fn();
+      const onOpenText = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onPress={onPress} onOpenText={onOpenText} />);
+      await userEvent.setup().press(screen.getByLabelText(OPEN_TEXT_LABEL));
+      expect(onOpenText).toHaveBeenCalledTimes(1);
+      expect(onPress).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('body button', () => {
     it('is disabled when nothing on the card responds', () => {
       renderWithTheme(<MitzvahCard {...BASE} />);
-      expect(screen.getByRole('button', { name: 'תפילין, 2 שעות' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeDisabled();
     });
 
     it.each([
       ['onPress', { onPress: jest.fn() }],
       ['onLongPress', { onLongPress: jest.fn() }],
-      ['onComplete', { onComplete: jest.fn() }],
-      ['onOpenText', { onOpenText: jest.fn() }],
-    ])('stays enabled when only %s is passed', (_label, handlers) => {
+    ])('is enabled when only %s is passed', (_label, handlers) => {
       renderWithTheme(<MitzvahCard {...BASE} {...handlers} />);
-      expect(screen.getByRole('button', { name: 'תפילין, 2 שעות' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeEnabled();
     });
 
-    it('is disabled for a read-only card that has only an onComplete', () => {
+    it('is disabled when only onComplete is passed, and the check button still works', async () => {
+      const onComplete = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onComplete={onComplete} />);
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeDisabled();
+      expect(screen.getByLabelText(CHECK_LABEL)).toBeEnabled();
+      await userEvent.setup().press(screen.getByLabelText(CHECK_LABEL));
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    it('is disabled when only onOpenText is passed, and the open-text button still works', async () => {
+      const onOpenText = jest.fn();
+      renderWithTheme(<MitzvahCard {...BASE} onOpenText={onOpenText} />);
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeDisabled();
+      expect(screen.getByLabelText(OPEN_TEXT_LABEL)).toBeEnabled();
+      await userEvent.setup().press(screen.getByLabelText(OPEN_TEXT_LABEL));
+      expect(onOpenText).toHaveBeenCalledTimes(1);
+    });
+
+    it('is disabled for a read-only card that has only an onComplete, which offers no check button', () => {
       renderWithTheme(<MitzvahCard {...BASE} readOnly onComplete={jest.fn()} />);
-      expect(screen.getByRole('button', { name: 'תפילין, 2 שעות' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: BODY_NAME })).toBeDisabled();
+      expect(screen.queryByLabelText(CHECK_LABEL)).toBeNull();
+      expect(screen.getAllByRole('button')).toHaveLength(1);
+    });
+
+    it('lets a check-in card with no onPress and no onLongPress mark through its check button alone', async () => {
+      const onComplete = jest.fn();
+      renderWithTheme(
+        <MitzvahCard name="תפילין" timeLeft="" pct={0} hideProgress statusText="ממתין" onComplete={onComplete} />,
+      );
+      expect(screen.getByRole('button', { name: 'תפילין, ממתין' })).toBeDisabled();
+      await userEvent.setup().press(screen.getByLabelText(CHECK_LABEL));
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('layout', () => {
+    it.each([
+      ['no button', {}, 0],
+      ['the open-text button', { onOpenText: jest.fn() }, BUTTON_STEP],
+      ['the check button', { onComplete: jest.fn() }, BUTTON_STEP],
+      ['both buttons', { onComplete: jest.fn(), onOpenText: jest.fn() }, 2 * BUTTON_STEP],
+      ['the done mark', { done: true }, BUTTON_STEP],
+      ['the done mark and the open-text button', { done: true, onOpenText: jest.fn() }, 2 * BUTTON_STEP],
+    ])('reserves the end of the first row for %s', (_label, handlers, reserved) => {
+      renderWithTheme(<MitzvahCard {...BASE} {...handlers} />);
+      const [row] = hostsWith('onLayout');
+      expect(StyleSheet.flatten(row.props.style).paddingEnd).toBe(reserved);
+    });
+
+    it('centres the buttons on the first row and follows it when the row grows', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onComplete={jest.fn()} />);
+      const [row] = hostsWith('onLayout');
+      const actions = () => hostsWith('pointerEvents').find((node) => node.props.pointerEvents === 'box-none');
+      expect(StyleSheet.flatten(actions()?.props.style)).toMatchObject({
+        height: 38,
+        top: spacing.lg,
+        end: spacing.lg,
+      });
+      fireEvent(row, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 52 } } });
+      expect(StyleSheet.flatten(actions()?.props.style).height).toBe(52);
     });
   });
 

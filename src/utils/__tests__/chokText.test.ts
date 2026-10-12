@@ -10,7 +10,7 @@ import type { ChokPortion } from '../chok';
 import { CITIES } from '@/data/cities';
 import { dateKey } from '@/stores/useCompletionsStore';
 import { at } from '@/testing/zmanim';
-import { ChokAsset, ChokSection, ChokSectionKind } from '@/types/chok';
+import { ChokAsset, ChokSection, ChokSectionKind, HaftarahVariant } from '@/types/chok';
 import { pickerEntries } from '@/utils/siddur';
 
 const JERUSALEM = CITIES[0];
@@ -25,6 +25,10 @@ const KIND_NAMES: Record<ChokSectionKind, string> = {
   halacha: 'Halacha',
   mussar: 'Mussar',
   haftarah: 'Haftarah',
+};
+const VARIANT_NAMES: Record<HaftarahVariant, string> = {
+  sephardi: 'Haftarah (Sephardi)',
+  ashkenazi: 'Haftarah (Ashkenazi)',
 };
 const CREDIT = { title: 'חוק לישראל השלם, רק תורה', license: 'באישור בעל האתר', url: 'http://example.org' };
 
@@ -104,6 +108,7 @@ describe('chokText', () => {
     choice: 'both' as const,
     variant: 'ashkenazi' as const,
     kindNames: KIND_NAMES,
+    variantNames: VARIANT_NAMES,
   };
 
   it('titles a single parasha by the printed heading and the English kind name', () => {
@@ -149,10 +154,55 @@ describe('chokText', () => {
     const text = chokText([asset('Vayakhel', 'לעילוי נשמה')], { ...options, slot: 'fri', variant: 'sephardi' });
     expect(text.sections.map((s) => s.title)).toEqual([
       { he: 'תורה', en: 'Torah' },
-      { he: 'הפטרה כמנהג הספרדים', en: 'Haftarah' },
+      { he: 'הפטרה כמנהג הספרדים', en: 'Haftarah (Sephardi)' },
       { he: 'משנה שבת פרק כב', en: 'Mishnah' },
     ]);
     expect(text.dedication).toBe('לעילוי נשמה');
+  });
+
+  it('names the haftarah of the variant in effect in English and leaves Hebrew as printed', () => {
+    const titleOf = (variant: HaftarahVariant) =>
+      chokText([VAYAKHEL], { ...options, slot: 'fri', variant }).sections.map((s) => s.title);
+    expect(titleOf('sephardi')[1]).toEqual({ he: 'הפטרה כמנהג הספרדים', en: 'Haftarah (Sephardi)' });
+    expect(titleOf('ashkenazi')[1]).toEqual({ he: 'הפטרה כמנהג האשכנזים', en: 'Haftarah (Ashkenazi)' });
+    expect(titleOf('ashkenazi').map((title) => title.he)).toEqual(['תורה', 'הפטרה כמנהג האשכנזים', 'משנה שבת פרק כב']);
+  });
+
+  it('keeps the plain kind name for a haftarah the source prints in one variant only', () => {
+    const single: ChokAsset = {
+      ...VAYAKHEL,
+      slots: { fri: [section('torah', 'תורה'), section('haftarah', 'הפטרה')] },
+    };
+    for (const variant of ['sephardi', 'ashkenazi'] as const) {
+      expect(chokText([single], { ...options, slot: 'fri', variant }).sections.map((s) => s.title)).toEqual([
+        { he: 'תורה', en: 'Torah' },
+        { he: 'הפטרה', en: 'Haftarah' },
+      ]);
+    }
+  });
+
+  it('carries the variant into the English titles of a double week and of a make-up fold', () => {
+    const text = chokText([VAYAKHEL, PEKUDEI], { ...options, slot: 'fri', variant: 'sephardi' });
+    expect(text.sections.map((s) => s.title.en)).toEqual([
+      'Vayakhel · Torah',
+      'Vayakhel · Haftarah (Sephardi)',
+      'Vayakhel · Mishnah',
+      'Pekudei · Torah',
+      'Pekudei · Haftarah (Sephardi)',
+      'Pekudei · Mishnah',
+    ]);
+    const label = { he: 'השלמה: יום שישי', en: 'Make-up: Friday' };
+    const fold = chokText([VAYAKHEL], {
+      ...options,
+      slot: 'sun',
+      variant: 'ashkenazi',
+      makeUps: [{ dateKey: '2028-03-24', slot: 'fri', label }],
+    }).sections[0];
+    expect(fold.segments.filter((segment) => segment.he[0][0].s === 'b').map((segment) => segment.en)).toEqual([
+      'Torah',
+      'Haftarah (Ashkenazi)',
+      'Mishnah',
+    ]);
   });
 
   it('has no sections for a slot the parasha does not carry', () => {

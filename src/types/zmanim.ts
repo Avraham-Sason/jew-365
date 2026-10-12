@@ -1,4 +1,6 @@
 export type Location = {
+  // Stable id of the CITIES entry this location came from; absent for a fix far from every city.
+  cityId?: string;
   lat: number;
   lng: number;
   tz: string;

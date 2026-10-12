@@ -5,4 +5,11 @@ Place required images here:
 - favicon.png (48×48)
 - notification-icon.png (96×96 monochrome on transparent)
 
-Generate from AppLogo via `npx expo-optimize` or Expo's asset tooling in Phase 7.8.
+icon.png, adaptive-icon.png and splash.png are rendered from the geometry of `src/components/AppLogo.tsx`
+(logo variant ב, approved 2026-10-09) as inline SVG in headless Chrome at exact pixel size:
+- icon.png: opaque parchment `#F5EFE4` background, logo 700 px wide, centred.
+- adaptive-icon.png: transparent background (app.json supplies the parchment), logo 600 px wide, inside
+  Android's 66/108 safe zone (626 px).
+- splash.png: parchment background, logo 500 px wide centred at y 1000, the store name `יהודי בזמן` in Heebo
+  Bold 104 px navy at y 1400 and the store subtitle `כל מצווה בזמנה` in Heebo Medium 60 px `#7F5A0F`
+  (gold palette `goldText`) at y 1530.

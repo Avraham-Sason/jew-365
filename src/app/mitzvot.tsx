@@ -6,7 +6,6 @@ import { ChipRow } from '@/components/ChipRow';
 import { ListRow } from '@/components/ListRow';
 import { iconFor, type IconName } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
-import { SegmentedControl } from '@/components/SegmentedControl';
 import { useDayModel } from '@/hooks/useDayModel';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -40,7 +39,6 @@ export default function MitzvotScreen() {
   const setHilulotEnabled = useUserStore((s) => s.setHilulotEnabled);
   const roshChodeshEnabled = useUserStore((s) => s.roshChodeshEnabled);
   const setRoshChodeshEnabled = useUserStore((s) => s.setRoshChodeshEnabled);
-  const [visibility, setVisibility] = useState<'active' | 'available'>('active');
   const [category, setCategory] = useState<MitzvahCategory | 'all'>('all');
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
 
@@ -48,15 +46,10 @@ export default function MitzvotScreen() {
     return ['all', ...Array.from(new Set(allMitzvot.map((item) => item.category)))] as (MitzvahCategory | 'all')[];
   }, [allMitzvot]);
 
-  const items = useMemo(() => {
-    return allMitzvot.filter((item) => {
-      const enabled = active[item.id]?.enabled ?? false;
-      if (visibility === 'active' && !enabled) return false;
-      if (visibility === 'available' && enabled) return false;
-      if (category !== 'all' && item.category !== category) return false;
-      return true;
-    });
-  }, [allMitzvot, active, category, visibility]);
+  const items = useMemo(
+    () => allMitzvot.filter((item) => category === 'all' || item.category === category),
+    [allMitzvot, category],
+  );
   // Hilulot and Rosh Chodesh are notification settings, not mitzvot: listed here as the user asked,
   // but kept out of the registry so they never reach history, home or the check-in.
   const settingRows: SettingRow[] = [
@@ -79,9 +72,7 @@ export default function MitzvotScreen() {
       onToggle: setRoshChodeshEnabled,
     },
   ];
-  const visibleSettingRows = settingRows.filter(
-    (row) => (visibility === 'active') === row.enabled && (category === 'all' || category === SETTING_ROWS_CATEGORY),
-  );
+  const visibleSettingRows = category === 'all' || category === SETTING_ROWS_CATEGORY ? settingRows : [];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -97,16 +88,6 @@ export default function MitzvotScreen() {
             onPress={() => router.push('/custom-mitzvah')}
           />
         }
-      />
-      <SegmentedControl
-        tone="surface"
-        options={[
-          { value: 'active', label: t('common.active') },
-          { value: 'available', label: t('common.available') },
-        ]}
-        value={visibility}
-        onChange={setVisibility}
-        style={styles.visibility}
       />
       <ChipRow
         values={categories}
@@ -172,10 +153,6 @@ function EnabledSwitch({ value, onChange, label }: { value: boolean; onChange: (
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-  },
-  visibility: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
   },
   categories: {
     paddingHorizontal: spacing.lg,

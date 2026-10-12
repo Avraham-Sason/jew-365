@@ -664,6 +664,8 @@ function labeledPartsOf(spec, label) {
       checkLabel(part.label, `${label} ${field} part #${part.from}`);
       if (part.en !== undefined && part.englishInPart)
         throw new Error(`${label}: a part carries both "en" and "englishInPart"`);
+      if (part.englishInPart && part.englishOutside)
+        throw new Error(`${label}: a part carries both "englishInPart" and "englishOutside"`);
       if (part.paragraph !== undefined && part.paragraph < 1)
         throw new Error(`${label} #${part.from}: starts at paragraph ${part.paragraph}`);
       if (part.until !== undefined && part.until < 1)
@@ -723,7 +725,10 @@ function withLabels(draft, parts, label) {
     }
     return piece;
   });
-  if (!own.some((part) => part.englishInPart && pieces.some((piece) => piece.en))) pieces[0].en = leftOver;
+  if (!own.some((part) => part.englishInPart && pieces.some((piece) => piece.en))) {
+    const outside = own.some((part) => part.englishOutside) && pieces.find((piece) => !piece.optional && !piece.minyan);
+    (outside || pieces[0]).en = leftOver;
+  }
   for (const part of spoken) {
     bounds.slice(0, -1).forEach((first, n) => {
       if (partCovers(part, draft.index, first, bounds[n + 1] - 1))
@@ -744,9 +749,10 @@ async function buildSection(spec, ctx) {
   if (to >= heAll.length) throw new Error(`${label}: range ends at ${to} but source has ${heAll.length} segments`);
   const omerOf = spec.omer ? tagOmerDays(spec, label) : () => undefined;
   const editsBySeg = bySegment(spec.edits);
-  const enEditsBySeg = bySegment(spec.enEdits);
+  const enEditsBySeg = bySegment(spec.enEdits?.filter((edit) => !edit.memory));
+  const memoryEditsBySeg = bySegment(spec.enEdits?.filter((edit) => edit.memory));
   const enDropped = new Set(spec.enDrop);
-  for (const i of enEditsBySeg.keys()) {
+  for (const i of [...enEditsBySeg.keys(), ...memoryEditsBySeg.keys()]) {
     if (enDropped.has(i)) throw new Error(`${label} #${i}: enEdits on a segment in enDrop`);
   }
   const parts = labeledPartsOf(spec, label);
@@ -758,6 +764,7 @@ async function buildSection(spec, ctx) {
   const targets = [
     ...editsBySeg.keys(),
     ...enEditsBySeg.keys(),
+    ...memoryEditsBySeg.keys(),
     ...(spec.enMoves ?? []).flatMap((move) => [move.seg, move.to]),
     ...enDropped,
     ...Object.keys(spec.at ?? {}).map(Number),
@@ -803,13 +810,24 @@ async function buildSection(spec, ctx) {
     const when = mergeConditions(spec.when, spec.at?.[i], omerOf(i));
     for (const part of parts.filter((candidate) => i >= candidate.from && i <= candidate.to)) matchedParts.add(part);
     const enGone = enDropped.has(i) || vacated.has(i);
-    drafts.push(
-      ...withLabels(
-        { index: i, he, en, enDropped: enGone, when, group: groupOf.get(i), promoted: classified.promoted },
-        parts,
-        label,
-      ),
+    const memoryEdits = memoryEditsBySeg.get(i);
+    const pieces = withLabels(
+      {
+        index: i,
+        he,
+        en,
+        enDropped: enGone,
+        when,
+        group: groupOf.get(i),
+        promoted: classified.promoted,
+        ...(memoryEdits ? { memoryEdits: { edits: memoryEdits, label: `${label} #${i}` } } : {}),
+      },
+      parts,
+      label,
     );
+    if (memoryEdits && (pieces.length !== 1 || groupOf.has(i)))
+      throw new Error(`${label} #${i}: a memory edit needs a segment that is neither cut by a part nor grouped`);
+    drafts.push(...pieces);
   }
   const unmatched = parts.filter((part) => !matchedParts.has(part));
   if (unmatched.length)
@@ -887,10 +905,11 @@ async function buildSection(spec, ctx) {
     ...(spec.chapter ? { chapter: spec.chapter } : {}),
     ...(spec.optional ? { optional: spec.optional } : {}),
     ...(minyanOnly ? { minyanOnly } : {}),
-    segments: segments.map(({ he, en, enDropped, when, optional, minyan }) => ({
+    segments: segments.map(({ he, en, enDropped, memoryEdits, when, optional, minyan }) => ({
       he,
       ...(en ? { en } : {}),
       ...(enDropped ? { enDropped } : {}),
+      ...(memoryEdits ? { memoryEdits } : {}),
       ...(when ? { when } : {}),
       ...(optional ? { optional } : {}),
       ...(minyan ? { minyan } : {}),
@@ -933,11 +952,24 @@ function fillTranslations(sections, memory, credits) {
       const hit = memory.get(normalizeHebrew(plain(segment.he)));
       if (!hit) continue;
       segment.en = hit.en;
+      segment.fromMemory = true;
       credits.add(hit.source);
       filled++;
     }
   }
   return filled;
+}
+
+function applyMemoryEdits(sections) {
+  for (const section of sections) {
+    for (const segment of section.segments) {
+      if (!segment.memoryEdits) continue;
+      const { edits, label } = segment.memoryEdits;
+      if (!segment.fromMemory)
+        throw new Error(`${label}: memory edit on a segment the translation memory did not fill`);
+      segment.en = applyEdits(segment.en, edits, `${label} (memory en)`);
+    }
+  }
 }
 
 function assetMapSource(built) {
@@ -971,8 +1003,13 @@ async function main() {
       for (const spec of specs) parts.push(await buildSection(spec, ctx));
       const sections = mergeSameTitledSections(parts);
       const filled = HEBREW_ONLY_TEXTS.includes(textId) ? 0 : fillTranslations(sections, memory, credits);
+      applyMemoryEdits(sections);
       const segments = sections.flatMap((s) => s.segments);
-      for (const segment of segments) delete segment.enDropped;
+      for (const segment of segments) {
+        delete segment.enDropped;
+        delete segment.fromMemory;
+        delete segment.memoryEdits;
+      }
       const translated = segments.filter((s) => s.en).length;
       report.push(
         `${nusach}/${textId}: ${segments.length} segments, ${translated} translated (${filled} via exact match)`,

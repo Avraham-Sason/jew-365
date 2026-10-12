@@ -60,6 +60,24 @@ function Hint({ text, style }: { text: string; style?: StyleProp<TextStyle> }) {
   return <Text style={[typography.small, styles.hint, { color: colors.textMuted }, style]}>{text}</Text>;
 }
 
+type Surface = 'home' | 'schedule' | 'notifications' | 'history' | 'library' | 'details' | 'siddur';
+
+const DAY_SURFACES: readonly Surface[] = ['home', 'schedule', 'notifications', 'history'];
+const CATEGORY_SURFACES: readonly Surface[] = ['library'];
+const REMINDER_SURFACES: readonly Surface[] = ['notifications'];
+const CONTENT_SURFACES: readonly Surface[] = ['details', 'siddur', 'notifications'];
+
+function Affects({ surfaces, style }: { surfaces: readonly Surface[]; style?: StyleProp<TextStyle> }) {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  const names = surfaces.map((surface) => t(`custom.surface.${surface}`)).join(' · ');
+  return (
+    <Text accessibilityRole="text" style={[typography.small, styles.affects, { color: colors.goldText }, style]}>
+      {t('custom.affects', { surfaces: names })}
+    </Text>
+  );
+}
+
 export default function CustomMitzvahScreen() {
   const { colors } = useTheme();
   const { t, language } = useI18n();
@@ -93,7 +111,13 @@ export default function CustomMitzvahScreen() {
 
   const titleText = useMemo(() => (editingId ? t('custom.editTitle') : t('custom.title')), [editingId, t]);
   const timesValid = TIME_PATTERN.test(startTime) && TIME_PATTERN.test(endTime);
-  const windowValid = timesValid && timeToMinutes(endTime) > timeToMinutes(startTime);
+  const endMinusStart = timesValid ? timeToMinutes(endTime) - timeToMinutes(startTime) : 1;
+  const windowNote =
+    endMinusStart < 0
+      ? t('custom.window.nextDay', { time: endTime })
+      : endMinusStart === 0
+        ? t('custom.window.fullDay', { time: endTime })
+        : null;
   const pickingBlock = pickingBlockIndex === null ? undefined : contentBlocks[pickingBlockIndex];
   const pickedTextId = pickingBlock?.type === 'siddur' ? pickingBlock.textId : null;
 
@@ -105,10 +129,6 @@ export default function CustomMitzvahScreen() {
     }
     if (!timesValid) {
       setError(t('custom.errors.timeInvalid'));
-      return;
-    }
-    if (!windowValid) {
-      setError(t('custom.errors.endBeforeStart'));
       return;
     }
     if (!activeDays.length) {
@@ -219,7 +239,7 @@ export default function CustomMitzvahScreen() {
     { value: 'start', label: t('custom.anchor.fromStart') },
     { value: 'end', label: t('custom.anchor.beforeEnd') },
   ];
-  const categoryLabel = windowValid ? t(`library.category.${categoryForWindow(startTime, endTime)}`) : null;
+  const categoryLabel = timesValid ? t(`library.category.${categoryForWindow(startTime, endTime)}`) : null;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -247,7 +267,11 @@ export default function CustomMitzvahScreen() {
           <TimeField label={t('custom.startTime')} value={startTime} onChange={setStartTime} style={styles.timeField} />
           <TimeField label={t('custom.endTime')} value={endTime} onChange={setEndTime} style={styles.timeField} />
         </View>
+        {windowNote ? (
+          <Text style={[typography.small, styles.note, { color: colors.goldText }]}>{windowNote}</Text>
+        ) : null}
         <Hint text={t('custom.hint.time')} />
+        <Affects surfaces={DAY_SURFACES} />
 
         <View style={styles.section}>
           <FieldLabel text={t('custom.category')} />
@@ -261,12 +285,14 @@ export default function CustomMitzvahScreen() {
             </View>
           ) : null}
           <Hint text={t('custom.hint.category')} />
+          <Affects surfaces={CATEGORY_SURFACES} />
         </View>
 
         <View style={styles.section}>
           <FieldLabel text={t('custom.activeDays')} />
           <WeekdayPicker selected={activeDays} onToggle={toggleDay} />
           <Hint text={t('custom.hint.days')} />
+          <Affects surfaces={DAY_SURFACES} />
         </View>
 
         <View style={[styles.switchRow, styles.section]}>
@@ -288,9 +314,11 @@ export default function CustomMitzvahScreen() {
           />
         </View>
         <Hint text={t('custom.hint.skip')} style={styles.tightHint} />
+        <Affects surfaces={DAY_SURFACES} />
 
         <Text style={[typography.subheading, styles.section, { color: colors.text }]}>{t('custom.reminders')}</Text>
-        <Hint text={t('custom.hint.reminders')} style={styles.headingHint} />
+        <Hint text={t('custom.hint.reminders')} style={styles.tightHint} />
+        <Affects surfaces={REMINDER_SURFACES} style={styles.headingAffects} />
         {reminders.map((r, idx) => {
           const clock = reminderClock(startTime, endTime, r);
           return (
@@ -346,11 +374,11 @@ export default function CustomMitzvahScreen() {
                 />
               </View>
               {clock ? (
-                <Text style={[typography.small, styles.reminderNote, { color: colors.goldText }]}>
+                <Text style={[typography.small, styles.note, { color: colors.goldText }]}>
                   {t('custom.reminderPreview', { time: clock })}
                 </Text>
-              ) : windowValid ? (
-                <Text style={[typography.small, styles.reminderNote, { color: colors.urgent }]}>
+              ) : timesValid ? (
+                <Text style={[typography.small, styles.note, { color: colors.urgent }]}>
                   {t('custom.reminderOutsideWindow')}
                 </Text>
               ) : null}
@@ -374,7 +402,8 @@ export default function CustomMitzvahScreen() {
 
         <View style={[styles.editorSection, { borderColor: colors.border }]}>
           <Text style={[typography.subheading, { color: colors.text }]}>{t('custom.contentBlocks')}</Text>
-          <Hint text={t('custom.hint.content')} style={styles.headingHint} />
+          <Hint text={t('custom.hint.content')} style={styles.tightHint} />
+          <Affects surfaces={CONTENT_SURFACES} style={styles.headingAffects} />
           {contentBlocks.map((block, idx) => (
             <View
               key={idx}
@@ -533,7 +562,8 @@ const styles = StyleSheet.create({
   label: { marginBottom: spacing.sm },
   hint: { marginTop: spacing.sm },
   tightHint: { marginTop: spacing.xs },
-  headingHint: { marginTop: spacing.xs, marginBottom: spacing.md },
+  affects: { marginTop: spacing.xs },
+  headingAffects: { marginTop: spacing.xs, marginBottom: spacing.md },
   input: {
     borderRadius: radius.md,
     borderWidth: 1,
@@ -569,7 +599,7 @@ const styles = StyleSheet.create({
   reminderRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   offsetInput: { width: 72, textAlign: 'center' },
   offsetWord: { flexShrink: 0 },
-  reminderNote: { marginTop: spacing.sm },
+  note: { marginTop: spacing.sm },
   addBtn: {
     borderRadius: radius.md,
     borderWidth: 1,

@@ -100,6 +100,7 @@ import { useUserStore } from '@/stores/useUserStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import { CITIES } from '@/data/cities';
+import { customToMitzvah } from '@/data/customMitzvotAdapter';
 import { at } from '@/testing/zmanim';
 import { t } from '@/i18n';
 import type { Mitzvah } from '@/types/mitzvah';
@@ -674,6 +675,94 @@ describe('NotificationScheduler', () => {
 
     // A reminder without skipIfDone still fires even when done.
     expect(shouldSuppressForCompletion({ mitzvahId: 'shacharit', dateKey: key }, `shacharit__${key}__0`)).toBe(false);
+  });
+
+  it('6.10e an overnight custom mitzvah is keyed by the day its window starts, also for a reminder after midnight', async () => {
+    const overnight = customToMitzvah({
+      id: 'custom_overnight',
+      name: 'לימוד לילה',
+      startHHMM: '22:00',
+      endHHMM: '01:00',
+      reminders: [
+        { anchor: 'start', offsetMin: 0, label: 'a' },
+        { anchor: 'start', offsetMin: 150, label: 'b' },
+        { anchor: 'end', offsetMin: -15, label: 'c' },
+      ],
+      skipOn: [],
+      createdAt: 1,
+    });
+    const location = CITIES[0];
+    const startDay = locationDayKey(PINNED_NOW);
+    const nextDay = locationDayKey(PINNED_NOW, 1);
+
+    await NotificationScheduler.scheduleAll(PINNED_NOW, [overnight]);
+
+    const triggersOn = (key: string) =>
+      Object.fromEntries(idsFor('custom_overnight', key).map((p) => [p.identifier, triggerOf(p)]));
+    expect(triggersOn(startDay)).toEqual({
+      [`custom_overnight__${startDay}__0`]: at(location, `${startDay}T22:00`).getTime(),
+      [`custom_overnight__${startDay}__1`]: at(location, `${nextDay}T00:30`).getTime(),
+      [`custom_overnight__${startDay}__2`]: at(location, `${nextDay}T00:45`).getTime(),
+    });
+    expect(idsFor('custom_overnight', nextDay).map((p) => p.identifier)).toEqual(
+      expect.arrayContaining([`custom_overnight__${nextDay}__0`, `custom_overnight__${nextDay}__1`]),
+    );
+    const afterMidnight = mockState.pending.find((p) => p.identifier === `custom_overnight__${startDay}__1`);
+    expect(afterMidnight?.content.data.dateKey).toBe(startDay);
+    expect(afterMidnight?.content.data.windowEnd).toBe(at(location, `${nextDay}T01:00`).toISOString());
+  });
+
+  it('6.10f a rebuild after midnight keeps the reminders still due in a window that opened yesterday', async () => {
+    const overnight = customToMitzvah({
+      id: 'custom_overnight',
+      name: 'לימוד לילה',
+      startHHMM: '22:00',
+      endHHMM: '01:00',
+      reminders: [
+        { anchor: 'start', offsetMin: 0, label: 'a' },
+        { anchor: 'start', offsetMin: 150, label: 'b' },
+        { anchor: 'end', offsetMin: -15, label: 'c' },
+      ],
+      skipOn: [],
+      createdAt: 1,
+    });
+    const location = CITIES[0];
+    const startDay = locationDayKey(PINNED_NOW);
+    const nextDay = locationDayKey(PINNED_NOW, 1);
+    const rebuildAt = at(location, `${nextDay}T00:10`);
+    jest.setSystemTime(rebuildAt);
+
+    await NotificationScheduler.scheduleAll(rebuildAt, [overnight]);
+
+    expect(Object.fromEntries(idsFor('custom_overnight', startDay).map((p) => [p.identifier, triggerOf(p)]))).toEqual({
+      [`custom_overnight__${startDay}__1`]: at(location, `${nextDay}T00:30`).getTime(),
+      [`custom_overnight__${startDay}__2`]: at(location, `${nextDay}T00:45`).getTime(),
+    });
+    expect(idsFor('custom_overnight', nextDay).map((p) => p.identifier)).toEqual(
+      expect.arrayContaining([`custom_overnight__${nextDay}__0`]),
+    );
+  });
+
+  it('6.10g a rebuild after midnight plans nothing for a window that opened yesterday once it is marked done', async () => {
+    const overnight = customToMitzvah({
+      id: 'custom_overnight',
+      name: 'לימוד לילה',
+      startHHMM: '22:00',
+      endHHMM: '01:00',
+      reminders: [{ anchor: 'start', offsetMin: 150, label: 'b' }],
+      skipOn: [],
+      createdAt: 1,
+    });
+    const location = CITIES[0];
+    const startDay = locationDayKey(PINNED_NOW);
+    const nextDay = locationDayKey(PINNED_NOW, 1);
+    const rebuildAt = at(location, `${nextDay}T00:10`);
+    jest.setSystemTime(rebuildAt);
+    useCompletionsStore.setState({ completions: { [startDay]: { custom_overnight: rebuildAt.getTime() } } });
+
+    await NotificationScheduler.scheduleAll(rebuildAt, [overnight]);
+
+    expect(idsFor('custom_overnight', startDay)).toHaveLength(0);
   });
 
   // The skip decision must come from the mitzvah's own window, not from the clock time the rebuild

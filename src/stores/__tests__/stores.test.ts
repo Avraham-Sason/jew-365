@@ -28,6 +28,8 @@ import { SIDDUR_SCROLL_SPEEDS, scrollSpeedLevel, useUserStore } from '../useUser
 import { INACTIVE, selectActive, useMitzvotStore } from '../useMitzvotStore';
 import { useCompletionsStore, dateKey } from '../useCompletionsStore';
 import { useCustomMitzvotStore } from '../useCustomMitzvotStore';
+import { CITIES } from '@/data/cities';
+import { Location } from '@/types/zmanim';
 
 describe('stores', () => {
   beforeEach(() => {
@@ -267,24 +269,24 @@ describe('useMitzvotStore merge', () => {
   });
 });
 
+const coldStart = (state: object, colorScheme: 'light' | 'dark' | null = null) => {
+  let started: ReturnType<typeof useUserStore.getState> | undefined;
+  jest.isolateModules(() => {
+    const { Appearance } = require('react-native');
+    const appearance = jest.spyOn(Appearance, 'getColorScheme').mockReturnValue(colorScheme);
+    try {
+      const { storage: freshStorage } = require('@/services/StorageService');
+      freshStorage.set('user-store', JSON.stringify({ version: STORE_VERSION, state }));
+      started = require('../useUserStore').useUserStore.getState();
+    } finally {
+      appearance.mockRestore();
+    }
+  });
+  return started!;
+};
+
 describe('useUserStore theme', () => {
   beforeEach(() => useUserStore.getState().reset());
-
-  const coldStart = (state: object, colorScheme: 'light' | 'dark' | null = null) => {
-    let started: ReturnType<typeof useUserStore.getState> | undefined;
-    jest.isolateModules(() => {
-      const { Appearance } = require('react-native');
-      const appearance = jest.spyOn(Appearance, 'getColorScheme').mockReturnValue(colorScheme);
-      try {
-        const { storage: freshStorage } = require('@/services/StorageService');
-        freshStorage.set('user-store', JSON.stringify({ version: STORE_VERSION, state }));
-        started = require('../useUserStore').useUserStore.getState();
-      } finally {
-        appearance.mockRestore();
-      }
-    });
-    return started!;
-  };
 
   it('defaults to gold and resets to it', () => {
     expect(useUserStore.getState().theme).toBe('gold');
@@ -330,5 +332,115 @@ describe('useUserStore theme', () => {
     const started = coldStart({ nusach: 'sefard' });
     expect(started.theme).toBe('gold');
     expect(started.nusach).toBe('sefard');
+  });
+});
+
+describe('useUserStore saved city', () => {
+  const JERUSALEM = CITIES[0];
+  const HAIFA = CITIES[2];
+  const TEL_AVIV = CITIES[1];
+  const staleJerusalem: Location = {
+    name: 'ירושלים',
+    nameEn: 'Jerusalem',
+    lat: 31.5,
+    lng: 35.0,
+    tz: 'Asia/Jerusalem',
+    inIsrael: true,
+    elevation: 700,
+  };
+  const johannesburg: Location = {
+    name: 'מיקום נוכחי',
+    nameEn: 'Current location',
+    lat: -26.2041,
+    lng: 28.0473,
+    tz: 'Africa/Johannesburg',
+    inIsrael: false,
+  };
+  const hydrate = (saved: object) => {
+    const { merge } = useUserStore.persist.getOptions();
+    return merge!(saved, useUserStore.getState());
+  };
+
+  beforeEach(() => useUserStore.getState().reset());
+
+  it('an old Jerusalem snapshot with a stale latitude and no id hydrates to the current entry and its id', () => {
+    const merged = hydrate({ location: staleJerusalem, locationSource: 'manual', locationStatus: 'ready' });
+    expect(merged.location).toEqual(JERUSALEM);
+    expect(merged.location.cityId).toBe('jerusalem');
+    expect(merged.location.lat).toBe(JERUSALEM.lat);
+    expect(merged.locationStatus).toBe('ready');
+  });
+
+  it('a payload saved before locations existed hydrates to the default city', () => {
+    const merged = hydrate({ nusach: 'sefard' });
+    expect(merged.location).toEqual(JERUSALEM);
+    expect(merged.inIsrael).toBe(true);
+  });
+
+  it('a city picked by id picks up a changed elevation and candle-lighting minutes', () => {
+    const original = { ...HAIFA };
+    const saved = { ...original, elevation: 100 };
+    try {
+      HAIFA.elevation = 260;
+      HAIFA.candleLightingMinutes = 30;
+      const merged = hydrate({ location: saved, locationSource: 'manual' });
+      expect(merged.location.cityId).toBe('haifa');
+      expect(merged.location.elevation).toBe(260);
+      expect(merged.location.candleLightingMinutes).toBe(30);
+    } finally {
+      Object.assign(HAIFA, original);
+      delete HAIFA.candleLightingMinutes;
+    }
+    expect(hydrate({ location: saved, locationSource: 'manual' }).location).toEqual(original);
+  });
+
+  it('a GPS fix near Tel Aviv keeps its coordinates and refreshes the city fields', () => {
+    const fix: Location = {
+      ...staleJerusalem,
+      name: 'תל אביב',
+      nameEn: 'Tel Aviv',
+      lat: 32.1,
+      lng: 34.8,
+      tz: 'Asia/Tel_Aviv',
+      elevation: 99,
+    };
+    const merged = hydrate({ location: fix, locationSource: 'gps' });
+    expect(merged.location).toEqual({ ...TEL_AVIV, lat: 32.1, lng: 34.8 });
+    expect(merged.location.cityId).toBe('tel-aviv');
+    expect(merged.location.tz).toBe('Asia/Jerusalem');
+    expect(merged.location.elevation).toBe(5);
+  });
+
+  it('a location that matches no city is untouched', () => {
+    const merged = hydrate({ location: johannesburg, locationSource: 'gps', inIsrael: false });
+    expect(merged.location).toBe(johannesburg);
+    expect(merged.inIsrael).toBe(false);
+  });
+
+  it('inIsrael follows the refreshed location, not the saved flag', () => {
+    expect(hydrate({ location: staleJerusalem, locationSource: 'manual', inIsrael: false }).inIsrael).toBe(true);
+    expect(hydrate({ location: johannesburg, locationSource: 'gps', inIsrael: true }).inIsrael).toBe(false);
+    expect(
+      hydrate({ location: { ...staleJerusalem, name: 'ניו יורק', nameEn: 'New York' }, locationSource: 'manual' })
+        .inIsrael,
+    ).toBe(false);
+  });
+
+  it('a cold start re-resolves the persisted city from the data', () => {
+    const started = coldStart({
+      location: staleJerusalem,
+      locationSource: 'manual',
+      locationStatus: 'ready',
+      inIsrael: false,
+    });
+    expect(started.location).toEqual(JERUSALEM);
+    expect(started.inIsrael).toBe(true);
+    expect(started.locationStatus).toBe('ready');
+  });
+
+  it('a city pick carries its id, and a pick survives the next hydrate', () => {
+    useUserStore.getState().setLocationState(HAIFA, 'ready', 'manual');
+    expect(useUserStore.getState().location.cityId).toBe('haifa');
+    expect(hydrate({ location: useUserStore.getState().location, locationSource: 'manual' }).location).toBe(HAIFA);
   });
 });

@@ -84,6 +84,7 @@ export default function SiddurScreen() {
     const day = isTomorrow ? t('common.tomorrow') : DateTime.fromJSDate(start).setLocale(language).toFormat('cccc');
     return t('siddur.today.laterOn', { day, time: clockOf(start) });
   };
+  const withText = today.filter(({ hasText }) => hasText);
   const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
 
   const mitzvahRow = ({ mitzvah, window, hasText, openNow }: (typeof today)[number]) => (
@@ -127,7 +128,9 @@ export default function SiddurScreen() {
         subtitle={`${t('siddur.catalog.subtitle')} · ${t(`nusach.${nusach}`)}`}
       />
       <ScrollView contentContainerStyle={styles.list}>
-        <CatalogSection title={t('siddur.group.today')}>{today.map(mitzvahRow)}</CatalogSection>
+        {withText.length > 0 && (
+          <CatalogSection title={t('siddur.group.today')}>{withText.map(mitzvahRow)}</CatalogSection>
+        )}
         <CatalogSection title={t('siddur.group.prayers')}>{prayers.map(mitzvahRow)}</CatalogSection>
         {groups.map(({ group, ids }) => (
           <CatalogSection key={group} title={t(`siddur.group.${group}`)}>

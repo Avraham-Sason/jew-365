@@ -11,7 +11,7 @@
 - [snapshot.ts](snapshot.ts) owns `readPlanInput(now, scope?)`, the one place a plan reads the stores, `currentScope()` and the `PlanScope` a caller may override, plus the small store readers the facade shares (`enabledMitzvot()`, `currentSettings()`, `hasNotificationPermission()`).
 - [plan.ts](plan.ts) owns `buildPlan(input)`: runs the planners, sorts by trigger and applies the platform cap.
 - [planners/horizon.ts](planners/horizon.ts) owns the horizon (`horizonDays()`, `holyBlocksWithin()`, `recentDaysBefore()`, `horizonFor()`) and `formatClock()`.
-- [planners/mitzvot.ts](planners/mitzvot.ts) owns mitzvah reminders: `planMitzvot()`, `buildTriggerTime()` and `bodyForReminder()`.
+- [planners/mitzvot.ts](planners/mitzvot.ts) owns mitzvah reminders: `planMitzvot()`, `buildTriggerTime()` and `bodyForReminder()`, and the per-window rule they share with the mitzvah screen's preview. `windowTriggers(mitzvah, reminders, date, scope)` is that rule, in one place: the day has a window, `isSkippedAt()` does not skip it, it is not marked done or skipped, and each reminder whose trigger passes `reminderFires()`; `planMitzvot()` builds its candidates from it, over the horizon days plus the day before the first one, so a window that opened yesterday and is still open after midnight (a custom mitzvah set across midnight) keeps its remaining reminders when a rebuild runs after midnight; that day's past triggers fall to `reminderFires()`. `nextReminderAt(mitzvah, reminders, scope)` walks the location's calendar days from yesterday through ten days from today (`NEXT_REMINDER_LOOKAHEAD_DAYS`) through `windowTriggers()` and returns the earliest trigger strictly after `scope.now`, or `null`. Its `ReminderScope` is the `PlanInput` subset `now`, `location`, `settings`, `completions` and `skipped`. It is not a planner and reads no store; the facade and the web shim both export it.
 - [planners/holyBlock.ts](planners/holyBlock.ts) owns the pre-block notice with its Omer lines.
 - [planners/hilulot.ts](planners/hilulot.ts) owns the hilula notices and `hilulaLines()`, the lines the pre-block notice carries for the notices a block swallows.
 - [planners/roshChodesh.ts](planners/roshChodesh.ts) owns the Rosh Chodesh notices (`before`, `evening`, `day`) and `roshChodeshLines()`, the lines the pre-block notice carries for the ones a block swallows. The day arithmetic is [../../data/roshChodesh.ts](../../data/roshChodesh.ts).
@@ -42,6 +42,7 @@
 ## Verification
 
 - Run `pnpm test -- src/services/notifications`, then `pnpm test -- src/services`, `pnpm test:tz -- src/services` and `pnpm typecheck`.
+- Run `pnpm test -- src/services/__tests__/NotificationScheduler.nextReminder.test.ts` and `pnpm test:tz -- src/services/__tests__/NotificationScheduler.nextReminder.test.ts` after touching `windowTriggers()` or `nextReminderAt()`: it checks the preview against the first candidate of `buildPlan()` in four zones.
 - `pnpm check:dox` after touching this file.
 
 ## Child DOX Index

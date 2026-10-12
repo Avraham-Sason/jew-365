@@ -47,7 +47,7 @@ import { ScrollSpeedStepper } from '@/components/ScrollSpeedStepper';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
-import { CITIES, getLocationName } from '@/data/cities';
+import { CITIES, cityOf, getLocationName } from '@/data/cities';
 import { Nusach } from '@/types/mitzvah';
 
 const NUSACHAOT: Nusach[] = ['ashkenaz', 'sefard', 'edot_hamizrach', 'chabad'];
@@ -104,6 +104,7 @@ export default function SettingsScreen() {
     })),
   );
   const enabledMitzvotCount = useMitzvotStore(selectEnabledCount);
+  const savedCityId = cityOf(user.location)?.cityId;
   // Held locally and committed on blur. Bound straight to the store, every keystroke serialised
   // the whole user store to MMKV and re-rendered the entire settings tree.
   const [nameDraft, setNameDraft] = useState(user.profileName);
@@ -328,7 +329,7 @@ export default function SettingsScreen() {
           <SectionLabel text={t('settings.pickCity')} style={styles.fieldLabel} />
           <ChipRow
             values={CITY_INDEXES}
-            selected={CITIES.findIndex((city) => city.name === user.location.name)}
+            selected={CITIES.findIndex((city) => city.cityId === savedCityId)}
             onSelect={(index) => user.setLocationState(CITIES[index], 'ready', 'manual')}
             renderLabel={(index) => getLocationName(CITIES[index], language)}
           />

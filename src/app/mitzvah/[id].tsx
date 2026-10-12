@@ -11,7 +11,7 @@ import { ReminderEditor } from '@/components/ReminderEditor';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
 import { hasSiddurText, isSiddurTextId, siddurPlace } from '@/data/siddur';
-import { dateKey } from '@/stores/useCompletionsStore';
+import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { BRAND } from '@/theme/colors';
@@ -19,12 +19,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
-import { ContentBlock, Reminder } from '@/types/mitzvah';
+import { ContentBlock, Reminder, UserSettings } from '@/types/mitzvah';
 import { currentOrNextWindow } from '@/utils/buildDayTimeline';
 import { clockOf, clockRange } from '@/utils/clock';
 import { mitzvahName } from '@/utils/mitzvahName';
-import { reminderFires } from '@/utils/skipRules';
-import { buildTriggerTime } from '@/services/NotificationScheduler';
+import { nextReminderAt } from '@/services/NotificationScheduler';
 import { useI18n } from '@/i18n';
 
 export default function MitzvahDetailScreen() {
@@ -37,6 +36,8 @@ export default function MitzvahDetailScreen() {
   const nusach = useUserStore((s) => s.nusach);
   const ksSofZman = useUserStore((s) => s.halachicOpinions.ksSofZman);
   const inIsrael = useUserStore((s) => s.inIsrael);
+  const completions = useCompletionsStore((s) => s.completions);
+  const skipped = useCompletionsStore((s) => s.skipped);
   const active = useMitzvotStore(selectActive(params.id));
   const setEnabled = useMitzvotStore((s) => s.setEnabled);
   const setReminders = useMitzvotStore((s) => s.setReminders);
@@ -50,23 +51,24 @@ export default function MitzvahDetailScreen() {
     [active.customReminders, mitzvah],
   );
   const includeContentInNotification = reminders.some((reminder) => reminder.includeContentInBody);
+  const settings = useMemo<UserSettings>(
+    () => ({ nusach, halachicOpinions: { ksSofZman }, inIsrael }),
+    [nusach, ksSofZman, inIsrael],
+  );
   const window = useMemo(
-    () =>
-      mitzvah ? currentOrNextWindow(mitzvah, location, { nusach, halachicOpinions: { ksSofZman }, inIsrael }) : null,
-    [mitzvah, location, nusach, ksSofZman, inIsrael],
+    () => (mitzvah ? currentOrNextWindow(mitzvah, location, settings) : null),
+    [mitzvah, location, settings],
   );
   const showText = Boolean(
     mitzvah && window && hasSiddurText(mitzvah, nusach, window.date, siddurPlace(location, inIsrael)),
   );
-  const nextTrigger = useMemo(() => {
-    if (!window) return null;
-    const now = new Date();
-    const candidates = reminders
-      .map((reminder) => buildTriggerTime(reminder, window))
-      .filter((trigger) => reminderFires(trigger, window, location, now))
-      .sort((a, b) => a.getTime() - b.getTime());
-    return candidates[0] ?? null;
-  }, [reminders, window, location]);
+  const nextTrigger = useMemo(
+    () =>
+      mitzvah
+        ? nextReminderAt(mitzvah, reminders, { now: new Date(), location, settings, completions, skipped })
+        : null,
+    [mitzvah, reminders, location, settings, completions, skipped],
+  );
 
   if (!mitzvah) {
     return (

@@ -1,6 +1,7 @@
 import {
   ALL_DAY_MIN,
   DraftBlock,
+  NIGHT_END_MIN,
   WEEKDAYS,
   categoryForWindow,
   cleanContentBlock,
@@ -8,7 +9,26 @@ import {
   isActiveOn,
   reminderClock,
   siddurTextName,
+  windowMinutes,
 } from '../customMitzvah';
+
+describe('windowMinutes', () => {
+  it.each([
+    ['08:00', '12:00', 240],
+    ['08:00', '08:01', 1],
+    ['00:00', '23:59', 1439],
+    ['22:00', '01:00', 180],
+    ['23:59', '00:00', 1],
+    ['08:30', '08:29', 1439],
+    ['20:00', '06:30', 630],
+  ])('%s to %s lasts %i minutes', (start, end, expected) => {
+    expect(windowMinutes(start, end)).toBe(expected);
+  });
+
+  it.each(['00:00', '08:00', '12:34', '23:59'])('equal times at %s are a full 24 hours', (time) => {
+    expect(windowMinutes(time, time)).toBe(1440);
+  });
+});
 
 describe('categoryForWindow', () => {
   it.each([
@@ -26,8 +46,35 @@ describe('categoryForWindow', () => {
 
   it('turns all-day exactly at the threshold', () => {
     expect(ALL_DAY_MIN).toBe(480);
-    expect(categoryForWindow('00:00', '07:59')).toBe('daily-morning');
-    expect(categoryForWindow('00:00', '08:00')).toBe('daily-allday');
+    expect(categoryForWindow('01:00', '08:59')).toBe('daily-morning');
+    expect(categoryForWindow('01:00', '09:00')).toBe('daily-allday');
+    expect(categoryForWindow('18:00', '01:59')).toBe('daily-evening');
+    expect(categoryForWindow('18:00', '02:00')).toBe('daily-allday');
+  });
+
+  it.each([
+    ['23:00', '01:00', 'daily-evening'],
+    ['22:00', '02:00', 'daily-evening'],
+    ['20:00', '03:00', 'daily-evening'],
+    ['00:00', '03:00', 'daily-evening'],
+    ['01:00', '05:00', 'daily-evening'],
+    ['02:00', '07:00', 'daily-morning'],
+    ['23:30', '04:00', 'daily-evening'],
+    ['22:00', '08:00', 'daily-allday'],
+    ['21:00', '06:00', 'daily-allday'],
+  ])('the overnight window %s to %s is %s', (start, end, expected) => {
+    expect(categoryForWindow(start, end)).toBe(expected);
+  });
+
+  it('reads a midpoint before 04:00 as a night window and 04:00 itself as the morning', () => {
+    expect(NIGHT_END_MIN).toBe(240);
+    expect(categoryForWindow('03:00', '04:58')).toBe('daily-evening');
+    expect(categoryForWindow('03:00', '05:00')).toBe('daily-morning');
+    expect(categoryForWindow('03:00', '04:59')).toBe('daily-evening');
+  });
+
+  it.each(['00:00', '08:00', '17:30', '23:59'])('equal times at %s are all-day', (time) => {
+    expect(categoryForWindow(time, time)).toBe('daily-allday');
   });
 });
 
@@ -72,6 +119,54 @@ describe('reminderClock', () => {
 
   it('is null for an offset that is not a number', () => {
     expect(reminderClock('08:00', '12:00', { anchor: 'start', offsetMin: Number.NaN })).toBeNull();
+  });
+
+  describe('across midnight', () => {
+    it('counts forward from the start past midnight', () => {
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: 0 })).toBe('22:00');
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: 120 })).toBe('00:00');
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: 150 })).toBe('00:30');
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: 180 })).toBe('01:00');
+    });
+
+    it('counts back from the end on the other side of midnight', () => {
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: 0 })).toBe('01:00');
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: -30 })).toBe('00:30');
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: -90 })).toBe('23:30');
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: -180 })).toBe('22:00');
+    });
+
+    it('is null outside the overnight window', () => {
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: 181 })).toBeNull();
+      expect(reminderClock('22:00', '01:00', { anchor: 'start', offsetMin: -1 })).toBeNull();
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: -181 })).toBeNull();
+      expect(reminderClock('22:00', '01:00', { anchor: 'end', offsetMin: 1 })).toBeNull();
+    });
+
+    it('a window that ends the morning after reaches every hour in between', () => {
+      expect(reminderClock('20:00', '06:30', { anchor: 'start', offsetMin: 600 })).toBe('06:00');
+      expect(reminderClock('20:00', '06:30', { anchor: 'end', offsetMin: -600 })).toBe('20:30');
+    });
+  });
+
+  describe('a full 24-hour window', () => {
+    it('reaches from the start to the same clock time the next day', () => {
+      expect(reminderClock('08:00', '08:00', { anchor: 'start', offsetMin: 0 })).toBe('08:00');
+      expect(reminderClock('08:00', '08:00', { anchor: 'start', offsetMin: 960 })).toBe('00:00');
+      expect(reminderClock('08:00', '08:00', { anchor: 'start', offsetMin: 1440 })).toBe('08:00');
+    });
+
+    it('counts back from the end a day after the start', () => {
+      expect(reminderClock('08:00', '08:00', { anchor: 'end', offsetMin: 0 })).toBe('08:00');
+      expect(reminderClock('08:00', '08:00', { anchor: 'end', offsetMin: -60 })).toBe('07:00');
+      expect(reminderClock('08:00', '08:00', { anchor: 'end', offsetMin: -1440 })).toBe('08:00');
+    });
+
+    it('is null past the day', () => {
+      expect(reminderClock('08:00', '08:00', { anchor: 'start', offsetMin: 1441 })).toBeNull();
+      expect(reminderClock('08:00', '08:00', { anchor: 'end', offsetMin: -1441 })).toBeNull();
+      expect(reminderClock('08:00', '08:00', { anchor: 'start', offsetMin: -1 })).toBeNull();
+    });
   });
 });
 
