@@ -1401,13 +1401,14 @@ const TEHILLIM_WEEK = [
   [120, { he: 'ליום שבת', en: 'Shabbat' }],
 ];
 
-// The last psalm of each of the five books, followed by that book's Yehi Ratzon.
+// The five books by their first and last psalm: a book's heading opens its first psalm, and its Yehi
+// Ratzon follows its last.
 const TEHILLIM_BOOKS = [
-  [41, { he: 'יהי רצון לאחר ספר ראשון', en: 'After the First Book' }],
-  [72, { he: 'יהי רצון לאחר ספר שני', en: 'After the Second Book' }],
-  [89, { he: 'יהי רצון לאחר ספר שלישי', en: 'After the Third Book' }],
-  [106, { he: 'יהי רצון לאחר ספר רביעי', en: 'After the Fourth Book' }],
-  [150, { he: 'יהי רצון לאחר ספר חמישי', en: 'After the Fifth Book' }],
+  [1, 41, { he: 'ספר ראשון', en: 'First Book' }],
+  [42, 72, { he: 'ספר שני', en: 'Second Book' }],
+  [73, 89, { he: 'ספר שלישי', en: 'Third Book' }],
+  [90, 106, { he: 'ספר רביעי', en: 'Fourth Book' }],
+  [107, 150, { he: 'ספר חמישי', en: 'Fifth Book' }],
 ];
 
 // The alternatives the prayer after a whole book prints, in book order: which book of Tehillim, and
@@ -5513,14 +5514,19 @@ function tehillimPsalm(number) {
       }),
     );
   }
+  const book = TEHILLIM_BOOKS.find(([first]) => first === number)?.[2];
   const day = TEHILLIM_WEEK.find(([first]) => first === number)?.[1];
-  return [{ ...psalmVerses(title, number), ...(day ? { chapter: day } : {}) }];
+  const headings = [...(book ? [{ ...book, level: 1 }] : []), ...(day ? [{ ...day, level: 2 }] : [])];
+  return [
+    { ...psalmVerses(title, number), ...(headings.length ? { headings } : {}), ...(day ? { chapter: day } : {}) },
+  ];
 }
 
-function tehillimBookPrayer(book, title) {
+function tehillimBookPrayer(book) {
+  const name = TEHILLIM_BOOKS[book][2];
   return {
     he: 'wikiAfterPsalms',
-    title,
+    title: { he: `יהי רצון לאחר ${name.he}`, en: `After the ${name.en}` },
     path: 'יהר"מ | שתכפר',
     transform: ashkenazName,
     edits: [
@@ -5533,10 +5539,8 @@ function tehillimBookPrayer(book, title) {
 
 function tehillim() {
   const psalms = Array.from({ length: 150 }, (_, index) => index + 1).flatMap((number) => {
-    const book = TEHILLIM_BOOKS.findIndex(([last]) => last === number);
-    return book === -1
-      ? tehillimPsalm(number)
-      : [...tehillimPsalm(number), tehillimBookPrayer(book, TEHILLIM_BOOKS[book][1])];
+    const book = TEHILLIM_BOOKS.findIndex(([, last]) => last === number);
+    return book === -1 ? tehillimPsalm(number) : [...tehillimPsalm(number), tehillimBookPrayer(book)];
   });
   return [
     {

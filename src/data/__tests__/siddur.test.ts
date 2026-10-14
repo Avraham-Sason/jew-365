@@ -4165,6 +4165,49 @@ describe('tehillim', () => {
     ]);
   });
 
+  it('heads the first psalm of each book and of each day of the weekly division, the book above the day', () => {
+    const headed = sections()
+      .filter((entry) => entry.headings)
+      .map((entry) => [entry.title.he, entry.headings!.map((heading) => [heading.he, heading.en, heading.level])]);
+    expect(headed).toEqual([
+      [
+        psalmTitle(1),
+        [
+          ['ספר ראשון', 'First Book', 1],
+          ['ליום ראשון', 'Sunday', 2],
+        ],
+      ],
+      [psalmTitle(30), [['ליום שני', 'Monday', 2]]],
+      [psalmTitle(42), [['ספר שני', 'Second Book', 1]]],
+      [psalmTitle(51), [['ליום שלישי', 'Tuesday', 2]]],
+      [
+        psalmTitle(73),
+        [
+          ['ספר שלישי', 'Third Book', 1],
+          ['ליום רביעי', 'Wednesday', 2],
+        ],
+      ],
+      [
+        psalmTitle(90),
+        [
+          ['ספר רביעי', 'Fourth Book', 1],
+          ['ליום חמישי', 'Thursday', 2],
+        ],
+      ],
+      [
+        psalmTitle(107),
+        [
+          ['ספר חמישי', 'Fifth Book', 1],
+          ['ליום שישי', 'Friday', 2],
+        ],
+      ],
+      [psalmTitle(120), [['ליום שבת', 'Shabbat', 2]]],
+    ]);
+    expect(sections(shabbat).filter((entry) => entry.headings)).toHaveLength(8);
+    for (const [, title] of BOOKS) expect(section(title).headings).toBeUndefined();
+    expect(BOOKS.map(([last]) => last)).toEqual([41, 72, 89, 106, 150]);
+  });
+
   it('gives all 150 psalms in order, with each book’s Yehi Ratzon right after its last psalm', () => {
     const titles = Array.from({ length: 150 }, (_, index) => index + 1).flatMap((number) => {
       const book = BOOKS.find(([last]) => last === number);
@@ -4407,6 +4450,14 @@ describe('shacharit chapters', () => {
     for (const nusach of NUSCHAOT) {
       for (const id of TEXT_IDS.filter((candidate) => candidate !== 'shacharit' && candidate !== 'tehillim')) {
         expect(load(nusach, id).sections.some((section) => section.chapter)).toBe(false);
+      }
+    }
+  });
+
+  it('no text but Tehillim carries headings above its sections', () => {
+    for (const nusach of NUSCHAOT) {
+      for (const id of TEXT_IDS.filter((candidate) => candidate !== 'tehillim')) {
+        expect(load(nusach, id).sections.some((section) => section.headings)).toBe(false);
       }
     }
   });

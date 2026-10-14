@@ -84,10 +84,10 @@ describe('expo-router routes', () => {
     expect(hidesIndex).toBe(true);
   });
 
-  it('registers the tabs in bar order with home third: more, history, home, siddur, settings', () => {
+  it('registers the tabs in bar order with home third: more, siddur, home, history, settings', () => {
     const layout = fs.readFileSync(path.join(APP_DIR, '(tabs)/_layout.tsx'), 'utf8');
     const names = [...layout.matchAll(/<Tabs\.Screen\s+name="([^"]+)"/g)].map((match) => match[1]);
-    expect(names.filter((name) => name !== 'index')).toEqual(['more', 'history', 'home', 'siddur', 'settings']);
+    expect(names.filter((name) => name !== 'index')).toEqual(['more', 'siddur', 'home', 'history', 'settings']);
   });
 
   it('registers the schedule as a root stack screen', () => {

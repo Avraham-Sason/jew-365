@@ -88,8 +88,12 @@ export type SiddurSegment = {
   minyan?: PassageLabel;
 };
 
+// A heading the reader draws above a section's card: level 1 opens a book of a text, level 2 a part of it.
+export type SectionHeading = { he: string; en: string; level: 1 | 2 };
+
 export type SiddurSection = {
   title: { he: string; en: string };
+  headings?: SectionHeading[];
   // Opens a chapter of the text: the section picker lists chapters, not every section, when a text
   // has any, and the sections up to the next chapter belong to it.
   chapter?: { he: string; en: string };

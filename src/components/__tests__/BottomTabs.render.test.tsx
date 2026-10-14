@@ -4,7 +4,7 @@ import { BottomTabs } from '../BottomTabs';
 import { renderWithTheme } from '@/testing/render';
 import { useUserStore } from '@/stores/useUserStore';
 
-const ROUTE_NAMES = ['index', 'more', 'history', 'home', 'siddur', 'settings'];
+const ROUTE_NAMES = ['index', 'more', 'siddur', 'home', 'history', 'settings'];
 
 function tabBarProps(focused: string) {
   const routes = ROUTE_NAMES.map((name) => ({ key: `${name}-key`, name }));
@@ -30,7 +30,7 @@ describe('BottomTabs', () => {
     renderWithTheme(<BottomTabs {...tabBarProps('home').props} />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs).toHaveLength(5);
-    ['עוד', 'היסטוריה', 'בית', 'סידור', 'הגדרות'].forEach((name, index) => {
+    ['עוד', 'סידור', 'בית', 'היסטוריה', 'הגדרות'].forEach((name, index) => {
       expect(tabs[index]).toHaveAccessibleName(name);
     });
   });

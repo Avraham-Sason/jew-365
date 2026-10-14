@@ -860,15 +860,30 @@ export default function SiddurScreen() {
           onLayout={autoScroll.onLayout}
           onContentSizeChange={autoScroll.onContentSizeChange}
           renderItem={({ item: section }) => (
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.surface },
-                shadowStyle(colors.shadow, shadowPresets.cardSoft),
-              ]}
-            >
-              {sectionCard(section)}
-            </View>
+            <>
+              {section.headings?.map((heading) => (
+                <Text
+                  key={heading.he}
+                  accessibilityRole="header"
+                  style={[
+                    heading.level === 1 ? typography.title : typography.heading,
+                    styles.sectionHeading,
+                    { color: colors.goldText },
+                  ]}
+                >
+                  {nameOf(heading)}
+                </Text>
+              ))}
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: colors.surface },
+                  shadowStyle(colors.shadow, shadowPresets.cardSoft),
+                ]}
+              >
+                {sectionCard(section)}
+              </View>
+            </>
           )}
           ListFooterComponent={
             <>
@@ -1170,6 +1185,11 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  sectionHeading: {
+    textAlign: 'center',
+    marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
   segment: {

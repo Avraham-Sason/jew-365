@@ -95,7 +95,7 @@ Store copy lives in [release/](release).
 
 - [src/app/](src/app) - Expo Router routes. The router root is set in [app.json](app.json) via `extra.router.root`.
 - [src/app/_layout.tsx](src/app/_layout.tsx) - Root providers, font loading, onboarding redirect guard, RTL bootstrap, notification handler init, and the exported `ErrorBoundary`.
-- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: more, history, home, siddur, settings; the hidden `index` redirects to home. More is a hub of rows that open stack screens: the schedule, Chok LeYisrael while its content is bundled, and Tehillim.
+- [src/app/(tabs)/](<src/app/(tabs)>) - Main tabs: more, siddur, home, history, settings; the hidden `index` redirects to home. More is a hub of rows that open stack screens: the schedule, Chok LeYisrael while its content is bundled, and Tehillim.
 - [src/app/mitzvot.tsx](src/app/mitzvot.tsx) - The mitzvot library as a stack screen, opened from Settings and the onboarding ready screen.
 - [src/app/onboarding/](src/app/onboarding) - Onboarding flow: welcome, profile (gender, marital status and the taharah opt-in), nusach, location/notifications, ready.
 - [src/app/taharah/](src/app/taharah) - Taharat hamishpacha: dashboard, event log, calendar and minhag settings, behind the biometric lock in its `_layout.tsx`.

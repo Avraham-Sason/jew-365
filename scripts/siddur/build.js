@@ -644,6 +644,7 @@ function mergeSameTitledSections(sections) {
         throw new Error(`${section.title.he}: merged sections disagree on "optional"`);
       }
       if (section.chapter) throw new Error(`${section.title.he}: a chapter must open on the first spec of its section`);
+      if (section.headings) throw new Error(`${section.title.he}: headings must sit on the first spec of its section`);
       previous.segments.push(...section.segments);
     } else merged.push({ ...section, segments: [...section.segments] });
   }
@@ -762,6 +763,10 @@ async function buildSection(spec, ctx) {
   if (spec.optional) checkLabel(spec.optional, label);
   if (spec.minyan) checkLabel(spec.minyan, label);
   if (spec.chapter) checkLabel(spec.chapter, label);
+  for (const heading of spec.headings ?? []) {
+    checkLabel(heading, label);
+    if (heading.level !== 1 && heading.level !== 2) throw new Error(`${label}: a heading's level is 1 or 2`);
+  }
   const selected = (i) => i >= from && i <= to && !spec.drop?.includes(i);
   const targets = [
     ...editsBySeg.keys(),
@@ -904,6 +909,7 @@ async function buildSection(spec, ctx) {
 
   return {
     title: spec.title,
+    ...(spec.headings?.length ? { headings: spec.headings } : {}),
     ...(spec.chapter ? { chapter: spec.chapter } : {}),
     ...(spec.optional ? { optional: spec.optional } : {}),
     ...(minyanOnly ? { minyanOnly } : {}),

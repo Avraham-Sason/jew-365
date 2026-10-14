@@ -21,9 +21,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ href: null }} />
       {/* Home sits in the middle of the bar and is drawn raised by BottomTabs. */}
       <Tabs.Screen name="more" />
-      <Tabs.Screen name="history" />
-      <Tabs.Screen name="home" />
       <Tabs.Screen name="siddur" />
+      <Tabs.Screen name="home" />
+      <Tabs.Screen name="history" />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

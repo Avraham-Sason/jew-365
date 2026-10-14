@@ -514,7 +514,14 @@ const CASES: SmokeCase[] = [
     label: 'Tehillim, a text shared by every nusach',
     Screen: SiddurReaderScreen,
     params: { id: 'tehillim' },
-    check: both(text('תהילים', 'Tehillim'), text('תפילה לפני אמירת תהלים', 'Prayer Before Tehillim')),
+    check: both(
+      both(text('תהילים', 'Tehillim'), text('תפילה לפני אמירת תהלים', 'Prayer Before Tehillim')),
+      async (language) => {
+        for (const name of language === 'he' ? ['ספר ראשון', 'ליום ראשון'] : ['First Book', 'Sunday']) {
+          expect(await screen.findByRole('header', { name })).toBeOnTheScreen();
+        }
+      },
+    ),
   },
   {
     file: 'siddur/index',
@@ -530,8 +537,8 @@ const CASES: SmokeCase[] = [
       const tabs = await screen.findAllByRole('tab');
       const names =
         language === 'he'
-          ? ['עוד', 'היסטוריה', 'בית', 'סידור', 'הגדרות']
-          : ['More', 'History', 'Home', 'Siddur', 'Settings'];
+          ? ['עוד', 'סידור', 'בית', 'היסטוריה', 'הגדרות']
+          : ['More', 'Siddur', 'Home', 'History', 'Settings'];
       expect(tabs).toHaveLength(5);
       names.forEach((name, index) => expect(tabs[index]).toHaveAccessibleName(name));
       expect(tabs[2]).toBeSelected();
