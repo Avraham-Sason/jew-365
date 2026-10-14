@@ -22,6 +22,14 @@ import {
   syncNotificationPermissionStatus,
 } from '@/services/NotificationScheduler';
 import { AppResetService } from '@/services/AppResetService';
+import {
+  backupDateLabel,
+  backupFailureKey,
+  exportBackup,
+  pickBackup,
+  restoreBackup,
+  type Backup,
+} from '@/services/BackupService';
 import { reportError } from '@/services/errors';
 import { openBatteryOptimizationSettings, supportsBatteryOptimizationSettings } from '@/services/deviceSettings';
 import {
@@ -112,6 +120,9 @@ export default function SettingsScreen() {
   const [statusText, setStatusText] = useState('');
   const [resetVisible, setResetVisible] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [pendingBackup, setPendingBackup] = useState<Backup | null>(null);
+  const [backupStatus, setBackupStatus] = useState<{ text: string; failed: boolean } | null>(null);
   const [open, setOpen] = useState<ReadonlySet<SectionKey>>(() => new Set());
 
   useFocusEffect(
@@ -151,6 +162,42 @@ export default function SettingsScreen() {
       setResetting(false);
     }
   };
+
+  const runBackupStep = async (step: () => Promise<void>) => {
+    if (backupBusy) return;
+    setBackupBusy(true);
+    setBackupStatus(null);
+    try {
+      await step();
+    } catch (error) {
+      setPendingBackup(null);
+      setBackupStatus({ text: t(backupFailureKey(error)), failed: true });
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const exportBackupFile = () =>
+    runBackupStep(async () => {
+      commitProfileDrafts();
+      await exportBackup();
+    });
+
+  const chooseBackupFile = () =>
+    runBackupStep(async () => {
+      setPendingBackup(await pickBackup());
+    });
+
+  const confirmRestore = () =>
+    runBackupStep(async () => {
+      if (!pendingBackup) return;
+      await restoreBackup(pendingBackup);
+      const restored = useUserStore.getState();
+      setNameDraft(restored.profileName);
+      setPhoneDraft(restored.profilePhone);
+      setPendingBackup(null);
+      setBackupStatus({ text: t('settings.backupRestored'), failed: false });
+    });
 
   const [locating, setLocating] = useState(false);
 
@@ -395,6 +442,34 @@ export default function SettingsScreen() {
             renderLabel={(value) => t(`settings.language.${value}`)}
           />
 
+          {Platform.OS !== 'web' ? (
+            <>
+              <SectionLabel text={t('settings.backup')} style={[styles.subHeading, subHeadingTone]} />
+              <Text style={[typography.small, { color: colors.textMuted }]}>
+                {t(Platform.OS === 'ios' ? 'settings.backupHint.ios' : 'settings.backupHint.android')}
+              </Text>
+              {user.taharahEnabled ? (
+                <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>
+                  {t('settings.backupTaharah')}
+                </Text>
+              ) : null}
+              <PrimaryButton label={t('settings.backupExport')} onPress={exportBackupFile} />
+              <PrimaryButton label={t('settings.backupImport')} onPress={chooseBackupFile} />
+              {backupStatus ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={[
+                    typography.small,
+                    styles.note,
+                    { color: backupStatus.failed ? colors.urgent : colors.textMuted },
+                  ]}
+                >
+                  {backupStatus.text}
+                </Text>
+              ) : null}
+            </>
+          ) : null}
+
           <SectionLabel text={t('settings.app')} style={[styles.subHeading, subHeadingTone]} />
           <Pressable
             onPress={() => setResetVisible(true)}
@@ -419,6 +494,17 @@ export default function SettingsScreen() {
         busy={resetting}
         onConfirm={performReset}
         onCancel={() => setResetVisible(false)}
+      />
+
+      <ConfirmDialog
+        visible={pendingBackup !== null}
+        title={t('settings.backupConfirmTitle')}
+        body={pendingBackup ? t('settings.backupConfirmBody', { date: backupDateLabel(pendingBackup, language) }) : ''}
+        confirmLabel={t('settings.backupConfirmAction')}
+        destructive
+        busy={backupBusy}
+        onConfirm={confirmRestore}
+        onCancel={() => setPendingBackup(null)}
       />
     </SafeAreaView>
   );

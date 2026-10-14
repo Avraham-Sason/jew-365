@@ -5,6 +5,9 @@ import { Stack, useRouter } from 'expo-router';
 import { AppLogo } from '@/components/AppLogo';
 import { ONBOARDING_STEPS, OnboardingDots } from '@/components/OnboardingDots';
 import { useUserStore } from '@/stores/useUserStore';
+import { backupFailureKey, pickBackup, restoreBackup } from '@/services/BackupService';
+import { NotificationScheduler, requestNotificationPermissions } from '@/services/NotificationScheduler';
+import { reportError } from '@/services/errors';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
@@ -21,6 +24,8 @@ export default function WelcomeScreen() {
   const [name, setName] = useState(profileName);
   const [phone, setPhone] = useState(profilePhone);
   const [error, setError] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  const [restoreError, setRestoreError] = useState('');
 
   // Name and phone are stored locally and used by no feature, so nothing is gained by blocking
   // onboarding on them.
@@ -28,6 +33,26 @@ export default function WelcomeScreen() {
     setProfileName(name.trim());
     setProfilePhone(phone.trim());
     router.push('/onboarding/profile');
+  };
+
+  // A new phone with a backup file skips the questions: the restored profile is already onboarded,
+  // so the root layout's guard moves on to home once the stores hold it.
+  const restore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    setRestoreError('');
+    try {
+      const backup = await pickBackup();
+      if (!backup) return;
+      await restoreBackup(backup);
+      if (await requestNotificationPermissions()) {
+        await NotificationScheduler.rebuild().catch((rebuildError) => reportError('schedule', rebuildError));
+      }
+    } catch (restoreFailure) {
+      setRestoreError(t(backupFailureKey(restoreFailure)));
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const inputStyle = {
@@ -96,6 +121,25 @@ export default function WelcomeScreen() {
           <Pressable onPress={submit} accessibilityRole="button" style={[styles.cta, { backgroundColor: colors.gold }]}>
             <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.continue')}</Text>
           </Pressable>
+          {Platform.OS !== 'web' ? (
+            <Pressable
+              onPress={restore}
+              disabled={restoring}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: restoring, busy: restoring }}
+              style={styles.restore}
+            >
+              <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('onboarding.restore')}</Text>
+            </Pressable>
+          ) : null}
+          {restoreError ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={[typography.small, styles.restoreError, { color: colors.urgent }]}
+            >
+              {restoreError}
+            </Text>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -138,6 +182,13 @@ const styles = StyleSheet.create({
   },
   footer: {
     gap: spacing.md,
+  },
+  restore: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  restoreError: {
+    textAlign: 'center',
   },
   cta: {
     alignItems: 'center',

@@ -2,7 +2,7 @@
   "expo": {
     "name": "יהודי בזמן",
     "slug": "jew-in-time",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "jewintime",
@@ -34,7 +34,7 @@
         "backgroundColor": "#F5EFE4"
       },
       "package": "com.jewintime.app",
-      "allowBackup": false,
+      "allowBackup": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -72,7 +72,13 @@
       "expo-task-manager",
       "expo-background-task",
       "expo-asset",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": false
+        }
+      ],
+      "./scripts/withAndroidBackupRules",
       [
         "expo-local-authentication",
         {

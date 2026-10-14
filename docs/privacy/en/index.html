@@ -15,9 +15,9 @@
 
 <main>
   <h1>Privacy Policy</h1>
-  <p class="meta">Effective 9 October 2026 · Developer: Avraham Sason · App: Jew in Time / יהודי בזמן (com.jewintime.app)</p>
+  <p class="meta">Effective 14 October 2026 · Developer: Avraham Sason · App: Jew in Time / יהודי בזמן (com.jewintime.app)</p>
 
-  <p class="lead">The app runs entirely on your device. There is no account, no server, and no collection of personal data. Nothing you enter and nothing the app computes is sent to us or to any third party. The one exception is a technical crash report that carries no personal data, described below.</p>
+  <p class="lead">The app runs entirely on your device. There is no account, no server, and no collection of personal data. Nothing you enter and nothing the app computes is sent to us or to any third party. The one exception is a technical crash report that carries no personal data, described below. The device backup your phone's operating system keeps in your Google or iCloud account, and the backup file you can export, are described under "Where data is stored".</p>
 
   <h2>What the app stores</h2>
   <p>Every item below is kept only in the app's local storage on your device:</p>
@@ -39,7 +39,7 @@
   <p>An optional feature. It is off by default and is offered only to users who state that they are married and have chosen a gender; a single user does not see it.</p>
   <ul>
     <li><strong>What is stored</strong> — the events you enter (onset, hefsek, bedikot, tevila, pauses and a rav's rulings) and your minhag settings. The count, the tasks and the reminders are calculated from them on the device.</li>
-    <li><strong>Where</strong> — on your device only, in a separate encrypted database. The encryption key is held in the operating system's secure storage (Keychain on iOS, Android Keystore on Android) and is never included in a backup or a transfer to another device. On Android the app is excluded from Google backup. If the system does not let the app read the key, the data is kept in a separate file that is not encrypted, also on the device only.</li>
+    <li><strong>Where</strong> — on your device only, in a separate encrypted database. The encryption key is held in the operating system's secure storage (Keychain on iOS, Android Keystore on Android) and is never included in a backup or a transfer to another device. On Android the data is excluded from Google backup. On iOS the device's iCloud backup may include the encrypted file, but never the key, so a copy restored from it cannot be read and the app deletes it. If the system does not let the app read the key, the data is kept in a separate file that is not encrypted. On Android that file is excluded from backup; on iOS it may be included in the device's iCloud backup. Family purity data is never included in the backup file the app exports.</li>
     <li><strong>Where it never goes</strong> — the data is not sent anywhere and is not part of crash reports.</li>
     <li><strong>Notifications</strong> — worded discreetly by default.</li>
     <li><strong>Deletion</strong> — resetting the app deletes all of it, along with the encryption key.</li>
@@ -50,7 +50,11 @@
   <p>The family purity screens are locked by default with your device's authentication: face recognition, fingerprint or the device passcode. The authentication is performed entirely by the operating system. The app receives only a "succeeded" or "failed" answer and never sees, stores or transmits biometric data. If the device has no biometrics set up, the lock does not apply. You can turn it off in the tracking settings.</p>
 
   <h2>Where data is stored</h2>
-  <p>Data lives in the app's private storage on your device, protected by the operating system's app sandbox. We keep no cloud backup and perform no cross-device sync.</p>
+  <p>Data lives in the app's private storage on your device, protected by the operating system's app sandbox. We have no server and perform no backup or sync of our own. Two things keep a copy outside the app, and both are under your control:</p>
+  <ul>
+    <li><strong>Device backup</strong> — on Android, your preferences, enabled mitzvot, custom mitzvot, history and profile answers (including name and phone, if you filled them in) are part of Google's automatic backup to your Google account, and come back after a reinstall or on a new phone. On iOS, the app's storage is part of the device's iCloud backup when that is on. Google or Apple run the backup in your account, and we have no access to it. You can turn it off in your phone's backup settings. For family purity data, see the section above.</li>
+    <li><strong>Backup file</strong> — under Settings → Device and notifications → Backup and restore you can export a file with your preferences, enabled mitzvot, custom mitzvot, history and profile answers, including name and phone. The file is not encrypted. The app hands it only to the destination you choose in your phone's share sheet, and from then on it is under your control. Family purity data is never included in it.</li>
+  </ul>
 
   <h2>What does leave the device</h2>
   <p>The app has no server of its own, so there is nowhere to send personal data. Only two technical components reach outward:</p>
@@ -58,6 +62,8 @@
     <li><strong>Update checks (EAS Update) with Expo's servers</strong> — the app asks whether a newer JavaScript bundle exists when it opens, when you return to it, and in the hourly background refresh. The check transmits technical values only: app version, platform, and update identifier. It carries no personal data, no location, and no mitzvah history.</li>
     <li><strong>Crash reports to Sentry</strong> — see the next section.</li>
   </ul>
+
+  <p>The device backup is not sent by the app: your phone's operating system uploads it to your Google or iCloud account, as described under "Where data is stored".</p>
 
   <h2>Crash reports</h2>
   <p>In the release builds of the app (not in development builds), when the app crashes it sends a technical report to Sentry, a crash-monitoring service of Functional Software, Inc. (sentry.io), which processes the report on our behalf. Sentry is the only outside party that receives reports about what happens inside the app.</p>
@@ -91,8 +97,10 @@
   <p>Two ways, both entirely under your control:</p>
   <ul>
     <li>In the app: Settings → Device and notifications → App → Reset the app. This clears all preferences, history, custom mitzvot, profile answers, family purity tracking data and scheduled reminders.</li>
-    <li>Uninstall the app. Since no copy exists on any server, uninstalling deletes everything.</li>
+    <li>Uninstall the app. Since no copy exists on any server of ours, uninstalling deletes everything on the device.</li>
   </ul>
+
+  <p>Resetting and uninstalling do not touch copies outside the app: delete the device backup in your Google or iCloud backup settings, and delete an exported backup file like any other file.</p>
 
   <h2>Children</h2>
   <p>The app is not directed to children under 13 and does not knowingly collect data from them.</p>

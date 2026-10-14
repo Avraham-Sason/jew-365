@@ -45,6 +45,7 @@ Track the count, the bedikot and the mikveh night, with reminders by halachic ti
 Private by design
 - No account and no server: your settings, history and data stay on your device
 - 20 cities to choose from, or GPS
+- Backup and restore: through the device's iCloud backup, and a backup file you can export and restore on any phone
 - Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
 - The app sends only technical crash reports, with no personal information
 
@@ -79,6 +80,7 @@ Expected rating: the rating App Store Connect computes from its questionnaire, d
 ## App Privacy Answers
 
 - Data collected: Diagnostics, Crash Data. Not linked to the user. Not used for tracking. Processor: Functional Software, Inc. (Sentry).
+- The device's iCloud backup and the exported backup file never reach the developer: the first is Apple's service in the user's account, the second goes only where the user sends it. Neither is data collection.
 - Not collected: location, contact info (the optional name and phone stay on the device), health data (the taharah tracker keeps cycle-related dates on the device only), usage data, identifiers, purchases.
 - Tracking: none.
 
