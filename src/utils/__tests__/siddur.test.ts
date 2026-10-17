@@ -386,6 +386,133 @@ describe('dayFeatures', () => {
   });
 });
 
+describe('selichot days', () => {
+  const SELICHOT_DAY_FLAGS = [
+    'selichotDay1',
+    'selichotDay2',
+    'selichotDay3',
+    'selichotDay4',
+    'selichotDay5',
+    'selichotDay6',
+    'selichotDay7',
+    'erevRoshHashana',
+    'tzomGedaliah',
+    'selichotTeshuva2',
+    'selichotTeshuva3',
+    'selichotTeshuva4',
+    'selichotTeshuva5',
+    'erevYomKippur',
+  ] as const satisfies readonly DayFlag[];
+  const dayFlagOn = (civil: Date, place = DIASPORA) => {
+    const flags = dayFeatures(new HDate(civil), place).flags;
+    const found = SELICHOT_DAY_FLAGS.filter((flag) => flags.has(flag));
+    return found.length ? found.join('+') : null;
+  };
+  const run = (from: Date, days: number, place = DIASPORA) =>
+    Array.from({ length: days }, (_, offset) =>
+      dayFlagOn(new Date(from.getFullYear(), from.getMonth(), from.getDate() + offset), place),
+    );
+
+  it('gives Rosh Hashana on a Tuesday seven selichot days, with Shabbat between the sixth and the seventh', () => {
+    expect(run(new Date(2025, 8, 13), 19)).toEqual([
+      null,
+      'selichotDay1',
+      'selichotDay2',
+      'selichotDay3',
+      'selichotDay4',
+      'selichotDay5',
+      'selichotDay6',
+      null,
+      'selichotDay7',
+      'erevRoshHashana',
+      null,
+      null,
+      'tzomGedaliah',
+      'selichotTeshuva2',
+      null,
+      'selichotTeshuva3',
+      'selichotTeshuva4',
+      'selichotTeshuva5',
+      'erevYomKippur',
+    ]);
+  });
+
+  it('gives Rosh Hashana on a Monday six selichot days, Erev Rosh Hashana on the Sunday', () => {
+    expect(run(new Date(2029, 8, 1), 9)).toEqual([
+      null,
+      'selichotDay1',
+      'selichotDay2',
+      'selichotDay3',
+      'selichotDay4',
+      'selichotDay5',
+      'selichotDay6',
+      null,
+      'erevRoshHashana',
+    ]);
+  });
+
+  it('gives Rosh Hashana on a Thursday three selichot days, and Tzom Gedaliah on the Sunday after a Shabbat on the 3rd', () => {
+    expect(run(new Date(2024, 8, 28), 15)).toEqual([
+      null,
+      'selichotDay1',
+      'selichotDay2',
+      'selichotDay3',
+      'erevRoshHashana',
+      null,
+      null,
+      null,
+      'tzomGedaliah',
+      'selichotTeshuva2',
+      'selichotTeshuva3',
+      'selichotTeshuva4',
+      'selichotTeshuva5',
+      'erevYomKippur',
+      null,
+    ]);
+  });
+
+  it('gives Rosh Hashana on Shabbat five selichot days, and Erev Yom Kippur on the Sunday', () => {
+    expect(run(new Date(2026, 8, 5), 16)).toEqual([
+      null,
+      'selichotDay1',
+      'selichotDay2',
+      'selichotDay3',
+      'selichotDay4',
+      'selichotDay5',
+      'erevRoshHashana',
+      null,
+      null,
+      'tzomGedaliah',
+      'selichotTeshuva2',
+      'selichotTeshuva3',
+      'selichotTeshuva4',
+      'selichotTeshuva5',
+      null,
+      'erevYomKippur',
+    ]);
+  });
+
+  it('runs the Ashkenazi season from Leil Selichot and the Sephardi one from 2 Elul, both through Erev Yom Kippur, never on Shabbat or a holy day', () => {
+    for (const year of [5785, 5786, 5787, 5790]) {
+      const from = new HDate(1, months.ELUL, year - 1).abs();
+      const to = new HDate(12, months.TISHREI, year).abs();
+      for (let abs = from; abs <= to; abs++) {
+        const hd = new HDate(abs);
+        const { flags } = dayFeatures(hd, ISRAEL);
+        const holy = flags.has('shabbat') || flags.has('yomTov') || flags.has('yomKippur');
+        const ashkenaziDay = SELICHOT_DAY_FLAGS.some((flag) => flags.has(flag) && flag !== 'erevYomKippur');
+        const ninthOfTishrei = hd.getMonth() === months.TISHREI && hd.getDate() === 9;
+        expect(flags.has('selichotAshkenazi')).toBe(ashkenaziDay || ninthOfTishrei);
+        const inSephardiSeason =
+          (hd.getMonth() === months.ELUL && hd.getDate() >= 2) ||
+          (hd.getMonth() === months.TISHREI && hd.getDate() <= 9);
+        expect(flags.has('selichotSephardi')).toBe(inSephardiSeason && !holy);
+        if (flags.has('selichotAshkenazi')) expect(flags.has('selichotSephardi')).toBe(true);
+      }
+    }
+  });
+});
+
 describe('matchesCondition', () => {
   it('needs every "all" flag, rejects any "none" flag, and matches the omer day exactly', () => {
     const day = features(['shabbat', 'yomTov'], 7);

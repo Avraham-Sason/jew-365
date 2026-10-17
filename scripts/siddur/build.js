@@ -78,7 +78,7 @@ function patchedTree(tree, patches, key) {
 
 function segmentsAt(tree, nodePath, sourceKey) {
   let node = tree;
-  for (const key of nodePath.split(' > ')) {
+  for (const key of nodePath === '*' ? [] : nodePath.split(' > ')) {
     node = node?.[key];
     if (node === undefined) throw new Error(`${sourceKey}: no node "${nodePath}"`);
   }

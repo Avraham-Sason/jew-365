@@ -1,4 +1,6 @@
 const mockAddNotificationResponseReceivedListener = jest.fn();
+const mockGetLastNotificationResponse = jest.fn((): unknown => null);
+const mockClearLastNotificationResponse = jest.fn();
 const mockMarkDoneFromNotificationData = jest.fn<Promise<boolean>, [unknown, string?]>(async () => true);
 const mockRouterPush = jest.fn();
 const mockRouterNavigate = jest.fn();
@@ -33,6 +35,8 @@ jest.mock('react-native-mmkv', () => {
 
 jest.mock('expo-notifications', () => ({
   addNotificationResponseReceivedListener: (listener: unknown) => mockAddNotificationResponseReceivedListener(listener),
+  getLastNotificationResponse: () => mockGetLastNotificationResponse(),
+  clearLastNotificationResponse: () => mockClearLastNotificationResponse(),
   setNotificationHandler: jest.fn(),
   SchedulableTriggerInputTypes: { DATE: 'date' },
   AndroidImportance: { HIGH: 'high', DEFAULT: 'default' },
@@ -71,6 +75,7 @@ import {
   DEFAULT_NOTIFICATION_ACTION,
   initNotificationResponseHandler,
   MARK_DONE_ACTION,
+  openLaunchNotificationResponse,
   OPEN_TEXT_ACTION,
 } from '../notificationResponseHandler';
 import { useUserStore } from '@/stores/useUserStore';
@@ -615,5 +620,85 @@ describe('notificationResponseHandler', () => {
       consumePendingNotificationRoute();
       expect(mockRouterPush).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('a tap that launched the app', () => {
+  const readerTap = () =>
+    response(
+      OPEN_TEXT_ACTION,
+      { mitzvahId: 'shacharit', dateKey: '2026-10-14', hasText: true },
+      'shacharit__2026-10-14__0',
+    );
+
+  beforeEach(() => {
+    useUserStore.getState().reset();
+    mockAddNotificationResponseReceivedListener.mockReset();
+    mockGetLastNotificationResponse.mockReset();
+    mockClearLastNotificationResponse.mockClear();
+    mockMarkDoneFromNotificationData.mockClear();
+    mockRouterPush.mockClear();
+  });
+
+  it('opens the reader for the open-text tap that launched a killed app', () => {
+    mockGetLastNotificationResponse.mockReturnValue(readerTap());
+
+    openLaunchNotificationResponse();
+
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/siddur/[id]',
+      params: { id: 'shacharit', date: '2026-10-14' },
+    });
+    expect(mockClearLastNotificationResponse).toHaveBeenCalled();
+  });
+
+  it('does nothing when the app was not launched by a tap', () => {
+    mockGetLastNotificationResponse.mockReturnValue(null);
+
+    openLaunchNotificationResponse();
+
+    expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it('never opens the same tap twice when the listener already received it', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+    const tap = readerTap();
+    listener(tap);
+    mockGetLastNotificationResponse.mockReturnValue(tap);
+
+    openLaunchNotificationResponse();
+
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a launching mark-done to the background task', () => {
+    mockGetLastNotificationResponse.mockReturnValue(
+      response(MARK_DONE_ACTION, { mitzvahId: 'shacharit', dateKey: '2026-10-14' }, 'shacharit__2026-10-14__0'),
+    );
+
+    openLaunchNotificationResponse();
+
+    expect(mockMarkDoneFromNotificationData).not.toHaveBeenCalled();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(mockClearLastNotificationResponse).toHaveBeenCalled();
+  });
+
+  it('clears a handled tap so the next launch does not replay it', () => {
+    initNotificationResponseHandler();
+    const listener = mockAddNotificationResponseReceivedListener.mock.calls[0][0];
+
+    listener(readerTap());
+
+    expect(mockClearLastNotificationResponse).toHaveBeenCalled();
+  });
+
+  it('survives a native module without the last-response API', () => {
+    mockGetLastNotificationResponse.mockImplementation(() => {
+      throw new Error('not available');
+    });
+
+    expect(() => openLaunchNotificationResponse()).not.toThrow();
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 });

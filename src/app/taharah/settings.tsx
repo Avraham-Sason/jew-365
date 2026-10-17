@@ -9,6 +9,7 @@ import { SectionLabel } from '@/components/SectionLabel';
 import { SettingsSection } from '@/components/SettingsSection';
 import { TAHARAH_PRESET_IDS } from '@/data/taharahPresets';
 import { markUnlocked } from '@/services/biometricLock';
+import { resetTaharahTracking } from '@/stores/taharahOptIn';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -38,6 +39,7 @@ export default function TaharahSettingsScreen() {
   const store = useTaharahStore();
   const { rules } = store.settings;
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [resetVisible, setResetVisible] = useState(false);
 
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -56,6 +58,16 @@ export default function TaharahSettingsScreen() {
     close();
   };
 
+  const resetTracking = () => {
+    setResetVisible(false);
+    resetTaharahTracking();
+    router.replace('/(tabs)/settings');
+  };
+
+  const affects = (key: string) => (
+    <Text style={[typography.small, styles.affects, { color: colors.textMuted }]}>{t(`taharah.affects.${key}`)}</Text>
+  );
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -71,6 +83,7 @@ export default function TaharahSettingsScreen() {
           <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>
             {t('taharah.settings.rulesHint')}
           </Text>
+          {affects('preset')}
           <SectionLabel text={t('taharah.rule.hefsekEarliestDay')} style={styles.fieldLabel} />
           <ChipRow
             values={HEFSEK_DAYS}
@@ -78,6 +91,7 @@ export default function TaharahSettingsScreen() {
             onSelect={(value) => store.setRule('hefsekEarliestDay', value)}
             renderLabel={String}
           />
+          {affects('hefsekEarliestDay')}
           <SectionLabel text={t('taharah.rule.mochDachuk')} style={styles.fieldLabel} />
           <ChipRow
             values={MOCH_RULES}
@@ -85,6 +99,7 @@ export default function TaharahSettingsScreen() {
             onSelect={(value) => store.setRule('mochDachuk', value)}
             renderLabel={(value) => t(`taharah.moch.${value}`)}
           />
+          {affects('mochDachuk')}
           <SectionLabel text={t('taharah.rule.onahBeinonitDays')} style={styles.fieldLabel} />
           <ChipRow
             values={ONAH_DAY_IDS}
@@ -92,6 +107,7 @@ export default function TaharahSettingsScreen() {
             onSelect={(id) => store.setRule('onahBeinonitDays', [...ONAH_DAYS[id]])}
             renderLabel={(id) => t(`taharah.onahBeinonit.${id}`)}
           />
+          {affects('onahBeinonitDays')}
           <SectionLabel text={t('taharah.rule.onahBeinonitSpan')} style={styles.fieldLabel} />
           <ChipRow
             values={SPANS}
@@ -99,8 +115,10 @@ export default function TaharahSettingsScreen() {
             onSelect={(value) => store.setRule('onahBeinonitSpan', value)}
             renderLabel={(value) => t(`taharah.span.${value}`)}
           />
+          {affects('onahBeinonitSpan')}
           <SwitchRow
             label={t('taharah.rule.ohrZarua')}
+            hint={t('taharah.affects.ohrZarua')}
             value={rules.ohrZarua}
             onValueChange={(value) => store.setRule('ohrZarua', value)}
           />
@@ -111,6 +129,7 @@ export default function TaharahSettingsScreen() {
             onSelect={(value) => store.setRule('haflagaMethod', value)}
             renderLabel={(value) => t(`taharah.haflaga.${value}`)}
           />
+          {affects('haflagaMethod')}
         </SettingsSection>
 
         <SettingsSection title={t('taharah.settings.role')}>
@@ -120,6 +139,7 @@ export default function TaharahSettingsScreen() {
             onSelect={store.setRole}
             renderLabel={(value) => t(`taharah.role.${value}`)}
           />
+          {affects('role')}
           {store.settings.role === 'husband' ? (
             <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>
               {t('taharah.husband.hint')}
@@ -128,6 +148,7 @@ export default function TaharahSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title={t('taharah.settings.reminders')}>
+          {affects('reminders')}
           <SwitchRow
             label={t('taharah.settings.discreet')}
             hint={t('taharah.settings.discreetHint')}
@@ -168,6 +189,16 @@ export default function TaharahSettingsScreen() {
         >
           <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('taharah.settings.deleteData')}</Text>
         </Pressable>
+        {affects('deleteData')}
+
+        <Pressable
+          onPress={() => setResetVisible(true)}
+          accessibilityRole="button"
+          style={[styles.dangerBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
+        >
+          <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('taharah.settings.reset')}</Text>
+        </Pressable>
+        {affects('reset')}
       </ScrollView>
 
       <ConfirmDialog
@@ -178,6 +209,16 @@ export default function TaharahSettingsScreen() {
         destructive
         onConfirm={deleteData}
         onCancel={() => setDeleteVisible(false)}
+      />
+
+      <ConfirmDialog
+        visible={resetVisible}
+        title={t('taharah.settings.resetConfirmTitle')}
+        body={t('taharah.settings.resetConfirmBody')}
+        confirmLabel={t('taharah.settings.resetAction')}
+        destructive
+        onConfirm={resetTracking}
+        onCancel={() => setResetVisible(false)}
       />
     </SafeAreaView>
   );
@@ -223,6 +264,9 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     marginTop: spacing.lg,
+  },
+  affects: {
+    marginTop: spacing.sm,
   },
   primaryBtn: {
     borderRadius: radius.lg,

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  AppState,
   FlatList,
   I18nManager,
   LayoutChangeEvent,
@@ -221,8 +222,24 @@ function useAutoScroll(
     holdMs.value = AUTO_SCROLL_START_MS;
     position.value = -1;
     frame.setActive(true);
-    return () => frame.setActive(false);
-  }, [running, frame, holdMs, position]);
+    // Leaving the app mid-touch (the system back or home gesture starts on the list) delivers a drag
+    // or fling start with no end, which held the scroll until the next manual drag. Coming back clears
+    // every hold and restarts the frame loop.
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      pressed.value = false;
+      dragging.value = false;
+      flinging.value = false;
+      holdMs.value = AUTO_SCROLL_START_MS;
+      position.value = -1;
+      frame.setActive(false);
+      frame.setActive(true);
+    });
+    return () => {
+      subscription.remove();
+      frame.setActive(false);
+    };
+  }, [running, frame, holdMs, position, pressed, dragging, flinging]);
 
   const scrollHandler = useAnimatedScrollHandler(
     {

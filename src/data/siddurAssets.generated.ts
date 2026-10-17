@@ -23,6 +23,8 @@ export const SIDDUR_ASSETS = {
     chanukah_candles: require('../../assets/siddur/ashkenaz/chanukah_candles.siddur'),
     tikkun_haklali: require('../../assets/siddur/shared/tikkun_haklali.siddur'),
     tehillim: require('../../assets/siddur/shared/tehillim.siddur'),
+    nishmat: require('../../assets/siddur/ashkenaz/nishmat.siddur'),
+    selichot: require('../../assets/siddur/ashkenaz/selichot.siddur'),
   },
   sefard: {
     tefillin: require('../../assets/siddur/sefard/tefillin.siddur'),
@@ -48,6 +50,8 @@ export const SIDDUR_ASSETS = {
     chanukah_candles: require('../../assets/siddur/sefard/chanukah_candles.siddur'),
     tikkun_haklali: require('../../assets/siddur/shared/tikkun_haklali.siddur'),
     tehillim: require('../../assets/siddur/shared/tehillim.siddur'),
+    nishmat: require('../../assets/siddur/sefard/nishmat.siddur'),
+    selichot: require('../../assets/siddur/sefard/selichot.siddur'),
   },
   edot_hamizrach: {
     tefillin: require('../../assets/siddur/edot_hamizrach/tefillin.siddur'),
@@ -73,6 +77,8 @@ export const SIDDUR_ASSETS = {
     chanukah_candles: require('../../assets/siddur/edot_hamizrach/chanukah_candles.siddur'),
     tikkun_haklali: require('../../assets/siddur/shared/tikkun_haklali.siddur'),
     tehillim: require('../../assets/siddur/shared/tehillim.siddur'),
+    nishmat: require('../../assets/siddur/edot_hamizrach/nishmat.siddur'),
+    selichot: require('../../assets/siddur/edot_hamizrach/selichot.siddur'),
   },
   chabad: {
     tefillin: require('../../assets/siddur/chabad/tefillin.siddur'),
@@ -98,6 +104,8 @@ export const SIDDUR_ASSETS = {
     chanukah_candles: require('../../assets/siddur/chabad/chanukah_candles.siddur'),
     tikkun_haklali: require('../../assets/siddur/shared/tikkun_haklali.siddur'),
     tehillim: require('../../assets/siddur/shared/tehillim.siddur'),
+    nishmat: require('../../assets/siddur/chabad/nishmat.siddur'),
+    selichot: require('../../assets/siddur/chabad/selichot.siddur'),
   },
 } as const;
 

@@ -8,6 +8,7 @@ import {
   chooseGender,
   chooseMaritalStatus,
   chooseNusach,
+  resetTaharahTracking,
   setTaharahTracking,
   taharahOffered,
 } from '../taharahOptIn';
@@ -15,6 +16,7 @@ import { useMitzvotStore } from '../useMitzvotStore';
 import { useTaharahStore } from '../useTaharahStore';
 import { useUserStore } from '../useUserStore';
 import { rulesFor } from '@/data/taharahPresets';
+import { taharahStorage } from '@/services/TaharahStorage';
 
 const taharah = () => useTaharahStore.getState();
 const user = () => useUserStore.getState();
@@ -289,6 +291,48 @@ describe('taharahOptIn', () => {
 
       expect(user().nusach).toBe('chabad');
       expect(taharah().settings.preset).toBe('ashkenaz');
+    });
+  });
+
+  describe('resetTaharahTracking', () => {
+    it('returns tracking to before it was switched on and leaves the rest of the app alone', () => {
+      chooseGender('female');
+      chooseMaritalStatus('married');
+      chooseNusach('edot_hamizrach');
+      setTaharahTracking(true);
+      taharah().addEvent({ type: 'onset', onah: { abs: 740000, kind: 'night' } });
+      taharah().setRule('ohrZarua', true);
+      taharah().setLeads({ hefsekLeadMin: 30 });
+      taharah().setLockEnabled(false);
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      resetTaharahTracking();
+
+      expect(user().taharahEnabled).toBe(false);
+      expect(taharah().events).toEqual([]);
+      expect(taharah().settings.preset).toBe('ashkenaz');
+      expect(taharah().settings.rules).toEqual(rulesFor('ashkenaz'));
+      expect(taharah().hefsekLeadMin).toBe(90);
+      expect(taharah().lockEnabled).toBe(true);
+      expect(taharahStorage.getString('taharah-store') ?? '').not.toContain('onset');
+      expect(user().gender).toBe('female');
+      expect(user().maritalStatus).toBe('married');
+      expect(user().nusach).toBe('edot_hamizrach');
+    });
+
+    it('lets tracking start again from the nusach preset afterwards', () => {
+      chooseGender('female');
+      chooseMaritalStatus('married');
+      chooseNusach('edot_hamizrach');
+      setTaharahTracking(true);
+      taharah().setPreset('chabad');
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      resetTaharahTracking();
+      setTaharahTracking(true);
+
+      expect(user().taharahEnabled).toBe(true);
+      expect(taharah().settings.preset).toBe('sephardi_ovadia');
     });
   });
 });

@@ -36,10 +36,10 @@ const BACKUP: Backup = {
   stores: { 'user-store': '{"state":{},"version":1}' },
 };
 
-async function openDeviceSection() {
+async function openBackupSection() {
   renderWithTheme(<SettingsScreen />);
   await act(async () => {});
-  fireEvent.press(screen.getByText(he('settings.device')));
+  fireEvent.press(screen.getByText(he('settings.backup')));
 }
 
 const press = async (label: string) => {
@@ -56,7 +56,7 @@ describe('Settings backup', () => {
   });
 
   it('explains where the backup lives and offers both actions', async () => {
-    await openDeviceSection();
+    await openBackupSection();
 
     expect(screen.getByText(he('settings.backup'))).toBeOnTheScreen();
     expect(screen.getByText(he('settings.backupHint.ios'))).toBeOnTheScreen();
@@ -65,15 +65,27 @@ describe('Settings backup', () => {
     expect(screen.queryByText(he('settings.backupTaharah'))).toBeNull();
   });
 
+  it('is a section of its own, closed until opened and apart from the device section', async () => {
+    renderWithTheme(<SettingsScreen />);
+    await act(async () => {});
+    expect(screen.queryByText(he('settings.backupExport'))).toBeNull();
+
+    fireEvent.press(screen.getByText(he('settings.device')));
+    expect(screen.queryByText(he('settings.backupExport'))).toBeNull();
+
+    fireEvent.press(screen.getByText(he('settings.backup')));
+    expect(screen.getByText(he('settings.backupExport'))).toBeOnTheScreen();
+  });
+
   it('says that taharah data stays on the phone while tracking is on', async () => {
     useUserStore.setState({ gender: 'female', maritalStatus: 'married', taharahEnabled: true });
-    await openDeviceSection();
+    await openBackupSection();
 
     expect(screen.getByText(he('settings.backupTaharah'))).toBeOnTheScreen();
   });
 
   it('exports through the share sheet', async () => {
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupExport'));
 
     expect(mockExport).toHaveBeenCalledTimes(1);
@@ -84,7 +96,7 @@ describe('Settings backup', () => {
     mockRestore.mockImplementation(async () => {
       useUserStore.setState({ profileName: 'restored name' });
     });
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
 
     expect(screen.getByText(he('settings.backupConfirmTitle'))).toBeOnTheScreen();
@@ -103,7 +115,7 @@ describe('Settings backup', () => {
     mockRestore.mockImplementation(async () => {
       useUserStore.setState({ profileName: 'restored name' });
     });
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
     await press(he('settings.backupConfirmAction'));
 
@@ -115,7 +127,7 @@ describe('Settings backup', () => {
 
   it('restores nothing when the dialog is cancelled or the picker closed', async () => {
     mockPick.mockResolvedValueOnce(BACKUP).mockResolvedValueOnce(null);
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
     await press(he('common.cancel'));
     await press(he('settings.backupImport'));
@@ -126,7 +138,7 @@ describe('Settings backup', () => {
 
   it('explains a file that is not a backup', async () => {
     mockPick.mockRejectedValue(new BackupError('invalid'));
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
 
     expect(screen.getByText(he('settings.backupInvalid'))).toBeOnTheScreen();
@@ -134,7 +146,7 @@ describe('Settings backup', () => {
 
   it('explains a backup from a newer version', async () => {
     mockPick.mockRejectedValue(new BackupError('newer'));
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
 
     expect(screen.getByText(he('settings.backupNewer'))).toBeOnTheScreen();
@@ -143,7 +155,7 @@ describe('Settings backup', () => {
   it('reports a failed restore and closes the dialog', async () => {
     mockPick.mockResolvedValue(BACKUP);
     mockRestore.mockRejectedValue(new Error('disk full'));
-    await openDeviceSection();
+    await openBackupSection();
     await press(he('settings.backupImport'));
     await press(he('settings.backupConfirmAction'));
 

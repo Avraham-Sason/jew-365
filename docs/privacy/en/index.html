@@ -15,9 +15,9 @@
 
 <main>
   <h1>Privacy Policy</h1>
-  <p class="meta">Effective 14 October 2026 · Developer: Avraham Sason · App: Jew in Time / יהודי בזמן (com.jewintime.app)</p>
+  <p class="meta">Effective 17 October 2026 · Developer: Avraham Sason · App: Jew in Time / יהודי בזמן (com.jewintime.app)</p>
 
-  <p class="lead">The app runs entirely on your device. There is no account, no server, and no collection of personal data. Nothing you enter and nothing the app computes is sent to us or to any third party. The one exception is a technical crash report that carries no personal data, described below. The device backup your phone's operating system keeps in your Google or iCloud account, and the backup file you can export, are described under "Where data is stored".</p>
+  <p class="lead">The app runs entirely on your device. There is no account and no server of our own, and personal data reaches us only in a message you send. Nothing you enter and nothing the app computes is sent to us or to any third party, except in two cases described below: a technical crash report that carries no personal data, and a message you choose to send us from “Contact us”. The device backup your phone's operating system keeps in your Google or iCloud account, and the backup file you can export, are described under "Where data is stored".</p>
 
   <h2>What the app stores</h2>
   <p>Every item below is kept only in the app's local storage on your device:</p>
@@ -27,7 +27,7 @@
     <li><strong>Preferences</strong> — nusach, language, theme, Israel/Diaspora, halachic opinions, which mitzvot are enabled, and their reminder settings.</li>
     <li><strong>Completion history</strong> — which mitzvot you marked done or skipped, and when.</li>
     <li><strong>Custom mitzvot</strong> you create.</li>
-    <li><strong>Name and phone number</strong> — fully optional fields. You may skip them; they are not validated and are never transmitted. They are shown in the app's Settings, and no other feature uses them.</li>
+    <li><strong>Name and phone number</strong> — fully optional fields. You may skip them, and they are not validated. They are shown in the app's Settings and serve only as the starting values of the “Contact us” form, where you can change them. They leave the device only when you send a message.</li>
     <li><strong>Gender and marital status</strong> — see the next section.</li>
     <li><strong>Family purity tracking data</strong>, if you turn that feature on — see the section after it.</li>
   </ul>
@@ -42,7 +42,7 @@
     <li><strong>Where</strong> — on your device only, in a separate encrypted database. The encryption key is held in the operating system's secure storage (Keychain on iOS, Android Keystore on Android) and is never included in a backup or a transfer to another device. On Android the data is excluded from Google backup. On iOS the device's iCloud backup may include the encrypted file, but never the key, so a copy restored from it cannot be read and the app deletes it. If the system does not let the app read the key, the data is kept in a separate file that is not encrypted. On Android that file is excluded from backup; on iOS it may be included in the device's iCloud backup. Family purity data is never included in the backup file the app exports.</li>
     <li><strong>Where it never goes</strong> — the data is not sent anywhere and is not part of crash reports.</li>
     <li><strong>Notifications</strong> — worded discreetly by default.</li>
-    <li><strong>Deletion</strong> — resetting the app deletes all of it, along with the encryption key.</li>
+    <li><strong>Deletion</strong> — in the tracking settings, "Delete the records" deletes the records only, and "Reset family purity tracking" deletes the records and the settings, replaces the encryption key and switches tracking off. Resetting the app deletes all of it, along with the encryption key.</li>
     <li><strong>Halacha</strong> — the app does not rule on halacha. In any doubt, ask a rav.</li>
   </ul>
 
@@ -53,15 +53,19 @@
   <p>Data lives in the app's private storage on your device, protected by the operating system's app sandbox. We have no server and perform no backup or sync of our own. Two things keep a copy outside the app, and both are under your control:</p>
   <ul>
     <li><strong>Device backup</strong> — on Android, your preferences, enabled mitzvot, custom mitzvot, history and profile answers (including name and phone, if you filled them in) are part of Google's automatic backup to your Google account, and come back after a reinstall or on a new phone. On iOS, the app's storage is part of the device's iCloud backup when that is on. Google or Apple run the backup in your account, and we have no access to it. You can turn it off in your phone's backup settings. For family purity data, see the section above.</li>
-    <li><strong>Backup file</strong> — under Settings → Device and notifications → Backup and restore you can export a file with your preferences, enabled mitzvot, custom mitzvot, history and profile answers, including name and phone. The file is not encrypted. The app hands it only to the destination you choose in your phone's share sheet, and from then on it is under your control. Family purity data is never included in it.</li>
+    <li><strong>Backup file</strong> — under Settings → Backup and restore you can export a file with your preferences, enabled mitzvot, custom mitzvot, history and profile answers, including name and phone. The file is not encrypted. The app hands it only to the destination you choose in your phone's share sheet, and from then on it is under your control. Family purity data is never included in it.</li>
   </ul>
 
   <h2>What does leave the device</h2>
-  <p>The app has no server of its own, so there is nowhere to send personal data. Only two technical components reach outward:</p>
+  <p>The app has no server of its own. Two technical components reach outward by themselves, and neither carries personal data:</p>
   <ul>
     <li><strong>Update checks (EAS Update) with Expo's servers</strong> — the app asks whether a newer JavaScript bundle exists when it opens, when you return to it, and in the hourly background refresh. The check transmits technical values only: app version, platform, and update identifier. It carries no personal data, no location, and no mitzvah history.</li>
     <li><strong>Crash reports to Sentry</strong> — see the next section.</li>
   </ul>
+
+  <p><strong>A message from “Contact us”</strong> — under Settings → Contact us you can send us a message. Only when you tap “Send message” does the app send the name, phone number and message you filled in, together with the app version, the operating system and its version, and the interface language, to Formspree (Formspree, Inc., formspree.io), a form service that forwards the message to our email and keeps a copy of it in our account there. We use these details only to answer you. They are not used for marketing and are given to no one. To have a sent message deleted, email us at the address below. Formspree's privacy policy: <a href="https://formspree.io/legal/privacy-policy/">formspree.io/legal/privacy-policy</a>. You can also write to us straight from your own email app, without the form.</p>
+
+  <p>The halacha hotline link on the More screen opens your dialer or WhatsApp with the line's number, as you choose. The app sends nothing itself: the call or message is yours, through those apps.</p>
 
   <p>The device backup is not sent by the app: your phone's operating system uploads it to your Google or iCloud account, as described under "Where data is stored".</p>
 
@@ -78,7 +82,7 @@
   <ul>
     <li>No advertising and no ad networks.</li>
     <li>No analytics and no behavioural tracking.</li>
-    <li>No sale or sharing of personal data with third parties.</li>
+    <li>No sale or sharing of personal data with third parties. Formspree forwards a message you sent to us and uses it for nothing else.</li>
     <li>No sign-up, no login, no cloud profile.</li>
   </ul>
 
@@ -112,6 +116,6 @@
   <p>Privacy questions: <a href="mailto:avisason9314@gmail.com">avisason9314@gmail.com</a></p>
 </main>
 
-<footer>Jew in Time · Updated 9 October 2026</footer>
+<footer>Jew in Time · Updated 17 October 2026</footer>
 </body>
 </html>

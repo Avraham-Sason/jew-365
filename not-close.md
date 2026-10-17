@@ -21,6 +21,13 @@ Chok LeYisrael is built, merged and shipped hidden: the committed asset map is e
   - **What it solves:** Ships the feature and keeps the contracts true.
   - **Expected result:** `pnpm check:dox`, `pnpm typecheck`, `pnpm lint` and `pnpm test:tz` green; a numbered production update.
 
+### High — Contact form
+
+- [ ] Publish the privacy policy that declares Formspree
+  - **What it is:** The contact form is live: `CONTACT_FORM_ID` (`xyekordk`) in [src/services/ContactService.ts](src/services/ContactService.ts), and a test message sent with the Android User-Agent reached the Formspree inbox with readable Hebrew on 2026-10-18. Push the policy pages in [docs/privacy/](docs/privacy) to `main` so GitHub Pages serves them before the form reaches users.
+  - **What it solves:** The live policy still says nothing personal leaves the device.
+  - **Expected result:** The policy live on GitHub Pages. The app is in neither store yet, so the App Privacy and Data safety answers in [release/](release) are entered at the first submission. Formspree's free plan allows 50 messages a month; past that the form shows `settings.contactFailed` and the email link still works.
+
 ## Bugs
 
 - **On iOS the unencrypted taharah fallback file rides the iCloud device backup.** When the keychain cannot be read at launch, [TaharahStorage.ts](src/services/TaharahStorage.ts) opens `jew-in-time-taharah-unencrypted` in MMKV's default folder, `Documents/mmkv`, which iCloud backs up. The policy states it as it is (found 2026-10-14 while adding backup). Android is not affected: its backup whitelist leaves the file out. Fix: open that instance under `Library/Caches` (MMKV's `path`, never backed up; a purge only drops a fallback the encrypted file never relied on), or mark it excluded with `NSURLIsExcludedFromBackupKey` through a native module; then edit both policy pages.

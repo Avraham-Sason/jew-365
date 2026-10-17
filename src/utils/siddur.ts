@@ -86,6 +86,39 @@ function observedTishaBav(year: number): HDate {
   return ninth.getDay() === 6 ? ninth.next() : ninth;
 }
 
+const SEPHARDI_SELICHOT_FROM_ELUL = 2;
+
+// Leil Selichot opens the Sunday that leaves at least four selichot days before Rosh Hashana,
+// Erev Rosh Hashana included.
+function leilSelichot(roshHashana: HDate): number {
+  const sunday = roshHashana.abs() - roshHashana.getDay();
+  return roshHashana.abs() - sunday < 4 ? sunday - 7 : sunday;
+}
+
+function weekdaysFrom(from: number, to: number): number {
+  let count = 0;
+  for (let abs = from; abs <= to; abs++) if (new HDate(abs).getDay() !== 6) count++;
+  return count;
+}
+
+function selichotFlags(hd: HDate, holy: boolean): DayFlag[] {
+  if (holy) return [];
+  const month = hd.getMonth();
+  const date = hd.getDate();
+  if (month === months.ELUL) {
+    const roshHashana = new HDate(1, months.TISHREI, hd.getFullYear() + 1);
+    const sephardi: DayFlag[] = date >= SEPHARDI_SELICHOT_FROM_ELUL ? ['selichotSephardi'] : [];
+    if (hd.abs() === roshHashana.abs() - 1) return [...sephardi, 'selichotAshkenazi', 'erevRoshHashana'];
+    const start = leilSelichot(roshHashana);
+    if (hd.abs() < start) return sephardi;
+    return [...sephardi, 'selichotAshkenazi', `selichotDay${weekdaysFrom(start, hd.abs())}` as DayFlag];
+  }
+  if (month !== months.TISHREI || date < 3 || date > 9) return [];
+  if (date === 9) return ['selichotSephardi', 'selichotAshkenazi'];
+  const nth = weekdaysFrom(new HDate(3, months.TISHREI, hd.getFullYear()).abs(), hd.abs());
+  return ['selichotSephardi', 'selichotAshkenazi', ...(nth > 1 ? [`selichotTeshuva${nth}` as DayFlag] : [])];
+}
+
 function purimName(place: Place): string {
   return place.jerusalem ? 'Shushan Purim' : 'Purim';
 }
@@ -132,6 +165,7 @@ export function dayFeatures(hd: HDate, place: Place): DayFeatures {
   add('talUmatar', within(hd, rainRequestStart(year, place.inIsrael), new HDate(14, months.NISAN, year)));
   add('aseretYemeiTeshuva', month === months.TISHREI && date <= 10);
   add('erevYomKippur', month === months.TISHREI && date === 9);
+  for (const flag of selichotFlags(hd, today.shabbat || today.yomTov || today.yomKippur)) flags.add(flag);
   add(
     'ledavidSeason',
     month === months.ELUL || (month === months.AV && date === 30) || (month === months.TISHREI && date <= 21),

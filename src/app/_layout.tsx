@@ -40,6 +40,7 @@ import { captureException } from '@/services/crashReporting';
 import {
   initNotificationResponseHandler,
   consumePendingNotificationRoute,
+  openLaunchNotificationResponse,
 } from '@/services/notificationResponseHandler';
 import { setLocale, t } from '@/i18n';
 import { StorageService } from '@/services/StorageService';
@@ -197,6 +198,13 @@ function RootInner() {
     consumePendingNotificationRoute();
     return () => sub.remove();
   }, []);
+
+  const launchResponseChecked = useRef(false);
+  useEffect(() => {
+    if (launchResponseChecked.current || firstSegment !== '(tabs)') return;
+    launchResponseChecked.current = true;
+    openLaunchNotificationResponse();
+  }, [firstSegment]);
 
   return (
     <QuietBlockContext.Provider value={quietBlock}>

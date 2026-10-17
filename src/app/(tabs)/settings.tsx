@@ -30,6 +30,15 @@ import {
   restoreBackup,
   type Backup,
 } from '@/services/BackupService';
+import {
+  CONTACT_EMAIL,
+  CONTACT_MESSAGE_MAX,
+  contactFailureKey,
+  contactMailUrl,
+  contactProblem,
+  isContactConfigured,
+  sendContactMessage,
+} from '@/services/ContactService';
 import { reportError } from '@/services/errors';
 import { openBatteryOptimizationSettings, supportsBatteryOptimizationSettings } from '@/services/deviceSettings';
 import {
@@ -66,7 +75,7 @@ const MARITAL_STATUSES = ['married', 'single'] as const;
 const PRAYER_MODES: readonly PrayerMode[] = ['minyan', 'alone'];
 const CITY_INDEXES = CITIES.map((_, index) => index);
 
-type SectionKey = 'profile' | 'prayer' | 'device';
+type SectionKey = 'profile' | 'prayer' | 'device' | 'backup' | 'contact';
 
 // Returns a number, so the subscription re-renders only when the count itself changes.
 const selectEnabledCount = (state: { activeMitzvot: Record<string, ActiveMitzvahState> }): number =>
@@ -123,6 +132,11 @@ export default function SettingsScreen() {
   const [backupBusy, setBackupBusy] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<Backup | null>(null);
   const [backupStatus, setBackupStatus] = useState<{ text: string; failed: boolean } | null>(null);
+  const [contactName, setContactName] = useState(user.profileName);
+  const [contactPhone, setContactPhone] = useState(user.profilePhone);
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactBusy, setContactBusy] = useState(false);
+  const [contactStatus, setContactStatus] = useState<{ text: string; failed: boolean } | null>(null);
   const [open, setOpen] = useState<ReadonlySet<SectionKey>>(() => new Set());
 
   useFocusEffect(
@@ -139,6 +153,11 @@ export default function SettingsScreen() {
 
   const toggle = (key: SectionKey) => {
     if (key === 'profile' && open.has(key)) commitProfileDrafts();
+    if (key === 'contact' && !open.has(key)) {
+      setContactName((current) => current.trim() || nameDraft.trim());
+      setContactPhone((current) => current.trim() || phoneDraft.trim());
+      setContactStatus(null);
+    }
     setOpen((current) => {
       const next = new Set(current);
       if (!next.delete(key)) next.add(key);
@@ -199,6 +218,30 @@ export default function SettingsScreen() {
       setBackupStatus({ text: t('settings.backupRestored'), failed: false });
     });
 
+  const submitContact = async () => {
+    if (contactBusy) return;
+    const input = { name: contactName, phone: contactPhone, message: contactMessage };
+    const problem = contactProblem(input);
+    if (problem) {
+      setContactStatus({
+        text: t(problem === 'missing' ? 'settings.contactMissing' : 'settings.contactPhoneInvalid'),
+        failed: true,
+      });
+      return;
+    }
+    setContactBusy(true);
+    setContactStatus(null);
+    try {
+      await sendContactMessage(input, language);
+      setContactMessage('');
+      setContactStatus({ text: t('settings.contactSent'), failed: false });
+    } catch (error) {
+      setContactStatus({ text: t(contactFailureKey(error)), failed: true });
+    } finally {
+      setContactBusy(false);
+    }
+  };
+
   const [locating, setLocating] = useState(false);
 
   const refreshLocation = async () => {
@@ -242,6 +285,12 @@ export default function SettingsScreen() {
   const permGranted = user.notificationPermission === 'granted';
   const notifActive = user.notificationsEnabled && permGranted;
   const subHeadingTone = { color: colors.goldText, borderTopColor: colors.border };
+  const inputTone = {
+    backgroundColor: colors.surface2,
+    color: colors.text,
+    borderColor: colors.border,
+    writingDirection: language === 'he' ? ('rtl' as const) : ('ltr' as const),
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -266,15 +315,7 @@ export default function SettingsScreen() {
             onBlur={commitProfileDrafts}
             placeholder={t('settings.profileNamePlaceholder')}
             placeholderTextColor={colors.textMuted}
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.surface2,
-                color: colors.text,
-                borderColor: colors.border,
-                writingDirection: language === 'he' ? 'rtl' : 'ltr',
-              },
-            ]}
+            style={[styles.input, inputTone]}
             autoCapitalize="words"
           />
           <SectionLabel text={t('settings.profilePhone')} style={styles.fieldLabel} />
@@ -285,15 +326,7 @@ export default function SettingsScreen() {
             placeholder={t('settings.profilePhonePlaceholder')}
             placeholderTextColor={colors.textMuted}
             keyboardType="phone-pad"
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.surface2,
-                color: colors.text,
-                borderColor: colors.border,
-                writingDirection: language === 'he' ? 'rtl' : 'ltr',
-              },
-            ]}
+            style={[styles.input, inputTone]}
           />
           <SectionLabel text={t('profile.gender')} style={styles.fieldLabel} />
           <ChipRow
@@ -442,34 +475,6 @@ export default function SettingsScreen() {
             renderLabel={(value) => t(`settings.language.${value}`)}
           />
 
-          {Platform.OS !== 'web' ? (
-            <>
-              <SectionLabel text={t('settings.backup')} style={[styles.subHeading, subHeadingTone]} />
-              <Text style={[typography.small, { color: colors.textMuted }]}>
-                {t(Platform.OS === 'ios' ? 'settings.backupHint.ios' : 'settings.backupHint.android')}
-              </Text>
-              {user.taharahEnabled ? (
-                <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>
-                  {t('settings.backupTaharah')}
-                </Text>
-              ) : null}
-              <PrimaryButton label={t('settings.backupExport')} onPress={exportBackupFile} />
-              <PrimaryButton label={t('settings.backupImport')} onPress={chooseBackupFile} />
-              {backupStatus ? (
-                <Text
-                  accessibilityLiveRegion="polite"
-                  style={[
-                    typography.small,
-                    styles.note,
-                    { color: backupStatus.failed ? colors.urgent : colors.textMuted },
-                  ]}
-                >
-                  {backupStatus.text}
-                </Text>
-              ) : null}
-            </>
-          ) : null}
-
           <SectionLabel text={t('settings.app')} style={[styles.subHeading, subHeadingTone]} />
           <Pressable
             onPress={() => setResetVisible(true)}
@@ -482,6 +487,103 @@ export default function SettingsScreen() {
           <Text style={[typography.small, styles.versionText, { color: colors.textMuted }]}>
             {t('settings.version', { version: appVersionLabel() })}
           </Text>
+        </SettingsSection>
+
+        {Platform.OS !== 'web' ? (
+          <SettingsSection title={t('settings.backup')} {...collapsible('backup')}>
+            <Text style={[typography.small, { color: colors.textMuted }]}>
+              {t(Platform.OS === 'ios' ? 'settings.backupHint.ios' : 'settings.backupHint.android')}
+            </Text>
+            {user.taharahEnabled ? (
+              <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>
+                {t('settings.backupTaharah')}
+              </Text>
+            ) : null}
+            <PrimaryButton label={t('settings.backupExport')} onPress={exportBackupFile} />
+            <PrimaryButton label={t('settings.backupImport')} onPress={chooseBackupFile} />
+            {backupStatus ? (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={[
+                  typography.small,
+                  styles.note,
+                  { color: backupStatus.failed ? colors.urgent : colors.textMuted },
+                ]}
+              >
+                {backupStatus.text}
+              </Text>
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        <SettingsSection title={t('settings.contact')} {...collapsible('contact')}>
+          <Text style={[typography.small, { color: colors.textMuted }]}>{t('settings.contactHint')}</Text>
+          {isContactConfigured() ? (
+            <>
+              <SectionLabel text={t('settings.profileName')} style={styles.fieldLabel} />
+              <TextInput
+                value={contactName}
+                onChangeText={setContactName}
+                placeholder={t('settings.profileNamePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('settings.profileName')}
+                style={[styles.input, inputTone]}
+                autoCapitalize="words"
+              />
+              <SectionLabel text={t('settings.profilePhone')} style={styles.fieldLabel} />
+              <TextInput
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                placeholder={t('settings.profilePhonePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('settings.profilePhone')}
+                keyboardType="phone-pad"
+                style={[styles.input, inputTone]}
+              />
+              <SectionLabel text={t('settings.contactMessage')} style={styles.fieldLabel} />
+              <TextInput
+                value={contactMessage}
+                onChangeText={setContactMessage}
+                placeholder={t('settings.contactMessagePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('settings.contactMessage')}
+                multiline
+                maxLength={CONTACT_MESSAGE_MAX}
+                textAlignVertical="top"
+                style={[styles.input, styles.messageInput, inputTone]}
+              />
+              <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>
+                {t('settings.contactPrivacy')}
+              </Text>
+              <PrimaryButton
+                label={t(contactBusy ? 'settings.contactSending' : 'settings.contactSend')}
+                onPress={submitContact}
+                busy={contactBusy}
+              />
+              {contactStatus ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={[
+                    typography.small,
+                    styles.note,
+                    { color: contactStatus.failed ? colors.urgent : colors.textMuted },
+                  ]}
+                >
+                  {contactStatus.text}
+                </Text>
+              ) : null}
+            </>
+          ) : null}
+          <Text style={[typography.small, styles.groupGap, { color: colors.textMuted }]}>
+            {t('settings.contactEmail')}
+          </Text>
+          <Pressable
+            onPress={() => Linking.openURL(contactMailUrl()).catch(() => {})}
+            accessibilityRole="link"
+            style={styles.emailLink}
+          >
+            <Text style={[typography.bodyBold, { color: colors.goldText }]}>{CONTACT_EMAIL}</Text>
+          </Pressable>
         </SettingsSection>
       </ScrollView>
 
@@ -547,13 +649,15 @@ function SwitchRow({ label, hint, value, onValueChange, style }: SwitchRowProps)
   );
 }
 
-function PrimaryButton({ label, onPress }: { label: string; onPress: () => void }) {
+function PrimaryButton({ label, onPress, busy = false }: { label: string; onPress: () => void; busy?: boolean }) {
   const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      disabled={busy}
       accessibilityRole="button"
-      style={[styles.primaryBtn, { backgroundColor: colors.gold }]}
+      accessibilityState={{ disabled: busy, busy }}
+      style={[styles.primaryBtn, { backgroundColor: colors.gold, opacity: busy ? 0.6 : 1 }]}
     >
       <Text style={[typography.bodyBold, { color: colors.onGold }]}>{label}</Text>
     </Pressable>
@@ -641,6 +745,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     fontSize: 16,
+  },
+  messageInput: {
+    minHeight: 120,
+  },
+  emailLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.sm,
   },
   dangerBtn: {
     borderRadius: radius.lg,

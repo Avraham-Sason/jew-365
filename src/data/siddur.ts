@@ -32,14 +32,16 @@ export const SIDDUR_TEXTS: Record<MitzvahTextId, SiddurEntry> = {
   maariv: { evening: true, available: { none: ['shabbat', 'yomTov', 'yomKippur'] } },
 };
 
+type Availability = { available?: Condition; availableLabel?: { he: string; en: string } };
+
 // `evening` texts are said at night and resolve for the night in effect or coming next;
-// `availableLabel` tells the catalog when a text whose `available` fails today can be said.
-export type StandaloneEntry = {
+// `availableLabel` tells the catalog when a text whose `available` fails today can be said, and
+// `availableIn` replaces both for a nusach whose minhag sets other days.
+export type StandaloneEntry = Availability & {
   name: { he: string; en: string };
   group: SiddurGroup;
   evening?: boolean;
-  available?: Condition;
-  availableLabel?: { he: string; en: string };
+  availableIn?: Partial<Record<Nusach, Availability>>;
 };
 
 export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
@@ -48,6 +50,7 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
   borei_nefashot: { name: { he: 'בורא נפשות', en: 'Borei Nefashot' }, group: 'meals' },
   tikkun_haklali: { name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'general' },
   tehillim: { name: { he: 'תהילים', en: 'Tehillim' }, group: 'general' },
+  nishmat: { name: { he: 'נשמת כל חי', en: 'Nishmat Kol Chai' }, group: 'general' },
   kriat_shema_al_hamita: { name: { he: 'קריאת שמע על המיטה', en: 'Bedtime Shema' }, group: 'general', evening: true },
   tefilat_haderech: { name: { he: 'תפילת הדרך', en: "The Traveler's Prayer" }, group: 'general' },
   asher_yatzar: { name: { he: 'אשר יצר', en: 'Asher Yatzar' }, group: 'general' },
@@ -68,6 +71,18 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
     evening: true,
     available: { all: ['chanukah'] },
     availableLabel: { he: 'בחנוכה', en: 'On Chanukah' },
+  },
+  selichot: {
+    name: { he: 'סליחות', en: 'Selichot' },
+    group: 'occasions',
+    available: { all: ['selichotAshkenazi'] },
+    availableLabel: { he: 'ממוצאי שבת הסליחות עד ערב יום הכיפורים', en: 'From Leil Selichot to Erev Yom Kippur' },
+    availableIn: {
+      edot_hamizrach: {
+        available: { all: ['selichotSephardi'] },
+        availableLabel: { he: 'מב׳ באלול עד ערב יום הכיפורים', en: 'From 2 Elul to Erev Yom Kippur' },
+      },
+    },
   },
 };
 
@@ -102,8 +117,15 @@ export function standaloneTextsIn(group: SiddurGroup): StandaloneTextId[] {
   return (Object.keys(STANDALONE_TEXTS) as StandaloneTextId[]).filter((id) => STANDALONE_TEXTS[id].group === group);
 }
 
+export function standaloneAvailability(id: StandaloneTextId, nusach: Nusach): Availability {
+  const { available, availableLabel, availableIn } = STANDALONE_TEXTS[id];
+  return availableIn?.[nusach] ?? { available, availableLabel };
+}
+
 export function hasStandaloneText(id: StandaloneTextId, nusach: Nusach, features: DayFeatures): boolean {
-  return siddurAsset(nusach, id) !== undefined && matchesCondition(STANDALONE_TEXTS[id].available, features);
+  return (
+    siddurAsset(nusach, id) !== undefined && matchesCondition(standaloneAvailability(id, nusach).available, features)
+  );
 }
 
 // The Hebrew day a standalone text opened with no date resolves for at this instant.

@@ -46,6 +46,7 @@ Track the count, the bedikot and the mikveh night, with reminders by halachic ti
 Private by design
 - No account and no server: your settings, history and data stay on your device
 - 20 cities to choose from, or GPS
+- Halacha hotline: call or WhatsApp an Ashkenazi or Sephardi halacha line, by your nusach
 - Backup and restore: automatic backup to your Google account, and a backup file you can export and restore on any phone
 - Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
 - The app sends only technical crash reports, with no personal information
@@ -83,6 +84,7 @@ Hebrew:
 פרטיות והתאמה
 - בלי חשבון ובלי שרת: ההגדרות, ההיסטוריה והנתונים נשמרים על המכשיר
 - 20 ערים לבחירה או מיקום לפי GPS
+- קו ההלכה: חיוג או וואטסאפ לקו הלכה אשכנזי או ספרדי, לפי הנוסח
 - גיבוי ושחזור: גיבוי אוטומטי לחשבון Google, וקובץ גיבוי שאפשר לייצא ולשחזר בכל טלפון
 - עברית ואנגלית, ושש ערכות נושא: זהב, ורוד, סגול, כחול, כהה ושזיף
 - האפליקציה שולחת דיווחי קריסה טכניים בלבד, בלי מידע אישי
@@ -94,7 +96,8 @@ Declare exactly this. The source of truth is the published policy in [../docs/pr
 - Location, approximate and precise: optional (the user can pick a city instead), used for app functionality (zmanim). Processed on the device and never transmitted. Not shared.
 - Crash logs and diagnostics: collected, in production builds only, and shared with Sentry (Functional Software, Inc.), the crash-reporting processor. Content: stack trace, device model, OS version, app version and update id. Not linked to identity: no personal data, no taharah data, no screen content, no IP address stored. Purpose: app functionality. Collection is required, since the app has no in-app switch for it. Data is encrypted in transit.
 - Health info: the app stores menstrual-cycle related dates on the device only and does not collect them. Do not declare Health info as collected or shared.
-- Not collected: name and phone (optional profile fields, shown in Settings and kept on the device), gender and marital status (profile answers, kept on the device), contacts, messages, photos, files, audio, calendar, financial info, web history, device or other IDs, purchase history.
+- Personal info, Name and Phone number, and Messages, Other in-app messages: collected only when the user sends a message from Settings → Contact us, processed by Formspree (Formspree, Inc.), which forwards it to the developer's email; a service provider acting for the developer is not sharing. Collection is optional (the user chooses to send). Purpose: developer communications. Linked to the user (the message carries their name and phone). Not used for advertising. Data is encrypted in transit. Deletion: on request by email.
+- Not collected: gender and marital status (profile answers, kept on the device), contacts, emails, SMS or MMS, photos, files, audio, calendar, financial info, web history, device or other IDs, purchase history.
 - Android backup: the app opts into Android Auto Backup for its preferences, enabled and custom mitzvot, history and profile answers; taharah data is excluded. The operating system stores the backup in the user's own Google account (end-to-end encrypted with the screen lock on Android 9 and later) and the developer never receives it, so it is not declared as collected. The exported backup file goes only where the user sends it through the share sheet and is not collected either.
 - Deletion: the app has no accounts. Settings, Reset the app, erases everything stored on the device; uninstalling does the same. Crash reports are not linked to a person, so they cannot be matched to a deletion request.
 - Security practices: data in transit is encrypted; no data is sold; no ads SDK.

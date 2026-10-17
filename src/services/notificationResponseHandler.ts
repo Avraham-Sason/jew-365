@@ -73,7 +73,23 @@ function openSiddur(data: PendingNotificationMeta, notificationId: string) {
   );
 }
 
+// A response can reach the app twice: through the listener and, after a launch, through
+// getLastNotificationResponse(). The replay skips the one the listener already handled.
+let lastHandled: string | null = null;
+
+function responseKey(response: Notifications.NotificationResponse): string {
+  return `${response.notification.request.identifier}|${response.actionIdentifier}|${response.notification.date}`;
+}
+
+function clearLastResponse(): void {
+  try {
+    Notifications.clearLastNotificationResponse();
+  } catch {}
+}
+
 export function handleNotificationResponse(response: Notifications.NotificationResponse): void {
+  lastHandled = responseKey(response);
+  clearLastResponse();
   const data = getData(response);
   if (response.actionIdentifier === MARK_DONE_ACTION) {
     markDoneFromNotificationData(data, response.notification.request.identifier).catch(() => {});
@@ -134,4 +150,22 @@ export function handleNotificationResponse(response: Notifications.NotificationR
 
 export function initNotificationResponseHandler(): Notifications.EventSubscription {
   return Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+}
+
+// A tap that launched a killed app is not delivered to a listener added after launch; the native
+// side keeps it as the last response instead. The root layout calls this once the first screen is
+// up, so the route lands on top of it instead of being replaced by the index redirect. Mark-done
+// never needs it: the headless action task has already recorded it.
+export function openLaunchNotificationResponse(): void {
+  let response: Notifications.NotificationResponse | null = null;
+  try {
+    response = Notifications.getLastNotificationResponse();
+  } catch {
+    return;
+  }
+  if (!response || response.actionIdentifier === MARK_DONE_ACTION || responseKey(response) === lastHandled) {
+    clearLastResponse();
+    return;
+  }
+  handleNotificationResponse(response);
 }

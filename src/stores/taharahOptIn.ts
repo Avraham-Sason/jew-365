@@ -1,5 +1,6 @@
 import type { Nusach } from '@/types/mitzvah';
 import { paletteForGender } from '@/theme/colors';
+import { clearTaharahStorage } from '@/services/TaharahStorage';
 import { useMitzvotStore } from './useMitzvotStore';
 import { useTaharahStore } from './useTaharahStore';
 import { Gender, MaritalStatus, useUserStore } from './useUserStore';
@@ -39,6 +40,14 @@ export function setTaharahTracking(next: boolean): void {
   if (next && !taharahOffered(user)) return;
   user.setTaharahEnabled(next);
   if (next && user.gender) useTaharahStore.getState().startTracking(user.gender, user.nusach);
+}
+
+// Back to before tracking was switched on: the switch off, the log, the minhag, the leads and the
+// lock at their defaults, and the encrypted file wiped under a new key. Nothing outside taharah moves.
+export function resetTaharahTracking(): void {
+  useUserStore.getState().setTaharahEnabled(false);
+  useTaharahStore.getState().reset();
+  clearTaharahStorage();
 }
 
 export function chooseNusach(next: Nusach): void {

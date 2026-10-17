@@ -8,6 +8,7 @@ import { MITZVOT } from '@/data/mitzvot';
 import {
   SIDDUR_GROUPS,
   STANDALONE_TEXTS,
+  standaloneAvailability,
   hasSiddurText,
   hasStandaloneText,
   mitzvahTextId,
@@ -105,7 +106,8 @@ export default function SiddurScreen() {
   );
 
   const row = (id: StandaloneTextId, group: SiddurGroup) => {
-    const { name, availableLabel } = STANDALONE_TEXTS[id];
+    const { name } = STANDALONE_TEXTS[id];
+    const { availableLabel } = standaloneAvailability(id, nusach);
     const open = available.get(id) ?? false;
     return (
       <ListRow

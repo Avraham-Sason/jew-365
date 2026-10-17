@@ -2,6 +2,11 @@ import { Nusach } from './mitzvah';
 
 export type SukkotOfferingFlag = `sukkotOffering${2 | 3 | 4 | 5 | 6 | 7}`;
 
+// The Ashkenazi selichot days that carry a selichot of their own: the Nth weekday from Leil Selichot,
+// and the Nth weekday of the Ten Days, Tzom Gedaliah (`tzomGedaliah`) being the first.
+export type SelichotDayFlag = `selichotDay${1 | 2 | 3 | 4 | 5 | 6 | 7}`;
+export type SelichotTeshuvaFlag = `selichotTeshuva${2 | 3 | 4 | 5}`;
+
 export type DayFlag =
   | 'sunday'
   | 'monday'
@@ -57,6 +62,11 @@ export type DayFlag =
   | 'chanukahFirstNight'
   | 'kiddushLevana'
   | 'avBeforeTishaBav'
+  | 'erevRoshHashana'
+  | 'selichotAshkenazi'
+  | 'selichotSephardi'
+  | SelichotDayFlag
+  | SelichotTeshuvaFlag
   | SukkotOfferingFlag;
 
 export type Place = {
@@ -147,7 +157,9 @@ export type StandaloneTextId =
   | 'sheva_berachot'
   | 'chanukah_candles'
   | 'tikkun_haklali'
-  | 'tehillim';
+  | 'tehillim'
+  | 'nishmat'
+  | 'selichot';
 
 export type SiddurTextId = MitzvahTextId | StandaloneTextId;
 

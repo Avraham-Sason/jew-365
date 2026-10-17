@@ -33,6 +33,7 @@ export const ICON_NAMES = [
   'sun',
   'undo',
   'warning',
+  'phone',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -248,6 +249,12 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Line x1={12} y1={9.8} x2={12} y2={13.8} />
       <Line x1={12} y1={16.7} x2={12} y2={16.8} />
     </>
+  ),
+  phone: ({ fill }) => (
+    <Path
+      d="M6.6,3.5H9.4L11,7.6L9,9.1Q10.5,12.6 14.9,15L16.4,13L20.5,14.6V17.4Q20.5,20.5 17.4,20.5Q11,20 7,16Q3,12 3.5,6.6Q3.5,3.5 6.6,3.5Z"
+      fill={fill}
+    />
   ),
 };
 
