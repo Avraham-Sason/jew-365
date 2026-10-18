@@ -34,6 +34,10 @@ export const ICON_NAMES = [
   'undo',
   'warning',
   'phone',
+  'search',
+  'user',
+  'bell',
+  'sliders',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -255,6 +259,32 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       d="M6.6,3.5H9.4L11,7.6L9,9.1Q10.5,12.6 14.9,15L16.4,13L20.5,14.6V17.4Q20.5,20.5 17.4,20.5Q11,20 7,16Q3,12 3.5,6.6Q3.5,3.5 6.6,3.5Z"
       fill={fill}
     />
+  ),
+  search: ({ fill }) => (
+    <>
+      <Circle cx={11} cy={11} r={6.5} fill={fill} />
+      <Path d="M15.8,15.8L20.5,20.5" />
+    </>
+  ),
+  user: ({ fill }) => (
+    <>
+      <Circle cx={12} cy={8} r={4} fill={fill} />
+      <Path d="M4.5,20.5C5.4,16.6 8.4,14.5 12,14.5C15.6,14.5 18.6,16.6 19.5,20.5" />
+    </>
+  ),
+  bell: ({ fill }) => (
+    <>
+      <Path d="M6,16.5V11A6,6 0 0 1 18,11V16.5L19.5,18H4.5Z" fill={fill} />
+      <Path d="M10,20.5A2.2,2.2 0 0 0 14,20.5" />
+    </>
+  ),
+  sliders: ({ fill }) => (
+    <>
+      <Path d="M4,7H7M11,7H20M4,12H13M17,12H20M4,17H6M10,17H20" />
+      <Circle cx={9} cy={7} r={2} fill={fill} />
+      <Circle cx={15} cy={12} r={2} fill={fill} />
+      <Circle cx={8} cy={17} r={2} fill={fill} />
+    </>
   ),
 };
 

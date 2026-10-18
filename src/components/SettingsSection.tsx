@@ -7,13 +7,14 @@ import { typography } from '@/theme/typography';
 
 type Props = {
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
   collapsible?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
 };
 
-export function SettingsSection({ title, children, collapsible = false, expanded = false, onToggle }: Props) {
+export function SettingsSection({ title, subtitle, children, collapsible = false, expanded = false, onToggle }: Props) {
   const { colors } = useTheme();
   return (
     <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -29,7 +30,12 @@ export function SettingsSection({ title, children, collapsible = false, expanded
             { marginBottom: expanded ? spacing.md : 0, opacity: pressed ? 0.75 : 1 },
           ]}
         >
-          <Text style={[typography.subheading, styles.headerTitle, { color: colors.text }]}>{title}</Text>
+          <View style={styles.headerTitle}>
+            <Text style={[typography.subheading, { color: colors.text }]}>{title}</Text>
+            {subtitle ? (
+              <Text style={[typography.small, styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+            ) : null}
+          </View>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
             <Path
               d={expanded ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'}
@@ -41,7 +47,12 @@ export function SettingsSection({ title, children, collapsible = false, expanded
           </Svg>
         </Pressable>
       ) : (
-        <Text style={[typography.subheading, styles.title, { color: colors.text }]}>{title}</Text>
+        <View style={styles.title}>
+          <Text style={[typography.subheading, { color: colors.text }]}>{title}</Text>
+          {subtitle ? (
+            <Text style={[typography.small, styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+          ) : null}
+        </View>
       )}
       {collapsible && !expanded ? null : children}
     </View>
@@ -65,5 +76,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
   },
 });
