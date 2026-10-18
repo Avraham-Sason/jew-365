@@ -142,6 +142,13 @@ describe('Settings search', () => {
     expect(mockPush).toHaveBeenCalledWith('/hilulot');
   });
 
+  it('takes "add a mitzvah" to the new custom mitzvah screen', async () => {
+    await renderSettings();
+    await search('הוספת מצווה');
+    fireEvent.press(screen.getByText(he('settings.searchAddMitzvah')));
+    expect(mockPush).toHaveBeenCalledWith('/custom-mitzvah');
+  });
+
   it('forgives a typo and a word typed in the other keyboard layout', async () => {
     await renderSettings();
     await search('התרעות');

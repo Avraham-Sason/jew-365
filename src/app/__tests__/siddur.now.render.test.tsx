@@ -3,6 +3,7 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 import { screen, within } from '@testing-library/react-native';
 import SiddurScreen from '../(tabs)/siddur';
 import { CITIES } from '@/data/cities';
+import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
@@ -70,6 +71,7 @@ describe('the siddur tab’s "now" card', () => {
       locationStatus: 'ready',
       locationSource: 'manual',
     });
+    useCompletionsStore.setState({ completions: {}, skipped: {} });
   });
 
   afterEach(() => jest.useRealTimers());
@@ -85,6 +87,14 @@ describe('the siddur tab’s "now" card', () => {
     expect(screen.getByText('עכשיו')).toBeOnTheScreen();
     expect(screen.queryByText('היום')).toBeNull();
     expect(within(screen.getByTestId('siddur-now')).queryByText(/^מ-/)).toBeNull();
+  });
+
+  it('drops a mitzvah already marked done for its window, and keeps the texts that have no mark', () => {
+    useCompletionsStore.setState({ completions: { '2027-06-15': { shacharit: 1, tefillin: 1 } } });
+    expect(nowCard('2027-06-15T07:30')).toEqual([BIRCHOT, 'קריאת שמע שחרית']);
+    useCompletionsStore.setState({ completions: { '2027-06-15': { maariv: 1 } } });
+    expect(nowCard('2027-06-16T00:30')).toEqual([BEDTIME, LEVANA]);
+    expect(nowCard('2027-06-16T21:30')).toEqual([MAARIV, BEDTIME, LEVANA]);
   });
 
   it('is absent while nothing is said', () => {

@@ -12,7 +12,7 @@ export type SettingsSearchItem = {
   labelKeys?: readonly string[];
   terms: readonly string[];
   section?: SettingsSectionKey;
-  route?: '/mitzvot' | '/hilulot' | '/rosh-chodesh';
+  route?: '/mitzvot' | '/custom-mitzvah' | '/hilulot' | '/rosh-chodesh';
   when?: SettingsSearchCondition;
 };
 
@@ -37,6 +37,30 @@ export const SETTINGS_SEARCH_ITEMS: readonly SettingsSearchItem[] = [
       'custom',
       'library',
       'reminders',
+    ],
+  },
+  {
+    id: 'addMitzvah',
+    icon: 'plus',
+    titleKey: 'settings.searchAddMitzvah',
+    labelKeys: ['custom.title'],
+    route: '/custom-mitzvah',
+    terms: [
+      'הוספה',
+      'הוסף',
+      'להוסיף',
+      'הוספת מצווה',
+      'מצווה חדשה',
+      'חדשה',
+      'יצירה',
+      'ליצור',
+      'מצווה משלי',
+      'אישית',
+      'מותאמת',
+      'add',
+      'new',
+      'create',
+      'custom mitzvah',
     ],
   },
   {

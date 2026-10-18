@@ -23,7 +23,7 @@ import { NavBar } from '@/components/NavBar';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useDayModel } from '@/hooks/useDayModel';
 import { useNow } from '@/hooks/useNow';
-import { dateKey } from '@/stores/useCompletionsStore';
+import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { SiddurGroup, StandaloneTextId } from '@/types/siddur';
@@ -51,6 +51,7 @@ export default function SiddurScreen() {
   const { settings, location, nusach, inIsrael, language, nameFor } = useDayModel();
   const router = useRouter();
   const now = useNow();
+  const completions = useCompletionsStore((state) => state.completions);
   const groups = useMemo(
     () => SIDDUR_GROUPS.map((group) => ({ group, ids: standaloneTextsIn(group) })).filter(({ ids }) => ids.length),
     [],
@@ -95,13 +96,15 @@ export default function SiddurScreen() {
       }),
     );
   }, [groups, nusach, now, location, inIsrael]);
-  // What is said now: the mitzvah texts whose window is open and the standalone texts whose hours hold,
-  // by opening time, so later windows never share the card with the one open now.
+  // What is said now: the mitzvah texts whose window is open and not yet marked done, and the standalone
+  // texts whose hours hold, by opening time, so later windows never share the card with the one open now.
   type NowEntry =
     | { start: Date; mitzvah: (typeof today)[number]; standalone?: undefined }
     | { start: Date; standalone: (typeof standaloneNow)[number]; mitzvah?: undefined };
   const openNow: NowEntry[] = [
-    ...today.filter((entry) => entry.openNow).map((entry) => ({ start: entry.window!.start, mitzvah: entry })),
+    ...today
+      .filter((entry) => entry.openNow && !completions[dateKey(entry.window!.date)]?.[entry.mitzvah.id])
+      .map((entry) => ({ start: entry.window!.start, mitzvah: entry })),
     ...standaloneNow.map((entry) => ({ start: entry.hours.start, standalone: entry })),
   ].sort((a, b) => a.start.getTime() - b.start.getTime());
   const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
