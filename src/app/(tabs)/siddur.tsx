@@ -13,6 +13,7 @@ import {
   hasStandaloneText,
   mitzvahTextId,
   siddurPlace,
+  standaloneHoursAt,
   standaloneTextDay,
   standaloneTextsIn,
 } from '@/data/siddur';
@@ -34,10 +35,10 @@ import { useI18n } from '@/i18n';
 const MITZVAH_TEXTS = MITZVOT.filter((mitzvah) => mitzvahTextId(mitzvah.id));
 const PRAYER_IDS = ['shacharit', 'mincha', 'maariv'];
 
-function CatalogSection({ title, children }: { title: string; children: React.ReactNode }) {
+function CatalogSection({ title, children, testID }: { title: string; children: React.ReactNode; testID?: string }) {
   const { colors } = useTheme();
   return (
-    <View style={styles.group}>
+    <View style={styles.group} testID={testID}>
       <SectionLabel text={title} />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>{children}</View>
     </View>
@@ -85,7 +86,24 @@ export default function SiddurScreen() {
     const day = isTomorrow ? t('common.tomorrow') : DateTime.fromJSDate(start).setLocale(language).toFormat('cccc');
     return t('siddur.today.laterOn', { day, time: clockOf(start) });
   };
-  const withText = today.filter(({ hasText }) => hasText);
+  const standaloneNow = useMemo(() => {
+    const place = siddurPlace(location, inIsrael);
+    return groups.flatMap(({ group, ids }) =>
+      ids.flatMap((id) => {
+        const hours = standaloneHoursAt(id, nusach, now, location, place);
+        return hours ? [{ id, group, hours }] : [];
+      }),
+    );
+  }, [groups, nusach, now, location, inIsrael]);
+  // What is said now: the mitzvah texts whose window is open and the standalone texts whose hours hold,
+  // by opening time, so later windows never share the card with the one open now.
+  type NowEntry =
+    | { start: Date; mitzvah: (typeof today)[number]; standalone?: undefined }
+    | { start: Date; standalone: (typeof standaloneNow)[number]; mitzvah?: undefined };
+  const openNow: NowEntry[] = [
+    ...today.filter((entry) => entry.openNow).map((entry) => ({ start: entry.window!.start, mitzvah: entry })),
+    ...standaloneNow.map((entry) => ({ start: entry.hours.start, standalone: entry })),
+  ].sort((a, b) => a.start.getTime() - b.start.getTime());
   const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
 
   const mitzvahRow = ({ mitzvah, window, hasText, openNow }: (typeof today)[number]) => (
@@ -104,6 +122,37 @@ export default function SiddurScreen() {
       disabled={!hasText}
     />
   );
+
+  const nowRow = (entry: NowEntry) => {
+    if (entry.mitzvah) {
+      const { mitzvah, window } = entry.mitzvah;
+      return (
+        <ListRow
+          key={mitzvah.id}
+          icon={iconFor(mitzvah.icon)}
+          iconTone="accent"
+          title={nameFor(mitzvah)}
+          caption={t('siddur.now.until', { time: clockOf(window!.end) })}
+          chevron
+          onPress={() =>
+            router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window!.date) } })
+          }
+        />
+      );
+    }
+    const { id, group, hours } = entry.standalone;
+    return (
+      <ListRow
+        key={id}
+        icon={group}
+        iconTone="accent"
+        title={label(STANDALONE_TEXTS[id].name)}
+        caption={t('siddur.now.until', { time: clockOf(hours.end) })}
+        chevron
+        onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
+      />
+    );
+  };
 
   const row = (id: StandaloneTextId, group: SiddurGroup) => {
     const { name } = STANDALONE_TEXTS[id];
@@ -130,8 +179,10 @@ export default function SiddurScreen() {
         subtitle={`${t('siddur.catalog.subtitle')} · ${t(`nusach.${nusach}`)}`}
       />
       <ScrollView contentContainerStyle={styles.list}>
-        {withText.length > 0 && (
-          <CatalogSection title={t('siddur.group.today')}>{withText.map(mitzvahRow)}</CatalogSection>
+        {openNow.length > 0 && (
+          <CatalogSection title={t('siddur.group.now')} testID="siddur-now">
+            {openNow.map(nowRow)}
+          </CatalogSection>
         )}
         <CatalogSection title={t('siddur.group.prayers')}>{prayers.map(mitzvahRow)}</CatalogSection>
         {groups.map(({ group, ids }) => (

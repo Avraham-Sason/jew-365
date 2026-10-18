@@ -1,7 +1,8 @@
 import { HDate } from '@hebcal/core';
 import { ContentBlock, Mitzvah, Nusach } from '@/types/mitzvah';
-import { Location } from '@/types/zmanim';
+import { Location, Zmanim } from '@/types/zmanim';
 import { HebcalService } from '@/services/HebcalService';
+import { ZmanimService } from '@/services/ZmanimService';
 import {
   Condition,
   DayFeatures,
@@ -15,6 +16,7 @@ import {
 import { CHOK_TEXT_ID } from './chok';
 import { isJerusalem } from './mitzvot';
 import { chokDayHasText } from '@/utils/chok';
+import { appDay, locationNoon } from '@/utils/locationDay';
 import { dayFeatures, liturgicalDay, matchesCondition } from '@/utils/siddur';
 import { SIDDUR_ASSETS } from './siddurAssets.generated';
 
@@ -34,15 +36,29 @@ export const SIDDUR_TEXTS: Record<MitzvahTextId, SiddurEntry> = {
 
 type Availability = { available?: Condition; availableLabel?: { he: string; en: string } };
 
+// The hours of a day a text with a time of its own is said, from that day's zmanim and the next day's.
+type TextHours = (day: Zmanim, next: Zmanim, location: Location) => { start: Date; end: Date };
+
 // `evening` texts are said at night and resolve for the night in effect or coming next;
 // `availableLabel` tells the catalog when a text whose `available` fails today can be said, and
-// `availableIn` replaces both for a nusach whose minhag sets other days.
+// `availableIn` replaces both for a nusach whose minhag sets other days. `hours` puts a text in the
+// catalog's "now" card while they hold; a text without them has no time of its own.
 export type StandaloneEntry = Availability & {
   name: { he: string; en: string };
   group: SiddurGroup;
   evening?: boolean;
   availableIn?: Partial<Record<Nusach, Availability>>;
+  hours?: TextHours;
 };
+
+const TONIGHT_TO_DAWN: TextHours = (day, next, location) => ({
+  start: HebcalService.nightfall(day, location),
+  end: next.alotHaShachar,
+});
+const MIDNIGHT_TO_MORNING_PRAYER: TextHours = (day, next) => ({
+  start: day.chatzotLayla,
+  end: next.sofZmanTfilaGra,
+});
 
 export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
   birkat_hamazon: { name: { he: 'ברכת המזון', en: 'Grace After Meals' }, group: 'meals' },
@@ -51,7 +67,12 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
   tikkun_haklali: { name: { he: 'תיקון הכללי', en: 'Tikkun HaKlali' }, group: 'general' },
   tehillim: { name: { he: 'תהילים', en: 'Tehillim' }, group: 'general' },
   nishmat: { name: { he: 'נשמת כל חי', en: 'Nishmat Kol Chai' }, group: 'general' },
-  kriat_shema_al_hamita: { name: { he: 'קריאת שמע על המיטה', en: 'Bedtime Shema' }, group: 'general', evening: true },
+  kriat_shema_al_hamita: {
+    name: { he: 'קריאת שמע על המיטה', en: 'Bedtime Shema' },
+    group: 'general',
+    evening: true,
+    hours: TONIGHT_TO_DAWN,
+  },
   tefilat_haderech: { name: { he: 'תפילת הדרך', en: "The Traveler's Prayer" }, group: 'general' },
   asher_yatzar: { name: { he: 'אשר יצר', en: 'Asher Yatzar' }, group: 'general' },
   birchot_hanehenin: { name: { he: 'ברכות הנהנין', en: 'Blessings on Food and Fragrance' }, group: 'general' },
@@ -63,6 +84,7 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
     evening: true,
     available: { all: ['kiddushLevana'], none: ['shabbat', 'yomTov', 'yomKippur'] },
     availableLabel: { he: 'מג׳ עד ט״ו בחודש', en: 'From the 3rd to the 15th of the month' },
+    hours: TONIGHT_TO_DAWN,
   },
   sheva_berachot: { name: { he: 'שבע ברכות', en: 'Sheva Berachot' }, group: 'occasions' },
   chanukah_candles: {
@@ -71,11 +93,13 @@ export const STANDALONE_TEXTS: Record<StandaloneTextId, StandaloneEntry> = {
     evening: true,
     available: { all: ['chanukah'] },
     availableLabel: { he: 'בחנוכה', en: 'On Chanukah' },
+    hours: TONIGHT_TO_DAWN,
   },
   selichot: {
     name: { he: 'סליחות', en: 'Selichot' },
     group: 'occasions',
     available: { all: ['selichotAshkenazi'] },
+    hours: MIDNIGHT_TO_MORNING_PRAYER,
     availableLabel: { he: 'ממוצאי שבת הסליחות עד ערב יום הכיפורים', en: 'From Leil Selichot to Erev Yom Kippur' },
     availableIn: {
       edot_hamizrach: {
@@ -133,6 +157,34 @@ export function standaloneTextDay(id: StandaloneTextId, instant: Date, location:
   return STANDALONE_TEXTS[id].evening
     ? HebcalService.hebrewNightAt(instant, location)
     : HebcalService.hebrewDayAt(instant, location);
+}
+
+// The hours of `id` open at `instant` (from the evening before through the next morning), when its
+// day offers it in `nusach`, else null: what the catalog's "now" card lists for a standalone text.
+export function standaloneHoursAt(
+  id: StandaloneTextId,
+  nusach: Nusach,
+  instant: Date,
+  location: Location,
+  place: Place,
+): { start: Date; end: Date } | null {
+  const { hours } = STANDALONE_TEXTS[id];
+  if (!hours) return null;
+  if (!hasStandaloneText(id, nusach, dayFeatures(standaloneTextDay(id, instant, location), place))) return null;
+  const today = appDay(instant, location);
+  const zmanimOn = (offset: number) =>
+    ZmanimService.getZmanim(
+      locationNoon(new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset), location),
+      location,
+    );
+  for (const offset of [-1, 0]) {
+    const day = zmanimOn(offset);
+    const next = zmanimOn(offset + 1);
+    if (!day || !next) continue;
+    const open = hours(day, next, location);
+    if (open.start.getTime() <= instant.getTime() && instant.getTime() < open.end.getTime()) return open;
+  }
+  return null;
 }
 
 export function customSiddurText(mitzvah: Mitzvah, nusach: Nusach): SiddurText | null {

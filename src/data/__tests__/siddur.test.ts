@@ -2088,22 +2088,42 @@ describe('standalone texts', () => {
     });
   });
 
-  it('closes Me’ein Shalosh for the Land of Israel or for abroad, and adds the day on Rosh Chodesh and Chol HaMoed', () => {
+  it('closes Me’ein Shalosh for food that did not grow in the Land of Israel, in Israel as abroad, and adds the day on Rosh Chodesh and Chol HaMoed', () => {
     for (const nusach of NUSCHAOT) {
       const inIsrael = openText(nusach, 'al_hamichya', weekday);
       const abroad = openText(nusach, 'al_hamichya', dayFeatures(new HDate(3, months.CHESHVAN, 5787), DIASPORA));
-      if (nusach === 'chabad') {
-        expect(inIsrael).toBe(abroad);
-      } else {
-        expect(inIsrael).toMatch(/פרי גפנה/);
-        expect(inIsrael).not.toMatch(/על הפרות/);
-        expect(abroad).toMatch(/על הפרות/);
-        expect(abroad).not.toMatch(/פרי גפנה|פרותיה/);
-      }
+      expect(inIsrael).toBe(abroad);
+      expect(inIsrael).toMatch(/על הארץ ועל המחיה/);
+      expect(inIsrael).toMatch(/על פרי הגפן/);
+      expect(inIsrael).toMatch(/על הפרות/);
+      expect(inIsrael).not.toMatch(/גפנה|פרותיה|מחיתה|כלכלתה/);
+      expect(shownOn(nusach, 'al_hamichya', weekday)).not.toMatch(/בחול|בא"י|של ארץ ישראל/);
       expect(openText(nusach, 'al_hamichya', roshChodesh)).toMatch(/ראש ה?חדש הזה/);
       expect(openText(nusach, 'al_hamichya', cholHamoedSukkot)).toMatch(/הסכות הזה/);
       expect(inIsrael).not.toMatch(/ראש ה?חדש הזה|הסכות הזה|המצות הזה|השבת הזה|הזכרון הזה/);
     }
+  });
+
+  it('keeps the Land of Israel ending of Me’ein Shalosh in a closed fold after the blessing, Chabad’s from the Sefard source', () => {
+    for (const nusach of NUSCHAOT) {
+      const sections = resolveSiddurText(load(nusach, 'al_hamichya'), weekday);
+      const folds = sections.filter((section) => section.optional);
+      expect(folds.map((section) => [section.title.he, section.optional?.he])).toEqual([
+        ['לפירות ארץ ישראל', 'לפירות ארץ ישראל'],
+      ]);
+      expect(sections[sections.length - 1]).toBe(folds[0]);
+      expect(aloneFolds(folds[0], 'alone').optionalOpen).toBe(false);
+      const folded = letters(folds[0].segments.flatMap((segment) => segment.he.flat().map((run) => run.t)).join(' '));
+      expect(folded).toMatch(/^על פירות ארץ ישראל מסיימים/);
+      expect(folded).toMatch(/ברוך אתה \S+ על הארץ/);
+      expect(folded).toMatch(/פרי גפנה/);
+      expect(folded).toMatch(/פרותיה/);
+      expect(folded).not.toMatch(/על הפרות/);
+    }
+    expect(letters(saidOn('edot_hamizrach', 'al_hamichya', weekday))).toMatch(/מחיתה ועל כלכלתה/);
+    const fold = (nusach: Nusach) =>
+      resolveSiddurText(load(nusach, 'al_hamichya'), weekday).find((section) => section.optional)!.segments;
+    expect(fold('chabad')).toEqual(fold('sefard'));
   });
 
   it('says Borei Nefashot and opens the Traveler’s Prayer with "Yehi Ratzon" in every nusach', () => {

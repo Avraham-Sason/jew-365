@@ -419,6 +419,7 @@ const T = {
   harachamanMilah: { he: 'הרחמן לברית מילה', en: 'Harachaman for a Brit Milah' },
   forgotYaalehVeyavo: { he: 'אם שכח יעלה ויבוא', en: 'If Yaaleh Veyavo Was Forgotten' },
   alHamichya: { he: 'ברכה מעין שלוש', en: "Me'ein Shalosh" },
+  alHamichyaIsrael: { he: 'לפירות ארץ ישראל', en: 'For Produce of the Land of Israel' },
   boreiNefashot: { he: 'בורא נפשות', en: 'Borei Nefashot' },
   tefilatHaderech: { he: 'תפילת הדרך', en: "The Traveler's Prayer" },
   derechVerses: { he: 'פסוקים לשמירה בדרך', en: 'Verses for Protection on the Way' },
@@ -771,6 +772,7 @@ const WHEN_SAID = {
   shevaBerachotMeal: { he: 'בסעודת שבע ברכות', en: 'At a sheva berachot meal' },
   britMilahMeal: { he: 'בסעודת ברית מילה', en: 'At a brit milah meal' },
   guest: { he: 'אורח אומר', en: 'A guest says' },
+  israelProduce: { he: 'לפירות ארץ ישראל', en: 'For produce of the Land of Israel' },
   enteringCity: { he: 'בכניסה לעיר וביציאה ממנה', en: 'When entering and leaving a city' },
   seaTravel: { he: 'לעוברי ימים ונהרות', en: 'For travel by sea or river' },
   airTravel: { he: 'לטסים במטוס', en: 'For air travel' },
@@ -1304,22 +1306,34 @@ function daatName(html) {
 const DAAT = { he: 'daatAshkenazHe', en: 'communityAshkenazEn', transform: daatName };
 const TORAT_EMET = { he: 'toratEmetSefardHe' };
 
-// The Israel / diaspora ending of Me'ein Shalosh, as each source prints it.
-const daatIsraelEnding = rule(
+// Me'ein Shalosh ends with the wording for food that did not grow in the Land of Israel, wherever the
+// reader is (the user's decision of 2026-10-18); each source prints the Israel wording beside it, which
+// the closed fold for produce of the Land of Israel takes instead.
+function israelEnding(name, pattern, wording) {
+  return {
+    abroad: rule(name, pattern, (...match) => wording(...match).abroad),
+    israel: rule(`${name} (Land of Israel)`, pattern, (...match) => wording(...match).israel),
+  };
+}
+const daatIsraelEnding = israelEnding(
   'Daat Israel ending',
   /(וְעַל [^()<]+?) \(<small>בחו"ל<\/small>—([^)]+)\)/g,
-  (_, israel, abroad) => `<if all="inIsrael">${israel}</if><if none="inIsrael">${abroad}</if>`,
+  (_, israel, abroad) => ({ abroad, israel }),
 );
-const toratEmetIsraelEnding = rule(
+const toratEmetIsraelEnding = israelEnding(
   'Torat Emet Israel ending',
   /(וְעַל (?:פְּרִי הַגָּפֶן|הַפֵּרוֹת)): <small>\( <small>בא"י<\/small> ([^)]+)\)<\/small>:/g,
-  (_, abroad, israel) => `<if none="inIsrael">${abroad}:</if><if all="inIsrael">${israel}:</if>`,
+  (_, abroad, israel) => ({ abroad: `${abroad}:`, israel: `${israel}:` }),
 );
-const edotIsraelEnding = rule(
+const edotIsraelEnding = israelEnding(
   'Edot Israel ending',
   /([^<>]+?)\s*<small><small>של ארץ ישראל\s*<\/small>\s*([^<]+?)<\/small>/g,
-  (_, abroad, israel) => `<if none="inIsrael">${abroad}</if><if all="inIsrael">${israel}</if>`,
+  (_, abroad, israel) => ({ abroad, israel: `${abroad.match(/^\s*/)[0]}${israel}` }),
 );
+const ISRAEL_PRODUCE_NOTE = {
+  he: '<small>על פירות ארץ ישראל מסיימים:</small>',
+  en: 'For produce of the Land of Israel, the blessing ends:',
+};
 
 const MIGDOL_NOTE = '(<small>בשבת וביו"ט אומר:</small> מִגְדּוֹל יְשׁוּעוֹת מַלְכּוֹ)';
 const noteBefore = (note, lead) => ({ from: lead, to: `<small>${note}</small> ${lead}` });
@@ -5345,9 +5359,18 @@ function ashkenazAlHamichya() {
       ...DAAT,
       title: T.alHamichya,
       path: 'Berachot > Birkat Hanehenin > Eating > Brachot Achronot > Al Hamichyah',
-      transform: compose(daatName, daatIsraelEnding),
+      transform: compose(daatName, daatIsraelEnding.abroad),
       edits: [{ seg: 4, from: inserts, to: dayInserts }],
       optionalParts: [{ from: 4, paragraph: 1, until: 2, label: WHEN_SAID.mealBeganYaalehVeyavo }],
+    },
+    {
+      ...DAAT,
+      title: T.alHamichyaIsrael,
+      optional: WHEN_SAID.israelProduce,
+      path: 'Berachot > Birkat Hanehenin > Eating > Brachot Achronot > Al Hamichyah',
+      from: 5,
+      transform: compose(daatName, daatIsraelEnding.israel),
+      insert: [{ at: 5, ...ISRAEL_PRODUCE_NOTE }],
     },
   ];
 }
@@ -5361,7 +5384,7 @@ function sefardAlHamichya() {
       path: "Blessings > Me'ein Shalosh",
       from: 2,
       drop: [8, 10],
-      transform: toratEmetIsraelEnding,
+      transform: toratEmetIsraelEnding.abroad,
       edits: [
         { seg: 11, from: '(ביו"ט:)', to: '(בחול המועד:)' },
         {
@@ -5374,7 +5397,23 @@ function sefardAlHamichya() {
       reviewed: [13, 14, 16],
       optionalParts: [{ from: 9, to: 11, label: WHEN_SAID.mealBeganYaalehVeyavo }],
     },
+    sefardIsraelProduceFold(),
   ];
+}
+
+// Chabad takes it too (the user's decision of 2026-10-18): its source prints only the general wording,
+// and this one is not verified identical to the Chabad wording.
+function sefardIsraelProduceFold() {
+  return {
+    ...TORAT_EMET,
+    title: T.alHamichyaIsrael,
+    optional: WHEN_SAID.israelProduce,
+    path: "Blessings > Me'ein Shalosh",
+    from: 13,
+    transform: toratEmetIsraelEnding.israel,
+    reviewed: [13, 14, 16],
+    insert: [{ at: 13, ...ISRAEL_PRODUCE_NOTE }],
+  };
 }
 
 function edotAlHamichya() {
@@ -5386,7 +5425,7 @@ function edotAlHamichya() {
       path: 'Al Hamihya',
       from: 1,
       drop: [6, 8, 10, 12],
-      transform: edotIsraelEnding,
+      transform: edotIsraelEnding.abroad,
       edits: [
         { seg: 9, from: yomTovOnly, to: '' },
         { seg: 11, from: yomTovOnly, to: '' },
@@ -5394,6 +5433,16 @@ function edotAlHamichya() {
       at: { 7: ROSH_CHODESH_OR_YESTERDAY, 9: CHOL_HAMOED_PESACH_OR_YESTERDAY, 11: CHOL_HAMOED_SUKKOT_OR_YESTERDAY },
       reviewed: [14, 15, 16, 18, 19, 20],
       optionalParts: [{ from: 7, to: 11, label: WHEN_SAID.mealBeganYaalehVeyavo }],
+    },
+    {
+      ...EDOT,
+      title: T.alHamichyaIsrael,
+      optional: WHEN_SAID.israelProduce,
+      path: 'Al Hamihya',
+      from: 14,
+      transform: edotIsraelEnding.israel,
+      reviewed: [14, 15, 16, 18, 19, 20],
+      insert: [{ at: 14, ...ISRAEL_PRODUCE_NOTE }],
     },
   ];
 }
@@ -5413,6 +5462,7 @@ function chabadAlHamichya() {
       },
       optionalParts: [{ from: 6, to: 9, label: WHEN_SAID.mealBeganYaalehVeyavo }],
     },
+    sefardIsraelProduceFold(),
   ];
 }
 
