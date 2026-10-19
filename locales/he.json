@@ -1,12 +1,12 @@
 {
   "ios": {
-    "CFBundleDisplayName": "יהודי בזמן",
+    "CFBundleDisplayName": "יהודי 360",
     "NSLocationWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים לפי האזור שלך.",
     "NSLocationAlwaysAndWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים ולרענון יומי של התראות.",
     "NSLocationAlwaysUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים ולרענון יומי של התראות.",
     "NSFaceIDUsageDescription": "זיהוי הפנים משמש לנעילת מסכי הטהרה בלבד"
   },
   "android": {
-    "app_name": "יהודי בזמן"
+    "app_name": "יהודי 360"
   }
 }

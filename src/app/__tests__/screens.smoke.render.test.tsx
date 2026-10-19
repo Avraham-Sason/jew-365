@@ -555,7 +555,7 @@ const CASES: SmokeCase[] = [
     label: 'welcome',
     Screen: OnboardingWelcomeScreen,
     fresh: true,
-    check: text('יהודי בזמן', 'Jew in Time'),
+    check: text('יהודי 360', 'Jew 360'),
   },
   {
     file: 'onboarding/location',

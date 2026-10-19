@@ -1,4 +1,4 @@
-# Failure-Point Audit — Jew in Time (יהודי בזמן)
+# Failure-Point Audit — Jew 360 (יהודי 360)
 
 Audit date: 2026-08-09 · Commit `edf9211` (+ the uncommitted `skipIfDone` work)
 

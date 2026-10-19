@@ -4,7 +4,7 @@ Canonical working notes for AI agents in this repository. Keep this file current
 
 ## Project Snapshot
 
-- App: Hebrew-first Expo/React Native mobile app for daily mitzvah reminders inside halachic time windows. The current display name is configured in [app.json](app.json); the package/slug remains `jew-in-time`. The English display name, "Jew in Time", comes from [locales/en.json](locales/en.json).
+- App: Hebrew-first Expo/React Native mobile app for daily mitzvah reminders inside halachic time windows. The current display name is configured in [app.json](app.json); the package/slug remains `jew-in-time`. The display name is `יהודי 360` in Hebrew and "Jew 360" in English (the user's call, 2026-10-19; it was `יהודי בזמן` / "Jew in Time"), the English one from [locales/en.json](locales/en.json). Only display surfaces carry the name: the bundle id `com.jewintime.app`, the slug, the `jewintime` scheme, the task names, the MMKV id and the backup file's `app` tag keep the old one, because changing any of them strands installed users or their data.
 - EAS project: `@avraham-sason/jew-in-time`, ID `8cc2a377-fcc9-4c78-bdde-ec0fc8f2a84e`.
 - Runtime model: local/offline first. Zmanim, Hebrew calendar, history, settings, completions, and reminders are computed on-device. There is no backend; the one call that carries personal data off the device is a message the user sends from Settings → Contact us, through Formspree ([src/services/ContactService.ts](src/services/ContactService.ts)).
 - Primary platforms: iOS, Android, and a web build for smoke/headless checks. Native notification/MMKV behavior requires a dev client or native build, not plain Expo Go.

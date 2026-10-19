@@ -6,7 +6,7 @@
 
 ## Ownership
 
-- [index.html](index.html) is the support and marketing page. Apple's Support URL and Marketing URL point here. It is one Hebrew page: the tagline, a feature list, the support address, the FAQ, a privacy summary and a one-line English summary that names the app "Jew in Time".
+- [index.html](index.html) is the support and marketing page. Apple's Support URL and Marketing URL point here. It is one Hebrew page: the tagline, a feature list, the support address, the FAQ, a privacy summary and a one-line English summary that names the app "Jew 360".
 - [privacy/index.html](privacy/index.html) is the Hebrew privacy policy, the canonical text.
 - [privacy/en/index.html](privacy/en/index.html) is the English privacy policy and must stay a faithful equivalent of the Hebrew one.
 - [taharah-review.html](taharah-review.html) is the Hebrew review document for the rav who approves the halachic rules of the family-purity tracker. It is reached by direct URL only (nothing links to it, and it is `noindex`). It must match [../src/data/taharahPresets.ts](../src/data/taharahPresets.ts) exactly: a changed preset value, rule or `TAHARAH_RULES_VERSION` changes the table, the rules version in its meta line and the numbered list of items to verify in the same edit. It is a review document, not a user-facing policy, and not a claim about shipped behavior.
@@ -25,7 +25,7 @@
 - Contact details and store URLs are real values. Never write a placeholder here.
 - Both language versions change together. A section added to one and missing from the other is a compliance gap.
 - Update the effective date at the top of both policy pages whenever their substance changes, and only then.
-- Names: the Hebrew pages use the Hebrew display name in [../app.json](../app.json), `יהודי בזמן`; the English pages use `Jew in Time`, the same as `app.name` in [../src/i18n/en.json](../src/i18n/en.json).
+- Names: the Hebrew pages use the Hebrew display name in [../app.json](../app.json), `יהודי 360`; the English pages use `Jew 360`, the same as `app.name` in [../src/i18n/en.json](../src/i18n/en.json).
 - Plain static HTML with no build step and no external assets: Heebo is served from [fonts/](fonts) through the `@font-face` rules in [style.css](style.css), so a page view contacts no third party. Add no external font, stylesheet, script or tracker.
 
 ## Work Guidance

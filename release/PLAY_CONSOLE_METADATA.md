@@ -2,8 +2,8 @@
 
 ## App Name
 
-- English (default): Jew in Time
-- Hebrew (he-IL): יהודי בזמן
+- English (default): Jew 360
+- Hebrew (he-IL): יהודי 360
 
 ## Short Description
 
@@ -15,7 +15,7 @@ Hebrew: כל מצווה בזמנה: זמני הלכה, תזכורות וסידו
 
 English:
 
-Jew in Time: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 360: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
@@ -53,7 +53,7 @@ Private by design
 
 Hebrew:
 
-יהודי בזמן — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
+יהודי 360 — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
 
 מצוות בזמנן
 - תשע מצוות תלויות זמן: תפילין, קריאת שמע, שחרית, מנחה, מעריב, ברכות השחר, הדלקת נרות, הבדלה וספירת העומר

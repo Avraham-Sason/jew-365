@@ -10,6 +10,6 @@ icon.png, adaptive-icon.png and splash.png are rendered from the geometry of `sr
 - icon.png: opaque parchment `#F5EFE4` background, logo 700 px wide, centred.
 - adaptive-icon.png: transparent background (app.json supplies the parchment), logo 600 px wide, inside
   Android's 66/108 safe zone (626 px).
-- splash.png: parchment background, logo 500 px wide centred at y 1000, the store name `יהודי בזמן` in Heebo
+- splash.png: parchment background, logo 500 px wide centred at y 1000, the store name `יהודי 360` in Heebo
   Bold 104 px navy at y 1400 and the store subtitle `כל מצווה בזמנה` in Heebo Medium 60 px `#7F5A0F`
   (gold palette `goldText`) at y 1530.

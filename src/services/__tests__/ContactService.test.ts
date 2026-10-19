@@ -59,7 +59,7 @@ describe('ContactService', () => {
   });
 
   it('builds a mail link to the developer address', () => {
-    expect(contactMailUrl()).toBe(`mailto:${CONTACT_EMAIL}?subject=Jew%20in%20Time`);
+    expect(contactMailUrl()).toBe(`mailto:${CONTACT_EMAIL}?subject=Jew%20360`);
   });
 
   describe('sendContactMessage', () => {
@@ -75,7 +75,7 @@ describe('ContactService', () => {
       expect(init.signal).toBeDefined();
       const body = JSON.parse(init.body);
       expect(body).toMatchObject({
-        _subject: 'Jew in Time: Avraham',
+        _subject: 'Jew 360: Avraham',
         name: 'Avraham',
         phone: '050-123-4567',
         message: 'The siddur font is small',

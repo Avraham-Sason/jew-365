@@ -52,8 +52,10 @@ describe('i18n', () => {
     expect(values).not.toContain('יהודי כשר');
     expect(values).not.toContain('Jew In Time');
     expect(values).not.toContain('Jewish Time');
-    expect((he as Record<string, string>)['app.name']).toBe('יהודי בזמן');
-    expect((en as Record<string, string>)['app.name']).toBe('Jew in Time');
+    expect(values).not.toContain('יהודי בזמן');
+    expect(values).not.toContain('Jew in Time');
+    expect((he as Record<string, string>)['app.name']).toBe('יהודי 360');
+    expect((en as Record<string, string>)['app.name']).toBe('Jew 360');
   });
 });
 

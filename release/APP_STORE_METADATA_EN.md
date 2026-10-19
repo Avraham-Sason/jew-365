@@ -2,7 +2,7 @@
 
 ## App Name
 
-Jew in Time
+Jew 360
 
 ## Subtitle
 
@@ -14,7 +14,7 @@ Accurate zmanim, a reminder inside each mitzvah's exact window, a siddur in four
 
 ## Description
 
-Jew in Time: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 360: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
