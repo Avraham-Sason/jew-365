@@ -1,12 +1,12 @@
 {
   "ios": {
-    "CFBundleDisplayName": "Jew 360",
+    "CFBundleDisplayName": "Jew 365",
     "NSLocationWhenInUseUsageDescription": "Location is needed to compute accurate halachic times for your area.",
     "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is needed to compute accurate halachic times and to refresh reminders daily.",
     "NSLocationAlwaysUsageDescription": "Location is needed to compute accurate halachic times and to refresh reminders daily.",
     "NSFaceIDUsageDescription": "Face ID only locks the taharah screens."
   },
   "android": {
-    "app_name": "Jew 360"
+    "app_name": "Jew 365"
   }
 }

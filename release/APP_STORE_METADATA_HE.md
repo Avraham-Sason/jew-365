@@ -2,7 +2,7 @@
 
 ## App Name
 
-יהודי 360
+יהודי 365
 
 ## Subtitle
 
@@ -14,7 +14,7 @@
 
 ## Description
 
-יהודי 360 — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
+יהודי 365 — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
 
 מצוות בזמנן
 - תשע מצוות תלויות זמן: תפילין, קריאת שמע, שחרית, מנחה, מעריב, ברכות השחר, הדלקת נרות, הבדלה וספירת העומר
@@ -56,15 +56,15 @@
 
 ## Support URL
 
-https://avraham-sason.github.io/jew-in-time/
+https://avraham-sason.github.io/jew-365/
 
 ## Marketing URL
 
-https://avraham-sason.github.io/jew-in-time/
+https://avraham-sason.github.io/jew-365/
 
 ## Privacy Policy URL
 
-https://avraham-sason.github.io/jew-in-time/privacy/
+https://avraham-sason.github.io/jew-365/privacy/
 
 ## Age Rating Draft
 

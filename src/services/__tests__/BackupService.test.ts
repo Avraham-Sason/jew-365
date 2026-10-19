@@ -58,6 +58,7 @@ import {
   exportBackup,
   parseBackup,
   pickBackup,
+  RESTORABLE_APPS,
   restoreBackup,
   type Backup,
 } from '../BackupService';
@@ -180,6 +181,14 @@ describe('BackupService', () => {
     it('rejects text that is not JSON', () => rejects('not json', 'invalid'));
     it('rejects a JSON array', () => rejects('[]', 'invalid'));
     it('rejects another app', () => rejects(JSON.stringify({ ...valid(), app: 'other' }), 'invalid'));
+    it('restores a backup of the previous app as one of this app', () => {
+      expect(RESTORABLE_APPS).toHaveLength(2);
+      expect(RESTORABLE_APPS[0]).toBe(BACKUP_APP);
+      for (const app of RESTORABLE_APPS) {
+        const backup = valid();
+        expect(parseBackup(JSON.stringify({ ...backup, app }))).toEqual(backup);
+      }
+    });
     it('rejects a format from a newer app as newer', () =>
       rejects(JSON.stringify({ ...valid(), format: BACKUP_FORMAT + 1 }), 'newer'));
     it('rejects a missing creation date', () => rejects(JSON.stringify({ ...valid(), createdAt: 'x' }), 'invalid'));
@@ -281,7 +290,7 @@ describe('BackupService', () => {
       await exportBackup(CREATED);
 
       const name = backupFileName(CREATED);
-      expect(name).toMatch(/^jew-in-time-backup-\d{4}-\d{2}-\d{2}\.json$/);
+      expect(name).toMatch(/^jew-365-backup-\d{4}-\d{2}-\d{2}\.json$/);
       expect(mockWrite).toHaveBeenCalledTimes(1);
       expect(JSON.parse(mockWrite.mock.calls[0][0])).toEqual(createBackup(CREATED));
       expect(mockShareAsync).toHaveBeenCalledWith(`file:///cache/${name}`, {

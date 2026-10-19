@@ -47,15 +47,19 @@ describe('i18n', () => {
     expect(out).toBe((en as Record<string, string>)['onboarding.welcomeTitle']);
   });
 
-  it('brand rename has no old app name in translations', () => {
-    const values = [...Object.values(he), ...Object.values(en)].join('\n');
-    expect(values).not.toContain('יהודי כשר');
-    expect(values).not.toContain('Jew In Time');
-    expect(values).not.toContain('Jewish Time');
-    expect(values).not.toContain('יהודי בזמן');
-    expect(values).not.toContain('Jew in Time');
-    expect((he as Record<string, string>)['app.name']).toBe('יהודי 360');
-    expect((en as Record<string, string>)['app.name']).toBe('Jew 360');
+  it('every brand mention in the translations is the app name', () => {
+    const heName = (he as Record<string, string>)['app.name'];
+    const enName = (en as Record<string, string>)['app.name'];
+    expect(heName).toBe('יהודי 365');
+    expect(enName).toBe('Jew 365');
+    const heBrand = /(^|[^\u0590-\u05FF])יהודי(?![\u0590-\u05FF])/g;
+    const enBrand = /\bJew(?:ish)?\b/g;
+    for (const value of Object.values(he)) {
+      expect(value.match(heBrand)?.length ?? 0).toBe(value.split(heName).length - 1);
+    }
+    for (const value of Object.values(en)) {
+      expect(value.match(enBrand)?.length ?? 0).toBe(value.split(enName).length - 1);
+    }
   });
 });
 

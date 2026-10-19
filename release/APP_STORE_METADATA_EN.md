@@ -2,7 +2,7 @@
 
 ## App Name
 
-Jew 360
+Jew 365
 
 ## Subtitle
 
@@ -14,7 +14,7 @@ Accurate zmanim, a reminder inside each mitzvah's exact window, a siddur in four
 
 ## Description
 
-Jew 360: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 365: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
@@ -56,15 +56,15 @@ mitzvah,zmanim,tefillin,siddur,birkat hamazon,hilula,mikvah,shema,mincha,maariv,
 
 ## Support URL
 
-https://avraham-sason.github.io/jew-in-time/
+https://avraham-sason.github.io/jew-365/
 
 ## Marketing URL
 
-https://avraham-sason.github.io/jew-in-time/
+https://avraham-sason.github.io/jew-365/
 
 ## Privacy Policy URL
 
-https://avraham-sason.github.io/jew-in-time/privacy/en/
+https://avraham-sason.github.io/jew-365/privacy/en/
 
 ## Age Rating Draft
 

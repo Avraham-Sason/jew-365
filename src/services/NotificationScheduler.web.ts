@@ -1,8 +1,8 @@
 import type { OnahKind, TaharahTaskKind } from '@/types/taharah';
 import { useUserStore } from '@/stores/useUserStore';
 
-const DAILY_REBUILD_TASK = 'jew-in-time-daily-rebuild-v2';
-const NOTIFICATION_ACTION_TASK = 'jew-in-time-notification-actions';
+const DAILY_REBUILD_TASK = 'jew-365-daily-rebuild';
+const NOTIFICATION_ACTION_TASK = 'jew-365-notification-actions';
 const MITZVAH_REMINDER_CATEGORY = 'mitzvah_reminder';
 const MITZVAH_TEXT_CATEGORY = 'mitzvah_reminder_text';
 const TAHARAH_KIND = 'taharah';

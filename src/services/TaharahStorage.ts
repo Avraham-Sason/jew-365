@@ -4,7 +4,7 @@ import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { StorageService } from '@/services/StorageService';
 
-export const TAHARAH_STORAGE_ID = 'jew-in-time-taharah';
+export const TAHARAH_STORAGE_ID = 'jew-365-taharah';
 export const TAHARAH_KEY_NAME = 'taharah-mmkv-key';
 
 // Opened when no key can be had (web, or a keychain that cannot be read). A different file than the

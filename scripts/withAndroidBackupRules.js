@@ -8,13 +8,13 @@ const path = require('path');
 // bundles (built for another binary) and the secure store (Keystore-encrypted, unreadable elsewhere).
 // The i18n preferences ride along so a restored Hebrew install starts right-to-left.
 const BACKED_UP = [
-  { domain: 'file', path: 'mmkv/jew-in-time' },
-  { domain: 'file', path: 'mmkv/jew-in-time.crc' },
+  { domain: 'file', path: 'mmkv/jew-365' },
+  { domain: 'file', path: 'mmkv/jew-365.crc' },
   { domain: 'sharedpref', path: 'com.facebook.react.modules.i18nmanager.I18nUtil.xml' },
 ];
 
-const FULL_BACKUP_CONTENT = 'jew_in_time_backup_rules';
-const DATA_EXTRACTION_RULES = 'jew_in_time_data_extraction_rules';
+const FULL_BACKUP_CONTENT = 'jew_365_backup_rules';
+const DATA_EXTRACTION_RULES = 'jew_365_data_extraction_rules';
 
 const includes = (indent) =>
   BACKED_UP.map(({ domain, path: file }) => `${indent}<include domain="${domain}" path="${file}" />`).join('\n');

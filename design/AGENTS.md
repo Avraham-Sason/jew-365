@@ -24,4 +24,4 @@
 
 ## Child DOX Index
 
-- [jew-in-time/AGENTS.md](jew-in-time/AGENTS.md) - Claude Design handoff for the Jew In Time UI direction.
+- [handoff/AGENTS.md](handoff/AGENTS.md) - Claude Design handoff for the original UI direction.

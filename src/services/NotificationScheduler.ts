@@ -22,7 +22,6 @@ import {
   DAILY_REBUILD_TASK,
   IOS_MAX,
   LAST_REBUILD_KEY,
-  LEGACY_DAILY_REBUILD_TASK,
   MARK_DONE_ACTION,
   MITZVAH_REMINDER_CATEGORY,
   MITZVAH_TEXT_CATEGORY,
@@ -401,15 +400,8 @@ TaskManager.defineTask<os.NotificationTaskPayload>(NOTIFICATION_ACTION_TASK, asy
   return handled ? BACKGROUND_NOTIFICATION_RESULT.NewData : BACKGROUND_NOTIFICATION_RESULT.NoData;
 });
 
-async function dropLegacyDailyTask(): Promise<void> {
-  if (await TaskManager.isTaskRegisteredAsync(LEGACY_DAILY_REBUILD_TASK)) {
-    await TaskManager.unregisterTaskAsync(LEGACY_DAILY_REBUILD_TASK);
-  }
-}
-
 export async function registerDailyRebuildTask(): Promise<void> {
   try {
-    await dropLegacyDailyTask().catch(() => {});
     await BackgroundTask.registerTaskAsync(DAILY_REBUILD_TASK, { minimumInterval: 60 });
   } catch (err) {
     console.warn('[daily-rebuild] register failed', err);

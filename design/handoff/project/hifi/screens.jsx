@@ -388,7 +388,7 @@ function OnboardingFlow({ t, isDark }) {
     /* 0 — Welcome */
     <div key="w" style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 28px', gap:14 }}>
       <AppLogo size={72} isDark={isDark}/>
-      <div style={{ fontSize:22, fontWeight:900, color:t.text, textAlign:'center', letterSpacing:-0.5 }}>יהודי כשר</div>
+      <div style={{ fontSize:22, fontWeight:900, color:t.text, textAlign:'center', letterSpacing:-0.5 }}>יהודי 365</div>
       <div style={{ fontSize:13, color:t.textSub, textAlign:'center', lineHeight:1.7 }}>
         אל תפספס שום מצווה —<br/>הזמנים הנכונים, בזמן הנכון
       </div>

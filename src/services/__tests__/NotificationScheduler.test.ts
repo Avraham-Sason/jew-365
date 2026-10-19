@@ -467,52 +467,22 @@ describe('NotificationScheduler', () => {
   });
 
   describe('6.9a the daily rebuild background task', () => {
-    const LEGACY_TASK = 'jew-in-time-daily-rebuild';
     const bg = require('expo-background-task');
-    const tm = require('expo-task-manager');
 
-    const restoreDefaults = () => {
-      tm.isTaskRegisteredAsync.mockReset().mockResolvedValue(false);
-      tm.unregisterTaskAsync.mockReset().mockResolvedValue(undefined);
-    };
+    beforeEach(() => bg.registerTaskAsync.mockClear());
 
-    beforeEach(() => {
-      bg.registerTaskAsync.mockClear();
-      restoreDefaults();
-    });
-    afterEach(restoreDefaults);
-
-    it('registers under the v2 name, every 60 minutes', async () => {
+    it('registers every 60 minutes', async () => {
       await registerDailyRebuildTask();
 
-      expect(DAILY_REBUILD_TASK).toBe('jew-in-time-daily-rebuild-v2');
+      expect(DAILY_REBUILD_TASK).toBe('jew-365-daily-rebuild');
       expect(bg.registerTaskAsync).toHaveBeenCalledTimes(1);
       expect(bg.registerTaskAsync).toHaveBeenCalledWith(DAILY_REBUILD_TASK, { minimumInterval: 60 });
     });
 
-    it('drops the registration an older build left under the legacy name', async () => {
-      tm.isTaskRegisteredAsync.mockImplementation(async (name: string) => name === LEGACY_TASK);
+    it('survives a failed registration', async () => {
+      bg.registerTaskAsync.mockRejectedValueOnce(new Error('native module missing'));
 
-      await registerDailyRebuildTask();
-
-      expect(tm.unregisterTaskAsync).toHaveBeenCalledTimes(1);
-      expect(tm.unregisterTaskAsync).toHaveBeenCalledWith(LEGACY_TASK);
-      expect(bg.registerTaskAsync).toHaveBeenCalledWith(DAILY_REBUILD_TASK, { minimumInterval: 60 });
-    });
-
-    it('leaves a clean install alone', async () => {
-      await registerDailyRebuildTask();
-
-      expect(tm.isTaskRegisteredAsync).toHaveBeenCalledWith(LEGACY_TASK);
-      expect(tm.unregisterTaskAsync).not.toHaveBeenCalled();
-    });
-
-    it('still registers when the legacy cleanup throws', async () => {
-      tm.isTaskRegisteredAsync.mockRejectedValue(new Error('native module missing'));
-
-      await registerDailyRebuildTask();
-
-      expect(bg.registerTaskAsync).toHaveBeenCalledWith(DAILY_REBUILD_TASK, { minimumInterval: 60 });
+      await expect(registerDailyRebuildTask()).resolves.toBeUndefined();
     });
   });
 

@@ -40,7 +40,7 @@ function load(): TaharahStorageModule {
 }
 
 const lastOpened = () => mockOpened[mockOpened.length - 1];
-const taharahOpened = () => mockOpened.filter((opened) => opened.config.id !== 'jew-in-time');
+const taharahOpened = () => mockOpened.filter((opened) => opened.config.id !== 'jew-365');
 
 describe('TaharahStorage', () => {
   beforeEach(() => {
@@ -68,7 +68,7 @@ describe('TaharahStorage', () => {
 
       expect(taharahOpened()).toHaveLength(1);
       expect(lastOpened().config).toEqual({
-        id: 'jew-in-time-taharah',
+        id: 'jew-365-taharah',
         encryptionKey: SecureStore.__store.get(KEY_NAME),
       });
     });
@@ -104,7 +104,7 @@ describe('TaharahStorage', () => {
 
       load();
 
-      expect(lastOpened().config).toEqual({ id: 'jew-in-time-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
       expect(SecureStore.setItem).not.toHaveBeenCalled();
     });
 
@@ -116,7 +116,7 @@ describe('TaharahStorage', () => {
 
       load();
 
-      expect(lastOpened().config).toEqual({ id: 'jew-in-time-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
     });
 
     it('never touches the secure store on web', () => {
@@ -132,7 +132,7 @@ describe('TaharahStorage', () => {
 
       expect(SecureStore.getItem).not.toHaveBeenCalled();
       expect(SecureStore.setItem).not.toHaveBeenCalled();
-      expect(lastOpened().config).toEqual({ id: 'jew-in-time-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
     });
 
     // A reset while the key cannot be read wipes only the fallback file; the encrypted one is
@@ -144,18 +144,18 @@ describe('TaharahStorage', () => {
         throw new Error('keychain locked');
       });
       const locked = load();
-      expect(lastOpened().config).toEqual({ id: 'jew-in-time-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
 
       locked.clearTaharahStorage();
-      expect(mockFiles.get('jew-in-time')!.contains(locked.WIPE_PENDING_KEY)).toBe(true);
+      expect(mockFiles.get('jew-365')!.contains(locked.WIPE_PENDING_KEY)).toBe(true);
       expect(SecureStore.__store.get(KEY_NAME)).toBe('OldKeyOldKeyOldK');
 
       load();
       const replaced = SecureStore.__store.get(KEY_NAME);
       expect(replaced).not.toBe('OldKeyOldKeyOldK');
-      expect(lastOpened().config).toEqual({ id: 'jew-in-time-taharah', encryptionKey: replaced });
+      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah', encryptionKey: replaced });
       expect(lastOpened().instance.clearAll).toHaveBeenCalled();
-      expect(mockFiles.get('jew-in-time')!.contains(locked.WIPE_PENDING_KEY)).toBe(false);
+      expect(mockFiles.get('jew-365')!.contains(locked.WIPE_PENDING_KEY)).toBe(false);
     });
 
     it('clearing still wipes the data and leaves the secure store alone', () => {

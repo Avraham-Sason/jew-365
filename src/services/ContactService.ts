@@ -34,7 +34,7 @@ export function contactProblem({ name, phone, message }: ContactMessage): Contac
 }
 
 export function contactMailUrl(): string {
-  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Jew 360')}`;
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Jew 365')}`;
 }
 
 export async function sendContactMessage(
@@ -53,7 +53,7 @@ export async function sendContactMessage(
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        _subject: `Jew 360: ${name}`,
+        _subject: `Jew 365: ${name}`,
         name,
         phone,
         message,

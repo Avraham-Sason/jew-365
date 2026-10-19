@@ -2,9 +2,8 @@ import type { ContentBlock } from '@/types/mitzvah';
 import type { OnahKind, TaharahTaskKind } from '@/types/taharah';
 import { dateKey } from '@/stores/useCompletionsStore';
 
-export const DAILY_REBUILD_TASK = 'jew-in-time-daily-rebuild-v2';
-export const LEGACY_DAILY_REBUILD_TASK = 'jew-in-time-daily-rebuild';
-export const NOTIFICATION_ACTION_TASK = 'jew-in-time-notification-actions';
+export const DAILY_REBUILD_TASK = 'jew-365-daily-rebuild';
+export const NOTIFICATION_ACTION_TASK = 'jew-365-notification-actions';
 export const MITZVAH_REMINDER_CATEGORY = 'mitzvah_reminder';
 export const MITZVAH_TEXT_CATEGORY = 'mitzvah_reminder_text';
 export const TAHARAH_BEDIKA_CATEGORY = 'taharah_bedika';

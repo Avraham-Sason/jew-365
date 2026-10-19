@@ -1,4 +1,4 @@
-# Failure-Point Audit — Jew 360 (יהודי 360)
+# Failure-Point Audit — Jew 365 (יהודי 365)
 
 Audit date: 2026-08-09 · Commit `edf9211` (+ the uncommitted `skipIfDone` work)
 
@@ -73,7 +73,7 @@ Findings went through an adversarial verification pass whose default stance was 
 |---|---------|-------|----------|
 | 1 | **Hard crash + total notification blackout** for London / Antwerp / Moscow, 31–81 days each summer. One `null` zman throws; nothing catches it | `ZmanimService.ts:8` | Critical |
 | 2 | **`skipOn` is ignored on every display surface** — tefillin is shown as an open mitzvah on Shabbat, then marked "Missed" | `buildDayTimeline.ts:50`, `home.tsx:120` | Critical |
-| 3 | **`pnpm android` builds a different app** — the on-disk `android/` project is `com.kosherjew.app`, another EAS project, another scheme, name יהודי כשר | `android/app/build.gradle:92` | Critical |
+| 3 | **`pnpm android` builds a different app** — the on-disk `android/` project is an older app's package, another EAS project, another scheme and name | `android/app/build.gradle:92` | Critical |
 | 4 | **Sefirat HaOmer is one night off** — nothing on night 1; a "count the Omer" reminder *with the bracha* on Shavuot night | `mitzvot.ts:27,256` | Critical |
 | 5 | **Maariv / Omer windows end at next-day noon** — an 18-hour window, and a completion after midnight suppresses the *next* night's reminders | `mitzvot.ts:162,256` | Critical |
 | 6 | **Shabbat skip is decided with *now's* clock time** — an evening rebuild schedules tefillin for Shabbat morning, or deletes Friday's | `NotificationScheduler.ts:325` | High |
@@ -419,9 +419,9 @@ Fix: one shared `isResolved(mitzvahId, date)` predicate for all three call sites
 
 > **Fixed 2026-08-10.** The bundle entry is now a root `index.js` that imports `expo-router/entry` and then `src/services/NotificationScheduler`, so both `defineTask` calls run on every bundle load, headless included. Pinned by `src/services/__tests__/backgroundTaskEntry.test.ts`. Ships over OTA — the entry is part of the JS bundle.
 
-Both `TaskManager.defineTask` calls sit at the module scope of `NotificationScheduler.ts`, which is imported only by route modules (`_layout.tsx`, home, settings, onboarding) and by lazy `require()`s inside store actions. expo-router loads route modules at render time. A headless launch evaluates only the entry graph and renders nothing — so neither task was ever defined there, and expo-task-manager logs *"Task "jew-in-time-notification-actions" has been executed but looks like it is not defined"* and drops the event.
+Both `TaskManager.defineTask` calls sit at the module scope of `NotificationScheduler.ts`, which is imported only by route modules (`_layout.tsx`, home, settings, onboarding) and by lazy `require()`s inside store actions. expo-router loads route modules at render time. A headless launch evaluates only the entry graph and renders nothing — so neither task was ever defined there, and expo-task-manager logs *"Task "jew-365-notification-actions" has been executed but looks like it is not defined"* and drops the event.
 
-Headless is exactly how Android delivers a MARK_DONE tap when the app process is dead: `ExpoHandlingDelegate.handleNotificationResponse` → `runTaskManagerTasks` → JobScheduler → TaskService boots headless JS (verified in the installed expo-notifications 0.32 source). The trap is invisible because the config-plugin receiver (`MitzvahNotificationService`) dismisses the tray notification *before* delegating — the tap looks successful, but `markDone` and `cancelForMitzvah` never run: the mitzvah stays unmarked and the rest of that day's reminders for it keep firing. With the app alive the JS listener path handles the tap correctly, which made the failure look random. Android's pending-response replay (delivered when a listener attaches in the same process) sometimes rescued a tap if the app was opened moments later — more randomness. The same gap killed `jew-in-time-daily-rebuild` in the killed state, leaving `refreshSchedulingOnForeground` as the only working day-rollover path.
+Headless is exactly how Android delivers a MARK_DONE tap when the app process is dead: `ExpoHandlingDelegate.handleNotificationResponse` → `runTaskManagerTasks` → JobScheduler → TaskService boots headless JS (verified in the installed expo-notifications 0.32 source). The trap is invisible because the config-plugin receiver (`MitzvahNotificationService`) dismisses the tray notification *before* delegating — the tap looks successful, but `markDone` and `cancelForMitzvah` never run: the mitzvah stays unmarked and the rest of that day's reminders for it keep firing. With the app alive the JS listener path handles the tap correctly, which made the failure look random. Android's pending-response replay (delivered when a listener attaches in the same process) sometimes rescued a tap if the app was opened moments later — more randomness. The same gap killed the daily rebuild task in the killed state, leaving `refreshSchedulingOnForeground` as the only working day-rollover path.
 
 ---
 
@@ -687,21 +687,21 @@ Fix: `minHeight: 58`, plus `maxFontSizeMultiplier={1.4}` and `numberOfLines={1}`
 ### 7.1 `pnpm android` builds a completely different app **[verified]** — ✅ FIXED
 `android/app/build.gradle:92`, `android/app/src/main/res/values/strings.xml`, `AndroidManifest.xml:29,49`
 
-> **Fixed 2026-08-09.** Ran `expo prebuild --clean`; the native project now matches `app.json` on every identity field (`com.jewintime.app`, app name יהודי בזמן, runtime 1.0.10, update URL `…/8cc2a377-…`, schemes `jewintime` / `exp+jew-in-time`), the config plugin's `MitzvahNotificationService` is wired under the correct package, and `POST_NOTIFICATIONS` / `RECEIVE_BOOT_COMPLETED` / `WAKE_LOCK` are all present. Added `pnpm prebuild:clean` plus an AGENTS.md rule that an existing native folder is disposable cache, never state.
+> **Fixed 2026-08-09.** Ran `expo prebuild --clean`; the native project now matches `app.json` on every identity field (package, app name, runtime 1.0.10, update URL, schemes), the config plugin's `MitzvahNotificationService` is wired under the correct package, and `POST_NOTIFICATIONS` / `RECEIVE_BOOT_COMPLETED` / `WAKE_LOCK` are all present. Added `pnpm prebuild:clean` plus an AGENTS.md rule that an existing native folder is disposable cache, never state.
 
 The on-disk `android/` folder (gitignored, left over from an old prebuild) disagrees with `app.json` on **every identity field**:
 
 | Field | `android/` on disk | `app.json` |
 |---|---|---|
-| applicationId / namespace | `com.kosherjew.app` | `com.jewintime.app` |
-| EAS update project | `86c60d8d-9f64-4f85-831e-31ffce5883fe` | `8cc2a377-fcc9-4c78-bdde-ec0fc8f2a84e` |
-| deep-link schemes | `kosherjew`, `exp+kosher-jew` | `jewintime` |
-| app_name | `יהודי כשר` | `יהודי בזמן` |
+| applicationId / namespace | an older app's package | the app's package |
+| EAS update project | an older EAS project | the app's EAS project |
+| deep-link schemes | the older app's schemes | the app's scheme |
+| app_name | the older app's name | the app's name |
 | runtime version | `1.0.2` | `1.0.10` |
 
 Expo CLI **does not re-run prebuild when the platform folder already exists**, so none of this is ever reconciled.
 
-Failure scenario: a developer runs `pnpm android` — the AGENTS.md-documented dev command — to do the one open task, manual mobile end-to-end verification. Gradle builds `com.kosherjew.app` with runtime 1.0.2, launcher label יהודי כשר, scheme `kosherjew`, and an update URL pointing at a **different EAS project**. They validate notification and mitzvah behaviour against an app that is not the shipping app: `jewintime://` links don't resolve, an OTA published with `pnpm update` is never delivered, and every app.json change since that prebuild — including the `POST_NOTIFICATIONS` / `SCHEDULE_EXACT_ALARM` permission set and the notification icon/colour — is absent from the APK. EAS builds prebuild fresh, so **local testing and CI silently diverge with no error message anywhere**.
+Failure scenario: a developer runs `pnpm android` — the AGENTS.md-documented dev command — to do the one open task, manual mobile end-to-end verification. Gradle builds an older app's package with runtime 1.0.2, its launcher label and scheme, and an update URL pointing at a **different EAS project**. They validate notification and mitzvah behaviour against an app that is not the shipping app: the app's deep links don't resolve, an OTA published with `pnpm update` is never delivered, and every app.json change since that prebuild — including the `POST_NOTIFICATIONS` / `SCHEDULE_EXACT_ALARM` permission set and the notification icon/colour — is absent from the APK. EAS builds prebuild fresh, so **local testing and CI silently diverge with no error message anywhere**.
 
 Fix: delete the local `android/` (and any `ios/`), or make the documented dev commands run `npx expo prebuild --platform android --clean` first. Native folders are gitignored — treat any existing one as disposable cache, not state.
 
@@ -728,7 +728,7 @@ The installed build prints `expo-background-fetch: This library is deprecated. U
 
 Neither `expo-background-fetch` nor `expo-task-manager` is listed in `plugins`, although both ship `app.plugin.js`. Their plugins add `UIBackgroundModes: ['fetch']` (already set manually) **and Android `WAKE_LOCK` + `RECEIVE_BOOT_COMPLETED`**. `RECEIVE_BOOT_COMPLETED` is declared manually; **`WAKE_LOCK` is not**. *(Update 2026-08-09: after the clean prebuild of §7.1, `WAKE_LOCK` does appear in the generated manifest via autolinked module plugins, so this half is moot. The deprecation of `expo-background-fetch` stands.)*
 
-> **Fixed 2026-10-09 (1.0.18).** The daily rebuild moved to `expo-background-task`: task `jew-in-time-daily-rebuild-v2`, `minimumInterval: 60` minutes, the package's config plugin (which adds the `processing` background mode and the `BGTaskSchedulerPermittedIdentifiers` entry), `app.json` no longer declaring `fetch` itself (`expo-task-manager`'s own auto-applied plugin still adds it to the Info.plist), and `registerDailyRebuildTask()` unregisters the legacy `jew-in-time-daily-rebuild` registration on an updated install. It is a native change, so it reaches users with the build.
+> **Fixed 2026-10-09 (1.0.18).** The daily rebuild moved to `expo-background-task`: a task of its own, `minimumInterval: 60` minutes, the package's config plugin (which adds the `processing` background mode and the `BGTaskSchedulerPermittedIdentifiers` entry), `app.json` no longer declaring `fetch` itself (`expo-task-manager`'s own auto-applied plugin still adds it to the Info.plist), and `registerDailyRebuildTask()` unregistered the background-fetch registration on an updated install. It is a native change, so it reaches users with the build.
 
 ### 7.4 AGENTS.md documents four scripts that don't exist **[verified]** — ✅ FIXED
 `AGENTS.md:27` vs `package.json`
@@ -755,7 +755,7 @@ Fix: `@hebcal[/+].*` (and likewise for the others), or drop the trailing `/.*` s
 
 ### 7.6 Release identity is inconsistent and store URLs are placeholders — ✅ FIXED
 
-> **Fixed 2026-09-01.** `release/APP_STORE_METADATA_HE.md` still carried the old name `יהודי כשר`, which `src/i18n/__tests__/i18n.test.ts` explicitly forbids; all three listings now read `יהודי בזמן` / `Jewish Time`, matching [app.json](app.json). The privacy policy moved out of `release/` and is published as real pages under [docs/](docs) — Hebrew and English — with a real contact address. Support, Marketing and Privacy Policy URLs in all three metadata files now hold live GitHub Pages URLs instead of "Add before submission". The generated Android project is disposable cache and regenerates from [app.json](app.json). GitHub Pages serves the folder from `main`, and all three URLs return 200.
+> **Fixed 2026-09-01.** `release/APP_STORE_METADATA_HE.md` still carried an older app name, which `src/i18n/__tests__/i18n.test.ts` forbids; all three listings now read the app's name, matching [app.json](app.json). The privacy policy moved out of `release/` and is published as real pages under [docs/](docs) — Hebrew and English — with a real contact address. Support, Marketing and Privacy Policy URLs in all three metadata files now hold live GitHub Pages URLs instead of "Add before submission". The generated Android project is disposable cache and regenerates from [app.json](app.json). GitHub Pages serves the folder from `main`, and all three URLs return 200.
 
 ### 7.7 Smaller release blockers — ✅ FIXED
 - **`ITSAppUsesNonExemptEncryption` is not declared** (`app.json:19`). Every TestFlight/App Store upload stalls on "Missing Compliance" until answered by hand, for every build. The app only uses HTTPS — add `"ITSAppUsesNonExemptEncryption": false`.

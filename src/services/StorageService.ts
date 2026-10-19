@@ -1,6 +1,6 @@
 import { MMKV } from 'react-native-mmkv';
 
-export const storage = new MMKV({ id: 'jew-in-time' });
+export const storage = new MMKV({ id: 'jew-365' });
 
 export const StorageService = {
   get<T>(key: string): T | undefined {

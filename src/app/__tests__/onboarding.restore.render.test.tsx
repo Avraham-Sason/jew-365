@@ -26,7 +26,7 @@ const mockRestore = jest.mocked(restoreBackup);
 const mockRequest = jest.mocked(requestNotificationPermissions);
 
 const BACKUP: Backup = {
-  app: 'jew-in-time',
+  app: 'jew-365',
   format: 1,
   createdAt: '2026-10-14T09:30:00.000Z',
   stores: { 'user-store': '{"state":{},"version":1}' },

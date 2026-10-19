@@ -6,8 +6,8 @@ const includeLines = (xml) => xml.match(/<include [^>]+>/g) ?? [];
 describe('Android backup rules', () => {
   it('backs up only the main MMKV file, its checksum and the RTL preference', () => {
     expect(BACKED_UP).toEqual([
-      { domain: 'file', path: 'mmkv/jew-in-time' },
-      { domain: 'file', path: 'mmkv/jew-in-time.crc' },
+      { domain: 'file', path: 'mmkv/jew-365' },
+      { domain: 'file', path: 'mmkv/jew-365.crc' },
       { domain: 'sharedpref', path: 'com.facebook.react.modules.i18nmanager.I18nUtil.xml' },
     ]);
   });

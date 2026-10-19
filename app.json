@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "יהודי 360",
-    "slug": "jew-in-time",
-    "version": "1.0.19",
+    "name": "יהודי 365",
+    "slug": "jew-365",
+    "version": "1.0.20",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "jewintime",
+    "scheme": "jew365",
     "userInterfaceStyle": "automatic",
     "locales": {
       "he": "./locales/he.json",
@@ -19,7 +19,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jewintime.app",
+      "bundleIdentifier": "com.jew365.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים לפי האזור שלך.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים ולרענון יומי של התראות.",
@@ -33,7 +33,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5EFE4"
       },
-      "package": "com.jewintime.app",
+      "package": "com.jew365.app",
       "allowBackup": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -102,14 +102,15 @@
         "root": "./src/app"
       },
       "eas": {
-        "projectId": "8cc2a377-fcc9-4c78-bdde-ec0fc8f2a84e"
+        "projectId": "681ad224-93cc-4094-81cd-f70c48087485"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
+    "owner": "avraham-sason",
     "updates": {
-      "url": "https://u.expo.dev/8cc2a377-fcc9-4c78-bdde-ec0fc8f2a84e"
+      "url": "https://u.expo.dev/681ad224-93cc-4094-81cd-f70c48087485"
     }
   }
 }

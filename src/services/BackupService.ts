@@ -15,7 +15,8 @@ import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
 
-export const BACKUP_APP = 'jew-in-time';
+export const BACKUP_APP = 'jew-365';
+export const RESTORABLE_APPS: readonly string[] = [BACKUP_APP, 'jew-in-time'];
 export const BACKUP_FORMAT = 1;
 const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
 
@@ -76,7 +77,12 @@ export function parseBackup(text: string): Backup {
   } catch {
     throw new BackupError('invalid');
   }
-  if (!isRecord(parsed) || parsed.app !== BACKUP_APP || typeof parsed.format !== 'number') {
+  if (
+    !isRecord(parsed) ||
+    typeof parsed.app !== 'string' ||
+    !RESTORABLE_APPS.includes(parsed.app) ||
+    typeof parsed.format !== 'number'
+  ) {
     throw new BackupError('invalid');
   }
   if (parsed.format > BACKUP_FORMAT) throw new BackupError('newer');
@@ -121,7 +127,7 @@ export async function restoreBackup(backup: Backup): Promise<void> {
 }
 
 export function backupFileName(now: Date = new Date()): string {
-  return `jew-in-time-backup-${dateKey(now)}.json`;
+  return `jew-365-backup-${dateKey(now)}.json`;
 }
 
 export async function exportBackup(now: Date = new Date()): Promise<void> {

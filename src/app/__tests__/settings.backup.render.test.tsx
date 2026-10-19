@@ -30,7 +30,7 @@ const mockPick = jest.mocked(pickBackup);
 const mockRestore = jest.mocked(restoreBackup);
 
 const BACKUP: Backup = {
-  app: 'jew-in-time',
+  app: 'jew-365',
   format: 1,
   createdAt: new Date(2026, 9, 14, 12).toISOString(),
   stores: { 'user-store': '{"state":{},"version":1}' },
