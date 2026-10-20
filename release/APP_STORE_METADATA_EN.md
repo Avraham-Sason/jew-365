@@ -25,7 +25,7 @@ Mitzvot, on time
 - Hebrew calendar, parasha, holidays and halachic opinions, set for Israel or the Diaspora
 
 A siddur in four nusachim
-The prayer text for each mitzvah, plus 14 more texts: Grace After Meals, Me'ein Shalosh, Borei Nefashot, the Traveler's Prayer, Asher Yatzar, blessings on food and fragrance, blessings on sights and sounds, the bedtime Shema, Kiddush Levana, affixing a mezuzah, Sheva Berachot, Chanukah candle lighting, Tikkun HaKlali and the whole of Tehillim, with a jump to each day of the week's portion. Ashkenaz, Sefard, Edot HaMizrach or Chabad, adjusted to the day, with auto-scroll so you can read without touching the screen.
+The prayer text for each mitzvah, plus 16 more texts: Grace After Meals, Me'ein Shalosh, Borei Nefashot, the Traveler's Prayer, Asher Yatzar, blessings on food and fragrance, blessings on sights and sounds, the bedtime Shema, Kiddush Levana, affixing a mezuzah, Sheva Berachot, Chanukah candle lighting, Selichot, Nishmat Kol Chai, Tikkun HaKlali and the whole of Tehillim, with a jump to each day of the week's portion. Ashkenaz, Sefard, Edot HaMizrach or Chabad, adjusted to the day, with auto-scroll so you can read without touching the screen.
 
 Shabbat and Yom Tov
 The app rests on Shabbat and Yom Tov: no notifications and a quiet screen. When it ends, mark what you did so your streak holds. An hour before it begins, a notice gives candle-lighting and exit times.
@@ -48,7 +48,7 @@ Private by design
 - Halacha hotline: call or WhatsApp an Ashkenazi or Sephardi halacha line, by your nusach
 - Backup and restore: through the device's iCloud backup, and a backup file you can export and restore on any phone
 - Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
-- The app sends only technical crash reports, with no personal information
+- Personal information leaves your device only in a message you choose to send from Contact us; crash reports are technical, with no personal information
 
 ## Keywords
 

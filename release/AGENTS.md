@@ -7,7 +7,7 @@
 ## Ownership
 
 - [APP_STORE_METADATA_HE.md](APP_STORE_METADATA_HE.md) and [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md) own App Store listing copy. The English file also holds the App Privacy answers.
-- [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) owns Google Play listing copy (English default, Hebrew localization), the Data safety answers and the content rating notes.
+- [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) owns Google Play listing copy (Hebrew default as `iw-IL`, English translation), the Data safety answers and the content rating notes.
 - The published privacy policy lives in [../docs/privacy/index.html](../docs/privacy/index.html) and [../docs/privacy/en/index.html](../docs/privacy/en/index.html), not here. This folder owns store copy only.
 
 ## Local Contracts
@@ -19,7 +19,7 @@
 - The optional taharah tracker keeps menstrual-cycle related dates on the device only and never collects them. Say exactly that wherever a store form asks about health information.
 - The same tracker sets the App Store age-rating questionnaire to Infrequent/Mild Medical/Treatment Information, and the rating is whatever App Store Connect computes from its questionnaire. Never submit `4+`. Answer the Play content rating questionnaire from the same facts.
 - Hebrew copy should preserve Hebrew-first product positioning; English copy should be a faithful market-facing equivalent, not a literal machine translation.
-- The feature list in the copy is the shipped feature list: nine built-in mitzvot, custom mitzvot, notification buttons, the siddur (the mitzvah texts plus fourteen standalone texts, Tehillim among them, four nuschaot, auto-scroll), schedule and history, the Shabbat and Yom Tov rest with the check-in and the pre-block notice, the optional notices for the hilulot of 57 tzaddikim and for Rosh Chodesh (three days before, the evening before, on the day), the weekly report after Shabbat (on by default: a notification that opens a report screen, past reports from the history tab), the optional taharah tracker, the halacha hotline (dial or WhatsApp, Ashkenazi or Sephardi by nusach), backup and restore (Android's automatic backup, the iCloud device backup, and a backup file), six palettes, twenty cities or GPS. A feature that is added or removed changes every listing in the same edit.
+- The feature list in the copy is the shipped feature list: nine built-in mitzvot, custom mitzvot, notification buttons, the siddur (the mitzvah texts plus sixteen standalone texts, Tehillim, Nishmat Kol Chai and Selichot among them, four nuschaot, auto-scroll), schedule and history, the Shabbat and Yom Tov rest with the check-in and the pre-block notice, the optional notices for the hilulot of 57 tzaddikim and for Rosh Chodesh (three days before, the evening before, on the day), the weekly report after Shabbat (on by default: a notification that opens a report screen, past reports from the history tab), the optional taharah tracker, the halacha hotline (dial or WhatsApp, Ashkenazi or Sephardi by nusach), backup and restore (Android's automatic backup, the iCloud device backup, and a backup file), six palettes, twenty cities or GPS. A feature that is added or removed changes every listing in the same edit.
 
 ## Work Guidance
 
