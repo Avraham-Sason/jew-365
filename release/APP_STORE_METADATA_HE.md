@@ -56,15 +56,15 @@
 
 ## Support URL
 
-https://avraham-sason.github.io/jew-365/
+https://jew-365.github.io/jew-365/
 
 ## Marketing URL
 
-https://avraham-sason.github.io/jew-365/
+https://jew-365.github.io/jew-365/
 
 ## Privacy Policy URL
 
-https://avraham-sason.github.io/jew-365/privacy/
+https://jew-365.github.io/jew-365/privacy/
 
 ## Age Rating Draft
 

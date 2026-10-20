@@ -38,7 +38,7 @@
 - Open both policy pages in a browser and confirm the Hebrew renders right-to-left and the language switch links resolve.
 - Open [taharah-review.html](taharah-review.html) at phone width (375px) and at desktop width: confirm the Hebrew renders right-to-left, nothing scrolls horizontally, the rules table collapses into stacked cards with a label on every value, and each `לאימות` badge jumps to its numbered item in section 8.
 - Run [pnpm check:dox](../scripts/check-dox.js) after adding or moving a file here.
-- Confirm the live URLs resolve after publishing: `https://avraham-sason.github.io/jew-365/`, `https://avraham-sason.github.io/jew-365/privacy/` and `https://avraham-sason.github.io/jew-365/privacy/en/`.
+- Confirm the live URLs resolve after publishing: `https://jew-365.github.io/jew-365/`, `https://jew-365.github.io/jew-365/privacy/` and `https://jew-365.github.io/jew-365/privacy/en/`.
 
 ## Child DOX Index
 

@@ -129,4 +129,4 @@ Questionnaire notes:
 - Feature graphic
 - Phone screenshots: Home (gold), Home (dark), Siddur tab, Reader, Schedule (day), Mitzvah detail, Settings
 - App icon
-- Privacy policy public URL: https://avraham-sason.github.io/jew-365/privacy/
+- Privacy policy public URL: https://jew-365.github.io/jew-365/privacy/

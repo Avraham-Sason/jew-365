@@ -4,8 +4,8 @@ import { captureException } from '@/services/crashReporting';
 
 // Formspree form id (https://formspree.io/f/<id>). It is public by design: it only lets a client
 // post into the form. Empty hides the contact form and leaves the email link.
-export const CONTACT_FORM_ID = 'xyekordk';
-export const CONTACT_EMAIL = 'avisason9314@gmail.com';
+export const CONTACT_FORM_ID = 'mrpevdbk';
+export const CONTACT_EMAIL = '365jew@gmail.com';
 export const CONTACT_MESSAGE_MAX = 2000;
 export const CONTACT_TIMEOUT_MS = 15_000;
 

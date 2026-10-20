@@ -56,15 +56,15 @@ mitzvah,zmanim,tefillin,siddur,birkat hamazon,hilula,mikvah,shema,mincha,maariv,
 
 ## Support URL
 
-https://avraham-sason.github.io/jew-365/
+https://jew-365.github.io/jew-365/
 
 ## Marketing URL
 
-https://avraham-sason.github.io/jew-365/
+https://jew-365.github.io/jew-365/
 
 ## Privacy Policy URL
 
-https://avraham-sason.github.io/jew-365/privacy/en/
+https://jew-365.github.io/jew-365/privacy/en/
 
 ## Age Rating Draft
 

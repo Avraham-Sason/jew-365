@@ -1,6 +1,6 @@
 const { nextUpdateNumber, labelMessage, chokMapCommitted } = require('../publish-update');
 
-const listed = (message) => `"${message}" (5 hours ago by avraham-sason)`;
+const listed = (message) => `"${message}" (5 hours ago by jew-365)`;
 
 describe('nextUpdateNumber', () => {
   it('starts at 1 on a version nothing was published for', () => {
