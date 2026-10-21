@@ -7,18 +7,20 @@ import Animated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { fontFamilies, typography } from '@/theme/typography';
 import { durations, radius, spacing } from '@/theme/tokens';
+import { Card } from './Card';
 import { IconTile } from './IconTile';
 import { MitzvahIcon, type IconName } from './MitzvahIcon';
 import { TimeRibbon } from './TimeRibbon';
 import { useI18n } from '@/i18n';
 
-const TILE_SIZE = 38;
-const BUTTON_SIZE = 30;
+const TILE_SIZE = 40;
+const BUTTON_SIZE = 32;
+const BUTTON_ICON_SIZE = 16;
+const BUTTON_ICON_STROKE = 2.2;
 const DONE_LINE_ICON_SIZE = 14;
 const URGENT_LINE_ICON_SIZE = 12;
 const URGENT_LINE_ICON_STROKE = 2;
@@ -41,28 +43,6 @@ type Props = {
   onOpenText?: () => void;
 };
 
-function OpenBook({ color }: { color: string }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 13 13" fill="none">
-      <Path
-        d="M6.5 3.4C5.3 2.6 3.7 2.2 1.6 2.2v7.7c2.1 0 3.7.4 4.9 1.2 1.2-.8 2.8-1.2 4.9-1.2V2.2c-2.1 0-3.7.4-4.9 1.2zM6.5 3.4v7.7"
-        stroke={color}
-        strokeWidth={1.3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
-function Checkmark({ color, size = 13, width = 1.8 }: { color: string; size?: number; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 13 13" fill="none">
-      <Path d="M2 6.5L5 9.5L11 3.5" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
 export function MitzvahCard({
   name,
   icon = 'custom',
@@ -83,8 +63,9 @@ export function MitzvahCard({
   const { colors } = useTheme();
   const { t } = useI18n();
   const bg = done ? colors.surface2 : urgent ? colors.urgentBg : colors.surface;
-  const bdr = done ? colors.border : urgent ? colors.urgentBorder : colors.border;
   const statusColor = statusTone === 'urgent' ? colors.urgent : statusTone === 'safe' ? colors.safe : colors.textMuted;
+  const buttonTone = urgent ? colors.urgent : colors.textSub;
+  const ringColor = urgent ? colors.urgent : colors.border;
   const canComplete = !readOnly && !done && Boolean(onComplete);
   const buttonCount = (onOpenText ? 1 : 0) + (canComplete || done ? 1 : 0);
   const [rowHeight, setRowHeight] = useState(TILE_SIZE);
@@ -117,13 +98,7 @@ export function MitzvahCard({
   }));
 
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: bg, borderColor: bdr, opacity: done ? 0.55 : 1 },
-        shadowStyle(colors.shadow, shadowPresets.card),
-      ]}
-    >
+    <Card style={[styles.card, { backgroundColor: bg, opacity: done ? 0.55 : 1 }]}>
       <Pressable
         onPress={onPress}
         onLongPress={onLongPress}
@@ -138,14 +113,14 @@ export function MitzvahCard({
         style={({ pressed }) => [styles.body, { opacity: !done && pressed && onPress ? 0.85 : 1 }]}
       >
         <View
-          style={[styles.row, { paddingEnd: buttonCount * (BUTTON_SIZE + spacing.md) }]}
+          style={[styles.row, { paddingEnd: buttonCount * (BUTTON_SIZE + spacing.sm) }]}
           onLayout={(event) => setRowHeight(event.nativeEvent.layout.height)}
         >
           <IconTile name={icon} tone={done ? 'done' : 'accent'} size={TILE_SIZE} />
           <View style={styles.meta}>
             <Text
               style={[
-                typography.bodyBold,
+                typography.heading,
                 {
                   color: done ? colors.textSub : colors.text,
                   textDecorationLine: done ? 'line-through' : 'none',
@@ -198,7 +173,7 @@ export function MitzvahCard({
             )}
           </View>
         </View>
-        {!done && !hideProgress ? <TimeRibbon pct={pct} timeLeft={timeLeft} /> : null}
+        {!done && !hideProgress ? <TimeRibbon pct={pct} timeLeft={timeLeft} urgent={urgent} /> : null}
       </Pressable>
       {buttonCount > 0 ? (
         // The buttons are siblings of the body, laid over its reserved end padding: a button inside the
@@ -210,9 +185,9 @@ export function MitzvahCard({
               accessibilityRole="button"
               accessibilityLabel={t('siddur.open')}
               hitSlop={8}
-              style={[styles.checkBtn, { borderColor: urgent ? colors.urgent : colors.border }]}
+              style={[styles.circleButton, { borderColor: ringColor }]}
             >
-              <OpenBook color={urgent ? colors.urgent : colors.textMuted} />
+              <MitzvahIcon name="siddur" size={BUTTON_ICON_SIZE} color={buttonTone} />
             </Pressable>
           ) : null}
           {canComplete ? (
@@ -222,21 +197,18 @@ export function MitzvahCard({
               accessibilityRole="button"
               accessibilityLabel={t('state.completeAction', { name })}
               hitSlop={8}
-              style={[
-                styles.checkBtn,
-                {
-                  borderColor: urgent ? colors.urgent : colors.border,
-                },
-              ]}
+              style={[styles.circleButton, { borderColor: ringColor }]}
             >
-              <Checkmark color={urgent ? colors.urgent : colors.textMuted} />
+              <MitzvahIcon name="check" size={BUTTON_ICON_SIZE} color={buttonTone} strokeWidth={BUTTON_ICON_STROKE} />
             </Pressable>
           ) : done ? (
-            <View
-              pointerEvents="none"
-              style={[styles.checkBtn, { backgroundColor: colors.gold, borderColor: colors.gold }]}
-            >
-              <Checkmark color={colors.onGold} />
+            <View pointerEvents="none" style={[styles.doneMark, { backgroundColor: colors.gold }]}>
+              <MitzvahIcon
+                name="check"
+                size={BUTTON_ICON_SIZE}
+                color={colors.onGold}
+                strokeWidth={BUTTON_ICON_STROKE}
+              />
             </View>
           ) : null}
         </View>
@@ -248,28 +220,23 @@ export function MitzvahCard({
               style={[
                 styles.stamp,
                 {
-                  borderColor: colors.gold,
+                  borderColor: colors.goldText,
                 },
                 shadowStyle(colors.goldLight, shadowPresets.glow),
                 stampStyle,
               ]}
             >
-              <Text style={[styles.stampText, { color: colors.gold }]}>{t('state.stamped')}</Text>
+              <Text style={[styles.stampText, { color: colors.goldText }]}>{t('state.stamped')}</Text>
             </Animated.View>
           </View>
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
+  card: { marginBottom: spacing.md },
   body: { padding: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   meta: { flex: 1, minWidth: 0 },
@@ -280,13 +247,20 @@ const styles = StyleSheet.create({
     end: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  checkBtn: {
+  circleButton: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
-    borderRadius: radius.md,
-    borderWidth: 2,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneMark: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -119,13 +119,7 @@ export function ReminderEditor({
         contentContainerStyle={styles.fields}
         keyboardShouldPersistTaps="handled"
       >
-        <SegmentedControl
-          tone="surface"
-          options={anchorOptions}
-          value={anchor}
-          onChange={changeAnchor}
-          style={styles.anchor}
-        />
+        <SegmentedControl options={anchorOptions} value={anchor} onChange={changeAnchor} style={styles.anchor} />
         <Text style={[typography.captionBold, styles.fieldLabel, { color: colors.text }]}>{t('reminder.label')}</Text>
         <TextInput
           accessibilityLabel={t('reminder.label')}

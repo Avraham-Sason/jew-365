@@ -1,22 +1,14 @@
 import React, { useMemo, useRef, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  ScrollView,
-  StyleProp,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TextStyle,
-  View,
-} from 'react-native';
+import { Keyboard, ScrollView, StyleProp, StyleSheet, Switch, Text, TextInput, TextStyle, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionLabel } from '@/components/SectionLabel';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TimeField } from '@/components/TimeField';
 import { WeekdayPicker } from '@/components/WeekdayPicker';
@@ -48,11 +40,6 @@ const SIDDUR_CHOICES: readonly SiddurTextId[] = [
 
 function emptyReminder(): Reminder {
   return { anchor: 'start', offsetMin: 0, label: '' };
-}
-
-function FieldLabel({ text }: { text: string }) {
-  const { colors } = useTheme();
-  return <Text style={[typography.captionBold, styles.label, { color: colors.textSub }]}>{text}</Text>;
 }
 
 function Hint({ text, style }: { text: string; style?: StyleProp<TextStyle> }) {
@@ -240,13 +227,14 @@ export default function CustomMitzvahScreen() {
     { value: 'end', label: t('custom.anchor.beforeEnd') },
   ];
   const categoryLabel = timesValid ? t(`library.category.${categoryForWindow(startTime, endTime)}`) : null;
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <Stack.Screen options={{ title: titleText, headerShown: false }} />
-      <ScreenHeader title={titleText} onBack={() => router.back()} />
+      <ScreenHeader title={titleText} onBack={goBack} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <FieldLabel text={t('custom.name')} />
+        <SectionLabel variant="field" text={t('custom.name')} />
         <TextInput
           value={name}
           onChangeText={setName}
@@ -274,7 +262,7 @@ export default function CustomMitzvahScreen() {
         <Affects surfaces={DAY_SURFACES} />
 
         <View style={styles.section}>
-          <FieldLabel text={t('custom.category')} />
+          <SectionLabel variant="field" text={t('custom.category')} />
           {categoryLabel ? (
             <View
               accessible
@@ -289,7 +277,7 @@ export default function CustomMitzvahScreen() {
         </View>
 
         <View style={styles.section}>
-          <FieldLabel text={t('custom.activeDays')} />
+          <SectionLabel variant="field" text={t('custom.activeDays')} />
           <WeekdayPicker selected={activeDays} onToggle={toggleDay} />
           <Hint text={t('custom.hint.days')} />
           <Affects surfaces={DAY_SURFACES} />
@@ -322,10 +310,7 @@ export default function CustomMitzvahScreen() {
         {reminders.map((r, idx) => {
           const clock = reminderClock(startTime, endTime, r);
           return (
-            <View
-              key={idx}
-              style={[styles.reminderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
+            <Card key={idx} padded style={styles.itemCard}>
               <TextInput
                 value={r.label}
                 onChangeText={(v) => updateReminder(idx, { label: v })}
@@ -366,7 +351,6 @@ export default function CustomMitzvahScreen() {
                   {t('custom.offsetMinutes')}
                 </Text>
                 <SegmentedControl
-                  tone="surface"
                   options={anchorOptions}
                   value={r.anchor}
                   onChange={(v) => changeAnchor(idx, v)}
@@ -383,32 +367,30 @@ export default function CustomMitzvahScreen() {
                 </Text>
               ) : null}
               <Hint text={t('custom.hint.reminderAnchor')} style={styles.tightHint} />
-              <Pressable
+              <Button
+                variant="danger"
+                size="compact"
+                label={t('custom.deleteReminder')}
                 onPress={() => removeReminder(idx)}
-                accessibilityRole="button"
-                style={[styles.deleteItemBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-              >
-                <Text style={[typography.captionBold, { color: colors.urgent }]}>{t('custom.deleteReminder')}</Text>
-              </Pressable>
-            </View>
+                style={styles.itemAction}
+              />
+            </Card>
           );
         })}
-        <Pressable
+        <Button
+          variant="secondary"
+          icon="plus"
+          label={t('custom.addReminder')}
           onPress={addReminder}
-          style={[styles.addBtn, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.text }]}>+ {t('custom.addReminder')}</Text>
-        </Pressable>
+          style={styles.addAction}
+        />
 
         <View style={[styles.editorSection, { borderColor: colors.border }]}>
           <Text style={[typography.subheading, { color: colors.text }]}>{t('custom.contentBlocks')}</Text>
           <Hint text={t('custom.hint.content')} style={styles.tightHint} />
           <Affects surfaces={CONTENT_SURFACES} style={styles.headingAffects} />
           {contentBlocks.map((block, idx) => (
-            <View
-              key={idx}
-              style={[styles.contentEditorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
+            <Card key={idx} padded style={styles.itemCard}>
               <ChipRow
                 values={CONTENT_TYPES}
                 selected={block.type}
@@ -416,24 +398,20 @@ export default function CustomMitzvahScreen() {
                 renderLabel={(type) => t(`custom.contentType.${type}`)}
               />
               {block.type === 'siddur' ? (
-                <Pressable
+                <Button
+                  variant="secondary"
+                  label={
+                    block.textId
+                      ? (siddurTextName(block.textId, language) ??
+                        (language === 'en' && block.en ? block.en : block.he))
+                      : t('custom.pickSiddurText')
+                  }
                   onPress={() => {
                     Keyboard.dismiss();
                     setPickingBlockIndex(idx);
                   }}
-                  accessibilityRole="button"
-                  style={[
-                    styles.addBtn,
-                    { backgroundColor: colors.surface2, borderColor: colors.border, marginTop: spacing.md },
-                  ]}
-                >
-                  <Text style={[typography.bodyBold, { color: block.textId ? colors.text : colors.textSub }]}>
-                    {block.textId
-                      ? (siddurTextName(block.textId, language) ??
-                        (language === 'en' && block.en ? block.en : block.he))
-                      : t('custom.pickSiddurText')}
-                  </Text>
-                </Pressable>
+                  style={styles.itemAction}
+                />
               ) : (
                 <>
                   <TextInput
@@ -477,21 +455,22 @@ export default function CustomMitzvahScreen() {
                   ) : null}
                 </>
               )}
-              <Pressable
+              <Button
+                variant="danger"
+                size="compact"
+                label={t('custom.deleteContentBlock')}
                 onPress={() => removeContentBlock(idx)}
-                accessibilityRole="button"
-                style={[styles.deleteItemBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-              >
-                <Text style={[typography.captionBold, { color: colors.urgent }]}>{t('custom.deleteContentBlock')}</Text>
-              </Pressable>
-            </View>
+                style={styles.itemAction}
+              />
+            </Card>
           ))}
-          <Pressable
+          <Button
+            variant="secondary"
+            icon="plus"
+            label={t('custom.addContentBlock')}
             onPress={addContentBlock}
-            style={[styles.addBtn, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.text }]}>+ {t('custom.addContentBlock')}</Text>
-          </Pressable>
+            style={styles.addAction}
+          />
         </View>
 
         {error ? (
@@ -500,17 +479,15 @@ export default function CustomMitzvahScreen() {
           </Text>
         ) : null}
 
-        <Pressable onPress={onSave} style={[styles.primaryBtn, { backgroundColor: colors.gold }]}>
-          <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('custom.save')}</Text>
-        </Pressable>
+        <Button label={t('custom.save')} onPress={onSave} style={styles.saveAction} />
 
         {editingId ? (
-          <Pressable
+          <Button
+            variant="danger"
+            label={t('custom.delete')}
             onPress={() => setDeleteVisible(true)}
-            style={[styles.dangerBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('custom.delete')}</Text>
-          </Pressable>
+            style={styles.itemAction}
+          />
         ) : null}
       </ScrollView>
 
@@ -559,7 +536,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   section: { marginTop: spacing.xl },
-  label: { marginBottom: spacing.sm },
   hint: { marginTop: spacing.sm },
   tightHint: { marginTop: spacing.xs },
   affects: { marginTop: spacing.xs },
@@ -590,53 +566,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
   },
-  reminderCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
+  itemCard: { marginBottom: spacing.md },
+  itemAction: { marginTop: spacing.md },
+  addAction: { marginTop: spacing.sm },
+  saveAction: { marginTop: spacing.xl },
   reminderRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   offsetInput: { width: 72, textAlign: 'center' },
   offsetWord: { flexShrink: 0 },
   note: { marginTop: spacing.sm },
-  addBtn: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
   editorSection: {
     borderTopWidth: 1,
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
-  },
-  contentEditorCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  deleteItemBtn: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  primaryBtn: {
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  dangerBtn: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
   },
   sheetList: {
     maxHeight: 420,

@@ -6,7 +6,7 @@
 
 ## Ownership
 
-- [[id].tsx](%5Bid%5D.tsx) renders mitzvah details, reminders, content blocks, and detail-level actions, including the "פתח נוסח" button into [../siddur/AGENTS.md](../siddur/AGENTS.md). Its header is [ScreenHeader](../../components/ScreenHeader.tsx) with the mitzvah's [IconTile](../../components/IconTile.tsx) (`iconFor(mitzvah.icon)`) as `leading` and the next-reminder preview as its child, and the delete-reminder confirmation is a [ConfirmDialog](../../components/ConfirmDialog.tsx).
+- [[id].tsx](%5Bid%5D.tsx) renders mitzvah details, reminders, content blocks, and detail-level actions, including the "פתח נוסח" button into [../siddur/AGENTS.md](../siddur/AGENTS.md). Its header is [ScreenHeader](../../components/ScreenHeader.tsx) with the mitzvah's [IconTile](../../components/IconTile.tsx) (`iconFor(mitzvah.icon)`) as `leading` and the next-reminder preview as its child, and the delete-reminder confirmation is a [ConfirmDialog](../../components/ConfirmDialog.tsx). Its cards are padded [Card](../../components/Card.tsx)s, "פתח נוסח" and the reset are the shared [Button](../../components/Button.tsx) (`secondary` for the reset), the next-reminder line is `goldText`, back replaces to home when there is nothing to go back to, and an unknown id shows a [ScreenHeader](../../components/ScreenHeader.tsx) titled `detail.notFound` with the back pill instead of a dead end.
 
 ## Local Contracts
 

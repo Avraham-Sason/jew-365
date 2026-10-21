@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AppLogo } from '@/components/AppLogo';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
@@ -9,25 +8,26 @@ type Props = {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  leading?: React.ReactNode;
 };
 
-export function NavBar({ title, subtitle, actions }: Props) {
+export function NavBar({ title, subtitle, actions, leading }: Props) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.headerBg }]}>
-      <AppLogo size={28} />
+    <View style={styles.wrap}>
+      {leading}
       <View style={styles.center}>
-        <Text style={[typography.subheading, styles.title, { color: colors.headerText }]} numberOfLines={1}>
+        <Text accessibilityRole="header" style={[typography.display, { color: colors.text }]} numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? (
-          <Text style={[typography.micro, { color: colors.headerSub }]} numberOfLines={1}>
+          <Text style={[typography.caption, styles.subtitle, { color: colors.textSub }]} numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      <View style={styles.edge}>{actions}</View>
+      {actions ? <View style={styles.actions}>{actions}</View> : null}
     </View>
   );
 }
@@ -37,19 +37,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   center: {
     flex: 1,
     minWidth: 0,
   },
-  title: {
-    lineHeight: 18,
+  subtitle: {
+    marginTop: 2,
   },
-  edge: {
-    minWidth: 28,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { MitzvahIcon } from './MitzvahIcon';
@@ -24,9 +25,10 @@ export function ChoiceRow({ label, selected, onPress }: Props) {
       style={[
         styles.row,
         {
-          borderColor: selected ? colors.gold : colors.border,
+          borderColor: selected ? colors.gold : 'transparent',
           backgroundColor: selected ? colors.goldLight : colors.surface,
         },
+        shadowStyle(colors.shadow, shadowPresets.cardSoft),
       ]}
     >
       <Text style={[typography.bodyBold, { color: selected ? colors.goldText : colors.text }]}>{label}</Text>

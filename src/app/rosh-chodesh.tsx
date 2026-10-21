@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { HDate } from '@hebcal/core';
 import { hilulaDateLabel } from '@/data/hilulot';
 import { roshChodeshLabel, upcomingRoshChodesh } from '@/data/roshChodesh';
+import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
@@ -15,7 +16,7 @@ import { HebcalService } from '@/services/HebcalService';
 import { useUserStore } from '@/stores/useUserStore';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
 
@@ -67,7 +68,7 @@ export default function RoshChodeshScreen() {
           </View>
         </SettingsSection>
         <SectionLabel text={t('roshChodesh.upcoming')} />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card divided>
           {upcoming.map(({ first, days, month }) => (
             <ListRow
               key={first.abs()}
@@ -79,7 +80,7 @@ export default function RoshChodeshScreen() {
               }
             />
           ))}
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -90,7 +91,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxxl,
   },
   switchRow: {
@@ -101,10 +103,5 @@ const styles = StyleSheet.create({
   switchHint: {
     flex: 1,
     paddingEnd: spacing.md,
-  },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
 });

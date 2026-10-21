@@ -116,6 +116,8 @@ describe('MitzvahIcon', () => {
   describe.each([
     ['chevronLeft', 'M15,6L9,12L15,18'],
     ['chevronRight', 'M9,6L15,12L9,18'],
+    ['chevronDown', 'M6,9L12,15L18,9'],
+    ['chevronUp', 'M6,15L12,9L18,15'],
   ] as const)('the %s icon', (name, d) => {
     const paths = (variant: IconVariant) =>
       render(createElement(MitzvahIcon, { name, color: '#111111', tint: '#eeeeee', variant })).UNSAFE_getAllByType(
@@ -204,6 +206,56 @@ describe('MitzvahIcon', () => {
 
     it('carries an exclamation mark: a stem and a dot', () => {
       expect(drawing('outline').UNSAFE_getAllByType(Line)).toHaveLength(2);
+    });
+  });
+
+  describe('the star', () => {
+    const paths = (name: IconName, variant: IconVariant) =>
+      render(createElement(MitzvahIcon, { name, color: '#111111', tint: '#eeeeee', variant })).UNSAFE_getAllByType(
+        Path,
+      );
+
+    it('is one five-point path under both names', () => {
+      const star = paths('star', 'outline');
+      expect(star).toHaveLength(1);
+      expect(star[0].props.d).toBe(paths('custom', 'outline')[0].props.d);
+    });
+
+    it('is unfilled in outline and tinted in duotone', () => {
+      expect(paths('star', 'outline').map((path) => path.props.fill)).toEqual(['none']);
+      expect(paths('star', 'duotone').map((path) => path.props.fill)).toEqual(['#eeeeee']);
+      expect(paths('custom', 'duotone').map((path) => path.props.fill)).toEqual(['#eeeeee']);
+    });
+  });
+
+  describe('the cloud', () => {
+    const paths = (variant: IconVariant) =>
+      render(
+        createElement(MitzvahIcon, { name: 'cloud', color: '#111111', tint: '#eeeeee', variant }),
+      ).UNSAFE_getAllByType(Path);
+
+    it('is one closed path, unfilled in outline and tinted in duotone', () => {
+      const outline = paths('outline');
+      expect(outline).toHaveLength(1);
+      expect(String(outline[0].props.d).endsWith('Z')).toBe(true);
+      expect(outline.map((path) => path.props.fill)).toEqual(['none']);
+      expect(paths('duotone').map((path) => path.props.fill)).toEqual(['#eeeeee']);
+    });
+  });
+
+  describe('the chat bubble', () => {
+    const paths = (variant: IconVariant) =>
+      render(
+        createElement(MitzvahIcon, { name: 'chat', color: '#111111', tint: '#eeeeee', variant }),
+      ).UNSAFE_getAllByType(Path);
+
+    it('is a bubble and two text lines, only the bubble taking the tint', () => {
+      expect(paths('outline').map((path) => path.props.fill)).toEqual(['none', undefined]);
+      expect(paths('duotone').map((path) => path.props.fill)).toEqual(['#eeeeee', undefined]);
+    });
+
+    it('closes the bubble outline', () => {
+      expect(String(paths('outline')[0].props.d).endsWith('Z')).toBe(true);
     });
   });
 

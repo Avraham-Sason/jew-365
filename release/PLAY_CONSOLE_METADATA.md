@@ -144,11 +144,13 @@ Questionnaire notes:
 
 ## Store Graphics
 
-Uploaded to the Hebrew default listing on 2026-10-20 and temporary until the redesign, after which all of them are replaced. The source files live outside the repo, in the user's `Downloads\jew365-play-assets`:
+The redesigned set made on 2026-10-21 replaces the temporary graphics uploaded to the Hebrew default listing on 2026-10-20. The files live outside the repo, in the user's `Downloads\jew365-play-assets\redesign`:
 
-- App icon: 512x512, a resize of [../assets/icon.png](../assets/icon.png).
-- Feature graphic: 1024x500.
-- Phone screenshots, 1080x1920 from the web build, in this order: Home, Siddur tab, Reader, Schedule, Settings. The mitzvah detail screen is left out because the web build renders its switches broken.
+- App icon: 512x512, a downscale of [../assets/icon.png](../assets/icon.png), the launcher icon.
+- Feature graphic: 1024x500, a cream background with the full logo, the name, the tagline and a one-line description.
+- Phone screenshots, 1080x1920 from the web build, in this order: Home, Siddur tab, Reader, History, Settings. The mitzvah detail screen is left out because the web build renders its switches broken.
+
+Uploading the set to the Hebrew default listing, and to the English translation, is still to do: a step the owner takes in the Play Console, or approves.
 
 ## Closed Test
 

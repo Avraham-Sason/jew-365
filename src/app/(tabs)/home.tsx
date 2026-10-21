@@ -6,13 +6,16 @@ import { DateTime } from 'luxon';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Banner, BannerTone } from '@/components/Banner';
+import { AppLogo } from '@/components/AppLogo';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
+import { Card } from '@/components/Card';
 import { CompletedRow } from '@/components/CompletedRow';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { iconFor } from '@/components/MitzvahIcon';
 import { MitzvahCard } from '@/components/MitzvahCard';
 import { NavBar } from '@/components/NavBar';
+import { CounterPill } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useDayModel } from '@/hooks/useDayModel';
 import { useNow } from '@/hooks/useNow';
@@ -27,9 +30,8 @@ import { useUserStore } from '@/stores/useUserStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useQuietBlock } from '@/components/ShabbatScreen';
-import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
-import { fontFamilies, typography } from '@/theme/typography';
-import { durations, radius, spacing } from '@/theme/tokens';
+import { typography } from '@/theme/typography';
+import { durations, spacing } from '@/theme/tokens';
 import { clockOf, formatRemaining } from '@/utils/clock';
 import { DayWindow, appDayWindow } from '@/utils/buildDayTimeline';
 import { checkInLastDay, checkInPhraseKey, latestCheckIn, overlapsBlock } from '@/utils/checkIn';
@@ -62,6 +64,7 @@ type LiveItem = {
 };
 
 const PROFILE_INTRO_KEY = 'profile:intro-dismissed';
+const WORDMARK_SIZE = 34;
 
 type CompletedItem = {
   id: string;
@@ -382,17 +385,21 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, []);
 
+  const countTotal = Math.max(totalActive, doneCount);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+      <View testID="home-brand" style={styles.brand}>
+        <AppLogo variant="wordmark" size={WORDMARK_SIZE} />
+      </View>
       <NavBar
         title={hebrewTitle}
         subtitle={subtitle}
         actions={
-          <View style={[styles.counter, { backgroundColor: `${colors.headerAccent}22` }]}>
-            <Text style={[typography.small, { color: colors.headerAccent, fontFamily: fontFamilies.heebo.bold }]}>
-              {doneCount}/{Math.max(totalActive, doneCount)}
-            </Text>
-          </View>
+          <CounterPill
+            label={`${doneCount}/${countTotal}`}
+            accessibilityLabel={t('common.doneOf', { done: doneCount, total: countTotal })}
+          />
         }
       />
       <ScrollView contentContainerStyle={styles.content}>
@@ -435,13 +442,7 @@ export default function HomeScreen() {
         </View>
 
         {nextUp ? (
-          <View
-            style={[
-              styles.nextUpCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              shadowStyle(colors.shadow, shadowPresets.cardSoft),
-            ]}
-          >
+          <Card style={styles.nextUpGap}>
             <ListRow
               icon={iconFor(nextUp.mitzvah.icon)}
               iconTone="muted"
@@ -449,9 +450,8 @@ export default function HomeScreen() {
               caption={t('home.nextAt', { name: nextUp.name, time: clockOf(nextUp.window.start) })}
               onPress={() => openDetail(nextUp.mitzvah.id)}
               onLongPress={() => setSelectedId(nextUp.mitzvah.id)}
-              style={styles.nextUpRow}
             />
-          </View>
+          </Card>
         ) : null}
 
         {missed.length ? (
@@ -484,7 +484,7 @@ export default function HomeScreen() {
         {completed.length ? (
           <>
             <SectionLabel text={t('home.completed')} count={completed.length} />
-            <View style={[styles.completedCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Card divided>
               {completed.map((item) => (
                 <CompletedRow
                   key={item.id}
@@ -495,32 +495,30 @@ export default function HomeScreen() {
                   undoLabel={t('home.undo')}
                 />
               ))}
-            </View>
+            </Card>
           </>
         ) : null}
 
         {taharahCard ? (
-          <Pressable
-            onPress={() => router.push('/taharah')}
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.taharahCard,
-              { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-              shadowStyle(colors.shadow, shadowPresets.cardSoft),
-            ]}
-          >
-            {taharahCard.concealed ? null : (
-              <Text style={[typography.captionBold, styles.cardLabel, { color: colors.textSub }]}>
-                {t('taharah.home.title')}
-              </Text>
-            )}
-            <Text style={[typography.heading, { color: colors.text }]}>{taharahCard.title}</Text>
-            {taharahCard.caption ? (
-              <Text style={[typography.caption, styles.cardCaption, { color: colors.textMuted }]}>
-                {taharahCard.caption}
-              </Text>
-            ) : null}
-          </Pressable>
+          <Card style={styles.taharahCard}>
+            <Pressable
+              onPress={() => router.push('/taharah')}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.taharahBody, { opacity: pressed ? 0.85 : 1 }]}
+            >
+              {taharahCard.concealed ? null : (
+                <Text style={[typography.captionBold, styles.cardLabel, { color: colors.textSub }]}>
+                  {t('taharah.home.title')}
+                </Text>
+              )}
+              <Text style={[typography.heading, { color: colors.text }]}>{taharahCard.title}</Text>
+              {taharahCard.caption ? (
+                <Text style={[typography.caption, styles.cardCaption, { color: colors.textMuted }]}>
+                  {taharahCard.caption}
+                </Text>
+              ) : null}
+            </Pressable>
+          </Card>
         ) : null}
       </ScrollView>
 
@@ -558,16 +556,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-  counter: {
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+  brand: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   taharahCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
     marginTop: spacing.lg,
+  },
+  taharahBody: {
+    padding: spacing.lg,
   },
   cardLabel: {
     marginBottom: spacing.sm,
@@ -575,14 +574,8 @@ const styles = StyleSheet.create({
   cardCaption: {
     marginTop: spacing.xs,
   },
-  nextUpCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
+  nextUpGap: {
     marginBottom: spacing.lg,
-  },
-  nextUpRow: {
-    borderBottomWidth: 0,
-    borderRadius: radius.lg,
   },
   list: {
     marginBottom: spacing.sm,
@@ -594,10 +587,5 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {
     marginBottom: spacing.md,
-  },
-  completedCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
 });

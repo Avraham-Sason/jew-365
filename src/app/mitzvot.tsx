@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, type Href } from 'expo-router';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { ListRow } from '@/components/ListRow';
 import { iconFor, type IconName } from '@/components/MitzvahIcon';
@@ -97,41 +98,46 @@ export default function MitzvotScreen() {
         style={styles.categories}
       />
       <ScrollView style={styles.listScroll} contentContainerStyle={styles.list}>
-        {items.map((item) => {
-          const enabled = active[item.id]?.enabled ?? false;
-          const label = nameFor(item);
-          return (
-            <ListRow
-              key={item.id}
-              icon={iconFor(item.icon)}
-              iconTone={enabled ? 'accent' : 'muted'}
-              title={label}
-              caption={t(`library.category.${item.category}`)}
-              onPress={() =>
-                item.isCustom
-                  ? router.push({ pathname: '/custom-mitzvah', params: { id: item.id } })
-                  : router.push(`/mitzvah/${item.id}`)
-              }
-              trailing={<EnabledSwitch value={enabled} onChange={() => setEnabled(item.id, !enabled)} label={label} />}
-            />
-          );
-        })}
-        {visibleSettingRows.map((row) => (
-          <ListRow
-            key={row.key}
-            icon={row.icon}
-            iconTone={row.enabled ? 'accent' : 'muted'}
-            title={row.title}
-            caption={row.caption}
-            onPress={() => router.push(row.route)}
-            trailing={
-              <EnabledSwitch value={row.enabled} onChange={() => row.onToggle(!row.enabled)} label={row.title} />
-            }
-          />
-        ))}
-        {!items.length && !visibleSettingRows.length ? (
+        {items.length || visibleSettingRows.length ? (
+          <Card divided>
+            {items.map((item) => {
+              const enabled = active[item.id]?.enabled ?? false;
+              const label = nameFor(item);
+              return (
+                <ListRow
+                  key={item.id}
+                  icon={iconFor(item.icon)}
+                  iconTone={enabled ? 'accent' : 'muted'}
+                  title={label}
+                  caption={t(`library.category.${item.category}`)}
+                  onPress={() =>
+                    item.isCustom
+                      ? router.push({ pathname: '/custom-mitzvah', params: { id: item.id } })
+                      : router.push(`/mitzvah/${item.id}`)
+                  }
+                  trailing={
+                    <EnabledSwitch value={enabled} onChange={() => setEnabled(item.id, !enabled)} label={label} />
+                  }
+                />
+              );
+            })}
+            {visibleSettingRows.map((row) => (
+              <ListRow
+                key={row.key}
+                icon={row.icon}
+                iconTone={row.enabled ? 'accent' : 'muted'}
+                title={row.title}
+                caption={row.caption}
+                onPress={() => router.push(row.route)}
+                trailing={
+                  <EnabledSwitch value={row.enabled} onChange={() => row.onToggle(!row.enabled)} label={row.title} />
+                }
+              />
+            ))}
+          </Card>
+        ) : (
           <Text style={[typography.body, styles.emptyText, { color: colors.textSub }]}>{t('library.empty')}</Text>
-        ) : null}
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -162,6 +168,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
   },
   emptyText: {

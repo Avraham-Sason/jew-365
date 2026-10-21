@@ -18,29 +18,9 @@ export const radius = {
   full: 999,
 } as const;
 
-export const elevation = {
-  card: {
-    x: 0,
-    y: 2,
-    blur: 14,
-    elevation: 2,
-  },
-  raised: {
-    x: 0,
-    y: 4,
-    blur: 20,
-    elevation: 4,
-  },
-} as const;
-
 export const durations = {
   fast: 180,
   base: 250,
   slow: 400,
   stamp: 1300,
-} as const;
-
-export const ribbonThresholds = {
-  safe: 0.5,
-  warning: 0.25,
 } as const;

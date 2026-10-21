@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { MitzvahIcon, backIcon, forwardIcon } from '@/components/MitzvahIcon';
 import { HebcalService } from '@/services/HebcalService';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { AppLanguage, useI18n } from '@/i18n';
@@ -41,7 +42,11 @@ export function DayStepper({ value, onChange, min, max }: Props) {
         disabled={prevDisabled}
         accessibilityRole="button"
         accessibilityLabel={formatDayLine(prev, language)}
-        style={[styles.arrow, { backgroundColor: colors.surface2, opacity: prevDisabled ? 0.35 : 1 }]}
+        style={[
+          styles.arrow,
+          { backgroundColor: colors.surface, opacity: prevDisabled ? 0.35 : 1 },
+          shadowStyle(colors.shadow, shadowPresets.cardSoft),
+        ]}
       >
         <MitzvahIcon name={backIcon(language)} size={ARROW_SIZE} color={colors.text} strokeWidth={ARROW_STROKE} />
       </Pressable>
@@ -56,7 +61,11 @@ export function DayStepper({ value, onChange, min, max }: Props) {
         disabled={nextDisabled}
         accessibilityRole="button"
         accessibilityLabel={formatDayLine(next, language)}
-        style={[styles.arrow, { backgroundColor: colors.surface2, opacity: nextDisabled ? 0.35 : 1 }]}
+        style={[
+          styles.arrow,
+          { backgroundColor: colors.surface, opacity: nextDisabled ? 0.35 : 1 },
+          shadowStyle(colors.shadow, shadowPresets.cardSoft),
+        ]}
       >
         <MitzvahIcon name={forwardIcon(language)} size={ARROW_SIZE} color={colors.text} strokeWidth={ARROW_STROKE} />
       </Pressable>
@@ -74,7 +83,7 @@ const styles = StyleSheet.create({
   arrow: {
     width: 44,
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

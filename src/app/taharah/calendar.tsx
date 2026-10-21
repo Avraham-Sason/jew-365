@@ -161,7 +161,7 @@ export default function TaharahCalendar() {
             onPress={() => setCursor((prev) => prev.minus({ months: 1 }))}
             accessibilityLabel={monthLabel(cursor.minus({ months: 1 }))}
           />
-          <Text style={[typography.captionBold, { color: colors.headerText }]}>{monthLabel(cursor)}</Text>
+          <Text style={[typography.captionBold, { color: colors.text }]}>{monthLabel(cursor)}</Text>
           <HeaderPill
             icon={forwardIcon(language)}
             onPress={() => setCursor((prev) => prev.plus({ months: 1 }))}
@@ -251,9 +251,9 @@ function DayCell({ cell, onPress }: { cell: Cell; onPress: () => void }) {
       style={[
         styles.cell,
         {
-          backgroundColor: isToday ? colors.goldWashStrong : colors.surface,
-          borderColor: clean !== null ? colors.safe : colors.border,
-          borderWidth: clean !== null ? 2 : 1,
+          backgroundColor: isToday ? colors.goldLight : colors.surface,
+          borderColor: colors.safe,
+          borderWidth: clean !== null ? 2 : 0,
           opacity: cell.inMonth ? 1 : 0.45,
         },
       ]}

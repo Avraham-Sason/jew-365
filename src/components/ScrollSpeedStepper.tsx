@@ -14,17 +14,15 @@ const STEP_HEIGHT = 30;
 type Props = {
   level: number;
   onChange: (level: number) => void;
-  tone: 'header' | 'surface';
   compact?: boolean;
 };
 
-export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: Props) {
+export function ScrollSpeedStepper({ level, onChange, compact = false }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const current = scrollSpeedLevel(level);
   const max = SIDDUR_SCROLL_SPEEDS.length;
-  const onHeader = tone === 'header';
-  const textColor = onHeader ? colors.headerText : colors.text;
+  const textColor = colors.text;
   const step = (icon: IconName, accessibilityLabel: string, next: number) => {
     const disabled = next < 1 || next > max;
     return (
@@ -46,14 +44,7 @@ export function ScrollSpeedStepper({ level, onChange, tone, compact = false }: P
     );
   };
   return (
-    <View
-      style={[
-        styles.group,
-        onHeader
-          ? { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.18)' }
-          : { backgroundColor: colors.surface2, borderColor: colors.border },
-      ]}
-    >
+    <View style={[styles.group, { backgroundColor: colors.surface2 }]}>
       {step('minus', t('siddur.scrollSlower'), current - 1)}
       <Text
         style={[typography.captionBold, styles.level, compact && styles.levelCompact, { color: textColor }]}
@@ -71,7 +62,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: radius.full,
-    borderWidth: 1,
   },
   step: {
     minWidth: 32,

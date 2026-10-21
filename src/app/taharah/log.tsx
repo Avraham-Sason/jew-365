@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import { useShallow } from 'zustand/react/shallow';
 import { Banner } from '@/components/Banner';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { DayStepper, formatDayLine } from '@/components/DayStepper';
-import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useNow } from '@/hooks/useNow';
@@ -38,7 +39,6 @@ const TYPE_LABEL: Record<LogType, string> = {
 };
 
 const SAVED_DELAY_MS = 700;
-const SAVED_ICON_SIZE = 24;
 const ONAH_KINDS: OnahKind[] = ['day', 'night'];
 const BEDIKA_RESULTS: BedikaResult[] = ['clean', 'notClean', 'doubtful'];
 const PAUSE_REASONS: PauseReason[] = ['pregnancy', 'postpartum', 'menopause', 'other'];
@@ -175,12 +175,13 @@ export default function TaharahLog() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ChipRow values={types} selected={type} onSelect={setType} renderLabel={(value) => t(TYPE_LABEL[value])} />
 
-        <SectionLabel text={t('taharah.log.date')} style={styles.label} />
+        <SectionLabel variant="field" text={t('taharah.log.date')} style={styles.label} />
         <DayStepper value={date} onChange={setDate} max={today} />
 
         {type === 'onset' ? (
           <>
             <SectionLabel
+              variant="field"
               text={timeUnknown ? t('taharah.log.onahChoice') : t('taharah.log.time')}
               style={styles.label}
             />
@@ -226,11 +227,11 @@ export default function TaharahLog() {
               />
             </View>
             {resolution ? (
-              <View style={[styles.preview, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Card padded style={styles.previewGap}>
                 <Text style={[typography.bodyBold, { color: colors.text }]}>
                   {hebrewDateOf(resolution.onah.abs)} · {t(`taharah.onah.${resolution.onah.kind}`)}
                 </Text>
-              </View>
+              </Card>
             ) : null}
             {timeInFuture ? <Banner tone="urgent" text={t('taharah.log.timeInFuture')} style={styles.notice} /> : null}
             {onahInFuture ? <Banner tone="urgent" text={t('taharah.log.onahInFuture')} style={styles.notice} /> : null}
@@ -242,7 +243,7 @@ export default function TaharahLog() {
 
         {type === 'hefsek' ? (
           <>
-            <SectionLabel text={t('taharah.log.resultLabel')} style={styles.label} />
+            <SectionLabel variant="field" text={t('taharah.log.resultLabel')} style={styles.label} />
             <ChipRow
               values={BEDIKA_RESULTS}
               selected={result}
@@ -278,11 +279,11 @@ export default function TaharahLog() {
 
         {type === 'tevila' ? (
           <>
-            <View style={[styles.preview, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Card padded style={styles.previewGap}>
               <Text style={[typography.bodyBold, { color: colors.text }]}>
                 {t('taharah.onah.night')} · {hebrewDateOf(dayAbs + 1)}
               </Text>
-            </View>
+            </Card>
             {tevilaNeedsHefsek ? (
               <Banner tone="urgent" text={t('taharah.log.tevilaNeedsHefsek')} style={styles.notice} />
             ) : null}
@@ -309,7 +310,7 @@ export default function TaharahLog() {
 
         {type === 'pause' ? (
           <>
-            <SectionLabel text={t('taharah.log.pauseReason')} style={styles.label} />
+            <SectionLabel variant="field" text={t('taharah.log.pauseReason')} style={styles.label} />
             <ChipRow
               values={PAUSE_REASONS}
               selected={reason}
@@ -321,19 +322,12 @@ export default function TaharahLog() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
+        <Button
+          label={saved ? t('taharah.log.saved') : t('common.save')}
+          icon={saved ? 'check' : undefined}
           onPress={save}
-          disabled={!canSave}
-          accessibilityRole="button"
-          style={[styles.saveBtn, { backgroundColor: colors.gold, opacity: canSave || saved ? 1 : 0.45 }]}
-        >
-          <View style={styles.saveLabel}>
-            {saved ? <MitzvahIcon name="check" size={SAVED_ICON_SIZE} color={colors.onGold} /> : null}
-            <Text style={[typography.heading, { color: colors.onGold }]}>
-              {saved ? t('taharah.log.saved') : t('common.save')}
-            </Text>
-          </View>
-        </Pressable>
+          disabled={!canSave && !saved}
+        />
       </View>
     </SafeAreaView>
   );
@@ -369,10 +363,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     flex: 1,
   },
-  preview: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
+  previewGap: {
     marginTop: spacing.md,
   },
   notice: {
@@ -382,16 +373,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-  },
-  saveBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-  },
-  saveLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
 });

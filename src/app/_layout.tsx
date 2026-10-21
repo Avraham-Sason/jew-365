@@ -31,7 +31,7 @@ import {
 } from '@expo-google-fonts/heebo';
 import { NotoSerifHebrew_400Regular, NotoSerifHebrew_700Bold } from '@expo-google-fonts/noto-serif-hebrew';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
-import { BRAND } from '@/theme/colors';
+import { BRAND, T_LIGHT } from '@/theme/colors';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies } from '@/theme/typography';
 import { useUserStore } from '@/stores/useUserStore';
@@ -278,12 +278,12 @@ const errorStyles = StyleSheet.create({
   title: { fontFamily: fontFamilies.heebo.bold, fontSize: 20, color: BRAND.navy, textAlign: 'center' },
   body: {
     fontSize: 15,
-    color: '#42506B',
+    color: T_LIGHT.textSub,
     textAlign: 'center',
     marginTop: spacing.md,
     lineHeight: 22,
   },
-  detail: { fontSize: 12, color: '#8A93A6', textAlign: 'center', marginTop: spacing.lg },
+  detail: { fontSize: 12, color: T_LIGHT.textMuted, textAlign: 'center', marginTop: spacing.lg },
   button: {
     marginTop: spacing.xxl,
     borderRadius: radius.lg,
@@ -291,7 +291,7 @@ const errorStyles = StyleSheet.create({
     paddingHorizontal: spacing.xxxl,
     backgroundColor: BRAND.gold,
   },
-  buttonLabel: { fontFamily: fontFamilies.heebo.bold, fontSize: 16, color: BRAND.white },
+  buttonLabel: { fontFamily: fontFamilies.heebo.bold, fontSize: 16, color: BRAND.onGold },
 });
 
 function RootLayout() {

@@ -5,10 +5,12 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }),
 }));
 
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import MitzvotScreen from '../mitzvot';
 import { MITZVOT } from '@/data/mitzvot';
+import { Card } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
 import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
@@ -167,6 +169,14 @@ describe('Mitzvot library', () => {
     expect(screen.getByText(HILULOT)).toBeOnTheScreen();
     expect(screen.getByText(ROSH_CHODESH)).toBeOnTheScreen();
     expect(screen.getByText(TEFILLIN)).toBeOnTheScreen();
+  });
+
+  it('lists every row on one divided card', () => {
+    renderWithTheme(<MitzvotScreen />);
+    const cards = screen.UNSAFE_getAllByType(Card);
+    expect(cards).toHaveLength(1);
+    expect(cards[0].props.divided).toBe(true);
+    expect(within(cards[0]).UNSAFE_getAllByType(ListRow)).toHaveLength(screen.UNSAFE_getAllByType(ListRow).length);
   });
 
   it('shows no empty state while the list has rows', () => {

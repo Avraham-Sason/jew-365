@@ -1,17 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
-import { MitzvahCard } from '@/components/MitzvahCard';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { CompletedRow } from '@/components/CompletedRow';
+import { iconFor } from '@/components/MitzvahIcon';
+import { MitzvahCard } from '@/components/MitzvahCard';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useDayModel } from '@/hooks/useDayModel';
 import { StorageService } from '@/services/StorageService';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { HolyBlock } from '@/types/zmanim';
 import { CHECK_IN_PROMPTED_KEY, checkInFor, checkInLastDay, checkInPhraseKey, latestCheckIn } from '@/utils/checkIn';
@@ -106,6 +109,7 @@ export default function CheckInRoute() {
                     .map((item) => (
                       <MitzvahCard
                         key={item.mitzvah.id}
+                        icon={iconFor(item.mitzvah.icon)}
                         name={nameFor(item.mitzvah)}
                         timeLeft=""
                         pct={0}
@@ -117,7 +121,7 @@ export default function CheckInRoute() {
                     ))}
                 </View>
                 {day.items.some((item) => item.done) ? (
-                  <View style={[styles.doneCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Card divided style={styles.doneGap}>
                     {day.items
                       .filter((item) => item.done)
                       .map((item) => (
@@ -129,15 +133,13 @@ export default function CheckInRoute() {
                           undoLabel={t('home.undo')}
                         />
                       ))}
-                  </View>
+                  </Card>
                 ) : null}
               </View>
             ))}
           </ScrollView>
           <View style={styles.footer}>
-            <Pressable onPress={finish} style={[styles.finishBtn, { backgroundColor: colors.gold }]}>
-              <Text style={[typography.heading, { color: colors.onGold }]}>{t('checkin.finish')}</Text>
-            </Pressable>
+            <Button label={t('checkin.finish')} onPress={finish} />
           </View>
         </>
       ) : (
@@ -163,20 +165,11 @@ const styles = StyleSheet.create({
   list: {
     gap: spacing.sm,
   },
-  doneCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
+  doneGap: {
     marginTop: spacing.sm,
   },
   footer: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-  },
-  finishBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
   },
 });

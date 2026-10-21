@@ -12,11 +12,6 @@
       "en": "./locales/en.json"
     },
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F5EFE4"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jew365.app",
@@ -31,7 +26,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F5EFE4"
+        "monochromeImage": "./assets/adaptive-monochrome.png",
+        "backgroundColor": "#F6F1E8"
       },
       "package": "com.jew365.app",
       "allowBackup": true,
@@ -54,6 +50,19 @@
       "expo-router",
       "expo-font",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F1E8",
+          "dark": {
+            "image": "./assets/splash-dark.png",
+            "backgroundColor": "#0E1626"
+          }
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "מיקום נדרש לחישוב זמני הלכה מדויקים ולרענון יומי של התראות.",
@@ -64,7 +73,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#C9922A"
+          "color": "#F08A3C"
         }
       ],
       "./scripts/withMitzvahNotificationAction",

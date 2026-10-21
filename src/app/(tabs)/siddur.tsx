@@ -17,6 +17,7 @@ import {
   standaloneTextDay,
   standaloneTextsIn,
 } from '@/data/siddur';
+import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
 import { iconFor } from '@/components/MitzvahIcon';
 import { NavBar } from '@/components/NavBar';
@@ -25,7 +26,7 @@ import { useDayModel } from '@/hooks/useDayModel';
 import { useNow } from '@/hooks/useNow';
 import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { SiddurGroup, StandaloneTextId } from '@/types/siddur';
 import { currentOrNextWindow } from '@/utils/buildDayTimeline';
 import { clockOf } from '@/utils/clock';
@@ -36,11 +37,10 @@ const MITZVAH_TEXTS = MITZVOT.filter((mitzvah) => mitzvahTextId(mitzvah.id));
 const PRAYER_IDS = ['shacharit', 'mincha', 'maariv'];
 
 function CatalogSection({ title, children, testID }: { title: string; children: React.ReactNode; testID?: string }) {
-  const { colors } = useTheme();
   return (
     <View style={styles.group} testID={testID}>
       <SectionLabel text={title} />
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>{children}</View>
+      <View style={styles.rows}>{children}</View>
     </View>
   );
 }
@@ -110,50 +110,57 @@ export default function SiddurScreen() {
   const prayers = PRAYER_IDS.flatMap((id) => today.filter(({ mitzvah }) => mitzvah.id === id));
 
   const mitzvahRow = ({ mitzvah, window, hasText, openNow }: (typeof today)[number]) => (
-    <ListRow
-      key={mitzvah.id}
-      icon={iconFor(mitzvah.icon)}
-      iconTone={hasText ? 'accent' : 'muted'}
-      title={nameFor(mitzvah)}
-      caption={
-        openNow ? t('siddur.today.open') : hasText && window ? laterCaption(window.start) : t('siddur.catalog.notToday')
-      }
-      chevron={hasText}
-      onPress={() =>
-        window && router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
-      }
-      disabled={!hasText}
-    />
+    <Card key={mitzvah.id}>
+      <ListRow
+        icon={iconFor(mitzvah.icon)}
+        iconTone={hasText ? 'accent' : 'muted'}
+        title={nameFor(mitzvah)}
+        caption={
+          openNow
+            ? t('siddur.today.open')
+            : hasText && window
+              ? laterCaption(window.start)
+              : t('siddur.catalog.notToday')
+        }
+        chevron={hasText}
+        onPress={() =>
+          window && router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
+        }
+        disabled={!hasText}
+      />
+    </Card>
   );
 
   const nowRow = (entry: NowEntry) => {
     if (entry.mitzvah) {
       const { mitzvah, window } = entry.mitzvah;
       return (
-        <ListRow
-          key={mitzvah.id}
-          icon={iconFor(mitzvah.icon)}
-          iconTone="accent"
-          title={nameFor(mitzvah)}
-          caption={t('siddur.now.until', { time: clockOf(window!.end) })}
-          chevron
-          onPress={() =>
-            router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window!.date) } })
-          }
-        />
+        <Card key={mitzvah.id}>
+          <ListRow
+            icon={iconFor(mitzvah.icon)}
+            iconTone="accent"
+            title={nameFor(mitzvah)}
+            caption={t('siddur.now.until', { time: clockOf(window!.end) })}
+            chevron
+            onPress={() =>
+              router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window!.date) } })
+            }
+          />
+        </Card>
       );
     }
     const { id, group, hours } = entry.standalone;
     return (
-      <ListRow
-        key={id}
-        icon={group}
-        iconTone="accent"
-        title={label(STANDALONE_TEXTS[id].name)}
-        caption={t('siddur.now.until', { time: clockOf(hours.end) })}
-        chevron
-        onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
-      />
+      <Card key={id}>
+        <ListRow
+          icon={group}
+          iconTone="accent"
+          title={label(STANDALONE_TEXTS[id].name)}
+          caption={t('siddur.now.until', { time: clockOf(hours.end) })}
+          chevron
+          onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
+        />
+      </Card>
     );
   };
 
@@ -162,16 +169,17 @@ export default function SiddurScreen() {
     const { availableLabel } = standaloneAvailability(id, nusach);
     const open = available.get(id) ?? false;
     return (
-      <ListRow
-        key={id}
-        icon={group}
-        iconTone={open ? 'accent' : 'muted'}
-        title={label(name)}
-        caption={open ? undefined : availableLabel ? label(availableLabel) : t('siddur.catalog.notToday')}
-        chevron={open}
-        onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
-        disabled={!open}
-      />
+      <Card key={id}>
+        <ListRow
+          icon={group}
+          iconTone={open ? 'accent' : 'muted'}
+          title={label(name)}
+          caption={open ? undefined : availableLabel ? label(availableLabel) : t('siddur.catalog.notToday')}
+          chevron={open}
+          onPress={() => router.push({ pathname: '/siddur/[id]', params: { id } })}
+          disabled={!open}
+        />
+      </Card>
     );
   };
 
@@ -203,15 +211,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxxl,
   },
   group: {
     marginBottom: spacing.xl,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
+  rows: {
+    gap: spacing.sm,
   },
 });

@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  PressableStateCallbackType,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, PressableStateCallbackType, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { ONBOARDING_STEPS, OnboardingDots } from '@/components/OnboardingDots';
 import { LocationService } from '@/services/LocationService';
@@ -85,21 +79,18 @@ export default function OnboardingLocationScreen() {
         {t('onboarding.locationBody')}
       </Text>
 
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Card padded style={styles.cardGap}>
         <Text style={[typography.bodyBold, { color: colors.text }]}>{getLocationName(user.location, language)}</Text>
         <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.xs }]}>
           {t(`settings.locationStatus.${user.locationStatus}`)}
         </Text>
-        <Pressable
+        <Button
+          variant="secondary"
+          label={busy ? '...' : t('onboarding.locationRefresh')}
           onPress={refreshLocation}
-          accessibilityRole="button"
-          style={(state) => [styles.secondaryBtn, { backgroundColor: colors.surface2 }, pressFeedback(state)]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.text }]}>
-            {busy ? '...' : t('onboarding.locationRefresh')}
-          </Text>
-        </Pressable>
-      </View>
+          style={styles.buttonGap}
+        />
+      </Card>
 
       <ChipRow
         values={CITY_NAMES}
@@ -118,7 +109,7 @@ export default function OnboardingLocationScreen() {
       {notificationsGranted ? null : (
         <Animated.View
           exiting={FadeOut.duration(250)}
-          style={[styles.card, { backgroundColor: colors.goldLight, borderColor: colors.gold }]}
+          style={[styles.notifyCard, { backgroundColor: colors.goldLight }]}
         >
           <Text style={[typography.subheading, { color: colors.text }]}>{t('onboarding.notificationsTitle')}</Text>
           <Text style={[typography.small, { color: colors.textSub, marginTop: spacing.xs }]}>
@@ -129,11 +120,7 @@ export default function OnboardingLocationScreen() {
             disabled={requesting}
             accessibilityRole="button"
             accessibilityState={{ busy: requesting }}
-            style={(state) => [
-              styles.secondaryBtn,
-              { borderColor: colors.gold, borderWidth: 1.5 },
-              pressFeedback(state),
-            ]}
+            style={(state) => [styles.notifyBtn, { backgroundColor: colors.surface }, pressFeedback(state)]}
           >
             {requesting ? (
               <ActivityIndicator color={colors.gold} />
@@ -147,21 +134,13 @@ export default function OnboardingLocationScreen() {
       )}
 
       <OnboardingDots step={3} total={ONBOARDING_STEPS} style={styles.dots} />
-      <Pressable
-        onPress={() => router.push('/onboarding/ready')}
-        disabled={!locationReady}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !locationReady }}
-        style={[styles.cta, { backgroundColor: colors.gold }, locationReady ? null : styles.ctaDisabled]}
-      >
-        <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.continue')}</Text>
-      </Pressable>
+      <Button label={t('common.continue')} onPress={() => router.push('/onboarding/ready')} disabled={!locationReady} />
       {locationReady ? null : (
         <Text style={[typography.small, styles.locationHint, { color: colors.textMuted }]}>
           {t('onboarding.locationRequired')}
         </Text>
       )}
-      <Pressable onPress={() => router.back()} style={styles.backBtn}>
+      <Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.backBtn}>
         <Text style={[typography.small, { color: colors.textSub }]}>{t('common.back')}</Text>
       </Pressable>
     </SafeAreaView>
@@ -173,16 +152,22 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.xl,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
+  cardGap: {
+    marginTop: spacing.xl,
+  },
+  buttonGap: {
+    marginTop: spacing.md,
+  },
+  notifyCard: {
+    borderRadius: radius.xl,
     padding: spacing.lg,
     marginTop: spacing.xl,
   },
-  secondaryBtn: {
-    borderRadius: radius.md,
+  notifyBtn: {
+    minHeight: 48,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
@@ -193,15 +178,6 @@ const styles = StyleSheet.create({
   dots: {
     marginTop: 'auto',
     marginBottom: spacing.md,
-  },
-  cta: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-  },
-  ctaDisabled: {
-    opacity: 0.5,
   },
   locationHint: {
     textAlign: 'center',

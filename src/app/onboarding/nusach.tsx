@@ -2,12 +2,13 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { Button } from '@/components/Button';
 import { ChoiceRow } from '@/components/ChoiceRow';
 import { ONBOARDING_STEPS, OnboardingDots } from '@/components/OnboardingDots';
 import { chooseNusach } from '@/stores/taharahOptIn';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
 
@@ -39,13 +40,7 @@ export default function NusachScreen() {
         </View>
       </ScrollView>
       <OnboardingDots step={2} total={ONBOARDING_STEPS} style={styles.dots} />
-      <Pressable
-        onPress={() => router.push('/onboarding/location')}
-        accessibilityRole="button"
-        style={[styles.cta, { backgroundColor: colors.gold }]}
-      >
-        <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.continue')}</Text>
-      </Pressable>
+      <Button label={t('common.continue')} onPress={() => router.push('/onboarding/location')} />
       <Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.backBtn}>
         <Text style={[typography.small, { color: colors.textSub }]}>{t('common.back')}</Text>
       </Pressable>
@@ -67,12 +62,6 @@ const styles = StyleSheet.create({
   },
   dots: {
     marginBottom: spacing.md,
-  },
-  cta: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
   },
   backBtn: {
     alignItems: 'center',

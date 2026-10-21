@@ -1,23 +1,29 @@
 import React from 'react';
-import Svg, { Circle, Polygon, Path } from 'react-native-svg';
-import { BRAND } from '@/theme/colors';
+import { View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
+import { LOGO_ASPECT, LOGO_SVG } from './logo.generated';
+import { useTheme } from '@/theme/ThemeProvider';
 
-type Props = { size?: number };
+export type AppLogoVariant = 'mark' | 'icon' | 'wordmark';
 
-export function AppLogo({ size = 32 }: Props) {
+type Props = { variant?: AppLogoVariant; size?: number };
+
+const ON_DARK = { mark: LOGO_SVG.markOnDark, wordmark: LOGO_SVG.wordmarkOnDark } as const;
+
+export function AppLogo({ variant = 'mark', size = 32 }: Props) {
+  const { isDark } = useTheme();
+  const xml = isDark && variant !== 'icon' ? ON_DARK[variant] : LOGO_SVG[variant];
+  const height = size;
+  const width = Math.round(size * LOGO_ASPECT[variant]);
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <Circle cx={24} cy={24} r={24} fill={BRAND.navy} />
-      <Circle cx={24} cy={24} r={23} stroke={BRAND.gold} strokeWidth={1.5} fill="none" />
-      <Polygon points="24,8 37,31 11,31" fill="none" stroke={BRAND.gold} strokeWidth={2.4} strokeLinejoin="round" />
-      <Polygon points="24,40 11,17 37,17" fill="none" stroke={BRAND.gold} strokeWidth={2.4} strokeLinejoin="round" />
-      <Path
-        d="M19.5,24.5 L22.5,27.5 L28.5,21"
-        stroke={BRAND.white}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      pointerEvents="none"
+      style={{ width, height }}
+    >
+      <SvgXml xml={xml} width={width} height={height} />
+    </View>
   );
 }

@@ -1,8 +1,18 @@
+import { StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { SegmentedControl } from '../SegmentedControl';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES, THEME_NAMES } from '@/theme/colors';
+import { radius, spacing } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
+
+type Node = ReturnType<typeof screen.getByRole>;
+
+const hostParent = (node: Node): Node => {
+  let current = node.parent;
+  while (current && typeof current.type !== 'string') current = current.parent;
+  return current!;
+};
 
 const OPTIONS = [
   { value: 'he', label: 'עברית' },
@@ -47,23 +57,25 @@ describe('SegmentedControl', () => {
     expect(onChange).toHaveBeenCalledWith('en');
   });
 
-  it.each(THEME_NAMES)('%s: the surface tone fills the selected option with gold and onGold text', (name) => {
-    useUserStore.setState({ theme: name });
-    const colors = THEMES[name];
-    renderWithTheme(<SegmentedControl options={OPTIONS} value="he" onChange={jest.fn()} />);
-    expect(screen.getByRole('radio', { name: 'עברית' })).toHaveStyle({ backgroundColor: colors.gold });
-    expect(screen.getByText('עברית')).toHaveStyle({ color: colors.onGold });
-    expect(screen.getByRole('radio', { name: 'English' })).toHaveStyle({ backgroundColor: 'transparent' });
-    expect(screen.getByText('English')).toHaveStyle({ color: colors.textMuted });
-  });
+  it.each(THEME_NAMES)(
+    '%s: the chosen option is a gold pill with onGold text, the others surface2 pills with text',
+    (name) => {
+      useUserStore.setState({ theme: name });
+      const colors = THEMES[name];
+      renderWithTheme(<SegmentedControl options={OPTIONS} value="he" onChange={jest.fn()} />);
+      expect(screen.getByRole('radio', { name: 'עברית' })).toHaveStyle({ backgroundColor: colors.gold });
+      expect(screen.getByText('עברית')).toHaveStyle({ color: colors.onGold });
+      expect(screen.getByRole('radio', { name: 'English' })).toHaveStyle({ backgroundColor: colors.surface2 });
+      expect(screen.getByText('English')).toHaveStyle({ color: colors.text });
+    },
+  );
 
-  it.each(THEME_NAMES)('%s: the header tone fills the selected option with headerAccent', (name) => {
-    useUserStore.setState({ theme: name });
-    const colors = THEMES[name];
-    renderWithTheme(<SegmentedControl options={OPTIONS} value="en" tone="header" onChange={jest.fn()} />);
-    expect(screen.getByRole('radio', { name: 'English' })).toHaveStyle({ backgroundColor: colors.headerAccent });
-    expect(screen.getByText('English')).toHaveStyle({ color: colors.headerBg });
-    expect(screen.getByText('עברית')).toHaveStyle({ color: colors.headerSub });
+  it('lays the options out as separate pills 4 points apart', () => {
+    renderWithTheme(<SegmentedControl options={OPTIONS} value="he" onChange={jest.fn()} />);
+    const track = hostParent(screen.getAllByRole('radio')[0]);
+    expect(track).toHaveStyle({ flexDirection: 'row', gap: spacing.xs });
+    expect(StyleSheet.flatten(track.props.style).backgroundColor).toBeUndefined();
+    screen.getAllByRole('radio').forEach((radio) => expect(radio).toHaveStyle({ borderRadius: radius.md }));
   });
 });
 

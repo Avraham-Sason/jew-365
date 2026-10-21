@@ -1,11 +1,20 @@
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Path } from 'react-native-svg';
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
-import { HEADER_PILL_BG, HeaderPill, ScreenHeader } from '../ScreenHeader';
+import { CounterPill, HeaderPill, ScreenHeader } from '../ScreenHeader';
 import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES, THEME_NAMES } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
+
+type Node = ReturnType<typeof screen.getByRole>;
+
+const hostParent = (node: Node): Node => {
+  let current = node.parent;
+  while (current && typeof current.type !== 'string') current = current.parent;
+  return current!;
+};
 
 describe('ScreenHeader', () => {
   beforeEach(() => {
@@ -18,11 +27,38 @@ describe('ScreenHeader', () => {
     expect(screen.getByText('Coming soon')).toBeOnTheScreen();
   });
 
-  it.each(THEME_NAMES)('%s: the title reads headerText and the subtitle headerSub', (name) => {
+  it.each(THEME_NAMES)('%s: the title reads text and the subtitle textSub', (name) => {
     useUserStore.setState({ theme: name });
     renderWithTheme(<ScreenHeader title="Hilulot" subtitle="Coming soon" />);
-    expect(screen.getByText('Hilulot')).toHaveStyle({ color: THEMES[name].headerText });
-    expect(screen.getByText('Coming soon')).toHaveStyle({ color: THEMES[name].headerSub });
+    expect(screen.getByText('Hilulot')).toHaveStyle({ color: THEMES[name].text });
+    expect(screen.getByText('Coming soon')).toHaveStyle({ color: THEMES[name].textSub });
+  });
+
+  it.each(THEME_NAMES)('%s: draws no band: nothing in it paints bg', (name) => {
+    useUserStore.setState({ theme: name });
+    renderWithTheme(<ScreenHeader title="Hilulot" subtitle="Coming soon" onBack={jest.fn()} />);
+    const painted = screen.UNSAFE_root.findAll(
+      (node: Node) =>
+        typeof node.type === 'string' && StyleSheet.flatten(node.props.style)?.backgroundColor === THEMES[name].bg,
+    );
+    expect(painted).toHaveLength(0);
+  });
+
+  it('centres the title and the subtitle', () => {
+    renderWithTheme(<ScreenHeader title="Hilulot" subtitle="Coming soon" />);
+    expect(screen.getByText('Hilulot')).toHaveStyle({ textAlign: 'center' });
+    expect(screen.getByText('Coming soon')).toHaveStyle({ textAlign: 'center' });
+  });
+
+  it('marks the title as a header for screen readers', () => {
+    renderWithTheme(<ScreenHeader title="Hilulot" />);
+    expect(screen.getByRole('header', { name: 'Hilulot' })).toBeOnTheScreen();
+  });
+
+  it('puts the leading node above the title', () => {
+    renderWithTheme(<ScreenHeader title="Hilulot" leading={<Text>Leading tile</Text>} />);
+    const json = JSON.stringify(screen.toJSON());
+    expect(json.indexOf('Leading tile')).toBeLessThan(json.indexOf('Hilulot'));
   });
 
   it('draws no back pill without onBack', () => {
@@ -55,9 +91,11 @@ describe('ScreenHeader', () => {
     expect(screen.UNSAFE_getByType(Path).props.d).toBe('M15,6L9,12L15,18');
   });
 
-  it('paints the back pill on the translucent header white', () => {
+  it('paints the back pill on surface with the label in text and the chevron in textSub', () => {
     renderWithTheme(<ScreenHeader title="Hilulot" onBack={jest.fn()} />);
-    expect(screen.getByRole('button', { name: 'חזור' })).toHaveStyle({ backgroundColor: HEADER_PILL_BG });
+    expect(screen.getByRole('button', { name: 'חזור' })).toHaveStyle({ backgroundColor: THEMES.gold.surface });
+    expect(screen.getByText('חזור')).toHaveStyle({ color: THEMES.gold.text });
+    expect(screen.UNSAFE_getByType(MitzvahIcon).props.color).toBe(THEMES.gold.textSub);
   });
 
   it('renders the actions slot and keeps its controls pressable', () => {
@@ -101,12 +139,12 @@ describe('HeaderPill', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('is unselected by default, on the translucent white with headerText', () => {
+  it('is unselected by default, a surface pill with text', () => {
     renderWithTheme(<HeaderPill label="Today" onPress={jest.fn()} />);
     const pill = screen.getByRole('button', { name: 'Today' });
     expect(pill).not.toBeSelected();
-    expect(pill).toHaveStyle({ backgroundColor: HEADER_PILL_BG });
-    expect(screen.getByText('Today')).toHaveStyle({ color: THEMES.gold.headerText });
+    expect(pill).toHaveStyle({ backgroundColor: THEMES.gold.surface });
+    expect(screen.getByText('Today')).toHaveStyle({ color: THEMES.gold.text });
   });
 
   it('is enabled by default', () => {
@@ -126,35 +164,35 @@ describe('HeaderPill', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
-  it.each(THEME_NAMES)('%s: selected turns the pill headerAccent with headerBg text', (name) => {
+  it.each(THEME_NAMES)('%s: selected turns the pill gold with onGold text', (name) => {
     useUserStore.setState({ theme: name });
     renderWithTheme(<HeaderPill label="Today" selected onPress={jest.fn()} />);
     const pill = screen.getByRole('button', { name: 'Today' });
     expect(pill).toBeSelected();
-    expect(pill).toHaveStyle({ backgroundColor: THEMES[name].headerAccent });
-    expect(screen.getByText('Today')).toHaveStyle({ color: THEMES[name].headerBg });
+    expect(pill).toHaveStyle({ backgroundColor: THEMES[name].gold });
+    expect(screen.getByText('Today')).toHaveStyle({ color: THEMES[name].onGold });
   });
 
   describe('with an icon', () => {
-    it('draws the icon in headerText with no text, named by its accessibilityLabel, and fires onPress once', async () => {
+    it('draws the icon in text with no text, named by its accessibilityLabel, and fires onPress once', async () => {
       const onPress = jest.fn();
       renderWithTheme(<HeaderPill icon="chevronRight" accessibilityLabel="Previous week" onPress={onPress} />);
       const icon = screen.UNSAFE_getByType(MitzvahIcon);
       expect(icon.props.name).toBe('chevronRight');
-      expect(icon.props.color).toBe(THEMES.gold.headerText);
+      expect(icon.props.color).toBe(THEMES.gold.text);
       expect(screen.UNSAFE_getByType(Path).props.d).toBe('M9,6L15,12L9,18');
       expect(screen.queryByText(/./)).toBeNull();
       await userEvent.setup().press(screen.getByRole('button', { name: 'Previous week' }));
       expect(onPress).toHaveBeenCalledTimes(1);
     });
 
-    it.each(THEME_NAMES)('%s: selected turns the icon headerBg on the headerAccent pill', (name) => {
+    it.each(THEME_NAMES)('%s: selected turns the icon onGold on the gold pill', (name) => {
       useUserStore.setState({ theme: name });
       renderWithTheme(<HeaderPill icon="chevronLeft" accessibilityLabel="Next week" selected onPress={jest.fn()} />);
       const pill = screen.getByRole('button', { name: 'Next week' });
       expect(pill).toBeSelected();
-      expect(pill).toHaveStyle({ backgroundColor: THEMES[name].headerAccent });
-      expect(screen.UNSAFE_getByType(MitzvahIcon).props.color).toBe(THEMES[name].headerBg);
+      expect(pill).toHaveStyle({ backgroundColor: THEMES[name].gold });
+      expect(screen.UNSAFE_getByType(MitzvahIcon).props.color).toBe(THEMES[name].onGold);
     });
 
     it('disabled fades the pill and swallows the press', () => {
@@ -178,5 +216,27 @@ describe('HeaderPill', () => {
       renderWithTheme(<HeaderPill label="Today" onPress={jest.fn()} />);
       expect(screen.UNSAFE_queryByType(MitzvahIcon)).toBeNull();
     });
+  });
+});
+
+describe('CounterPill', () => {
+  beforeEach(() => {
+    useUserStore.getState().reset();
+  });
+
+  it.each(THEME_NAMES)('%s: shows its label in goldText on a goldLight pill', (name) => {
+    useUserStore.setState({ theme: name });
+    renderWithTheme(<CounterPill label="6/9" />);
+    expect(screen.getByText('6/9')).toHaveStyle({ color: THEMES[name].goldText });
+    expect(hostParent(screen.getByText('6/9'))).toHaveStyle({
+      backgroundColor: THEMES[name].goldLight,
+      borderRadius: radius.full,
+    });
+  });
+
+  it('is named by its accessibilityLabel when given and is not a button', () => {
+    renderWithTheme(<CounterPill label="6/9" accessibilityLabel="6 of 9 done" />);
+    expect(screen.getByLabelText('6 of 9 done')).toBeOnTheScreen();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

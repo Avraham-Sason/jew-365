@@ -3,7 +3,10 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { AppLogo } from '@/components/AppLogo';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ONBOARDING_STEPS, OnboardingDots } from '@/components/OnboardingDots';
+import { SectionLabel } from '@/components/SectionLabel';
 import { useUserStore } from '@/stores/useUserStore';
 import { backupFailureKey, pickBackup, restoreBackup } from '@/services/BackupService';
 import { NotificationScheduler, requestNotificationPermissions } from '@/services/NotificationScheduler';
@@ -12,6 +15,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
+
+const WELCOME_LOGO_SIZE = 112;
 
 export default function WelcomeScreen() {
   const { colors } = useTheme();
@@ -68,21 +73,19 @@ export default function WelcomeScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <AppLogo size={64} />
+            <AppLogo size={WELCOME_LOGO_SIZE} />
             <Text style={[typography.display, { color: colors.text, marginTop: spacing.md }]}>
               {t('onboarding.welcomeTitle')}
             </Text>
             <Text style={[typography.body, styles.body, { color: colors.textSub }]}>{t('onboarding.welcomeBody')}</Text>
           </View>
 
-          <View style={styles.form}>
+          <Card padded>
             <Text style={[typography.heading, { color: colors.text }]}>{t('onboarding.registerTitle')}</Text>
             <Text style={[typography.body, styles.registerBody, { color: colors.textSub }]}>
               {t('onboarding.registerBody')}
             </Text>
-            <Text style={[typography.captionBold, { color: colors.textSub, marginBottom: spacing.sm }]}>
-              {t('settings.profileName')}
-            </Text>
+            <SectionLabel variant="field" text={t('settings.profileName')} />
             <TextInput
               value={name}
               onChangeText={(v) => {
@@ -98,14 +101,7 @@ export default function WelcomeScreen() {
               <Text style={[typography.small, { color: colors.urgent, marginTop: spacing.xs }]}>{error}</Text>
             ) : null}
 
-            <Text
-              style={[
-                typography.captionBold,
-                { color: colors.textSub, marginTop: spacing.lg, marginBottom: spacing.sm },
-              ]}
-            >
-              {t('settings.profilePhone')}
-            </Text>
+            <SectionLabel variant="field" text={t('settings.profilePhone')} style={styles.secondLabel} />
             <TextInput
               value={phone}
               onChangeText={setPhone}
@@ -114,13 +110,11 @@ export default function WelcomeScreen() {
               keyboardType="phone-pad"
               style={[styles.input, inputStyle]}
             />
-          </View>
+          </Card>
         </ScrollView>
         <View style={styles.footer}>
           <OnboardingDots step={0} total={ONBOARDING_STEPS} />
-          <Pressable onPress={submit} accessibilityRole="button" style={[styles.cta, { backgroundColor: colors.gold }]}>
-            <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.continue')}</Text>
-          </Pressable>
+          <Button label={t('common.continue')} onPress={submit} />
           {Platform.OS !== 'web' ? (
             <Pressable
               onPress={restore}
@@ -170,8 +164,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.lg,
   },
-  form: {
-    paddingHorizontal: spacing.xs,
+  secondLabel: {
+    marginTop: spacing.lg,
   },
   input: {
     borderRadius: radius.md,
@@ -189,11 +183,5 @@ const styles = StyleSheet.create({
   },
   restoreError: {
     textAlign: 'center',
-  },
-  cta: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
   },
 });

@@ -4,21 +4,33 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 
-type Props = { text: string; count?: number; style?: StyleProp<TextStyle> };
+type Props = { text: string; count?: number; variant?: 'section' | 'field'; style?: StyleProp<TextStyle> };
 
-export function SectionLabel({ text, count, style }: Props) {
+export function SectionLabel({ text, count, variant = 'section', style }: Props) {
   const { colors } = useTheme();
+  const section = variant === 'section';
   return (
-    <Text style={[typography.captionBold, styles.label, { color: colors.textSub }, style]}>
+    <Text
+      accessibilityRole={section ? 'header' : undefined}
+      style={[
+        section ? typography.heading : typography.captionBold,
+        section ? styles.section : styles.field,
+        { color: section ? colors.text : colors.textSub },
+        style,
+      ]}
+    >
       {count === undefined ? text : `${text} (${count})`}
     </Text>
   );
 }
 
 const styles = StyleSheet.create({
-  label: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
+  section: {
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
     paddingHorizontal: spacing.xs,
+  },
+  field: {
+    marginBottom: spacing.sm,
   },
 });

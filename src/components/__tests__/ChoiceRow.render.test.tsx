@@ -40,6 +40,26 @@ describe('ChoiceRow', () => {
     expect(node?.props['aria-checked']).toBe(selected);
   });
 
+  it.each(THEME_NAMES)(
+    '%s: rests on surface with a transparent border and turns goldLight with a gold border when selected',
+    (name) => {
+      useUserStore.setState({ theme: name });
+      const { rerender } = renderWithTheme(<ChoiceRow label="גבר" selected={false} onPress={jest.fn()} />);
+      expect(screen.getByRole('radio', { name: 'גבר' })).toHaveStyle({
+        backgroundColor: THEMES[name].surface,
+        borderColor: 'transparent',
+        borderWidth: 1.5,
+        shadowColor: THEMES[name].shadow,
+      });
+      rerender(<ChoiceRow label="גבר" selected onPress={jest.fn()} />);
+      expect(screen.getByRole('radio', { name: 'גבר' })).toHaveStyle({
+        backgroundColor: THEMES[name].goldLight,
+        borderColor: THEMES[name].gold,
+        borderWidth: 1.5,
+      });
+    },
+  );
+
   it.each(THEME_NAMES)('%s: the tick is onGold on a gold circle', (name) => {
     useUserStore.setState({ theme: name });
     renderWithTheme(<ChoiceRow label="גבר" selected onPress={jest.fn()} />);

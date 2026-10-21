@@ -32,6 +32,7 @@
     "check:dox": "node scripts/check-dox.js",
     "siddur:build": "node scripts/siddur/build.js",
     "chok:build": "node scripts/chok/build.js",
+    "logo:build": "node design/jew365-concepts/vector/build.mjs && node scripts/logo/export.mjs",
     "prepare": "husky"
   },
   "dependencies": {

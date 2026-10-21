@@ -18,9 +18,10 @@ jest.mock('@/services/NotificationScheduler', () => ({
   refreshSchedulingOnForeground: async () => {},
 }));
 
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { DateTime } from 'luxon';
 import HomeScreen from '../(tabs)/home';
+import { AppLogo } from '@/components/AppLogo';
 import { CITIES } from '@/data/cities';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
@@ -28,6 +29,7 @@ import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
+import { THEMES } from '@/theme/colors';
 import type { CustomMitzvah } from '@/types/mitzvah';
 import { clockOf } from '@/utils/clock';
 
@@ -177,6 +179,18 @@ describe('home between midnight and alot', () => {
     renderAt(AFTER_ALOT);
     expect(screen.getByText('0/1')).toBeOnTheScreen();
     expect(screen.queryByText(/^בוצעו/)).toBeNull();
+  });
+
+  it('puts the wordmark on its own brand row and keeps the done counter in the header', () => {
+    useCompletionsStore.setState({ completions: { '2027-06-14': { maariv: 1 } } });
+    renderAt(AFTER_MAARIV);
+    const brand = screen.getByTestId('home-brand');
+    expect(brand).toHaveStyle({ flexDirection: 'row', justifyContent: 'flex-end' });
+    expect(screen.UNSAFE_getAllByType(AppLogo)).toHaveLength(1);
+    expect(within(brand).UNSAFE_getByType(AppLogo).props).toMatchObject({ variant: 'wordmark', size: 34 });
+    expect(within(brand).queryByLabelText('בוצעו 1 מתוך 1')).toBeNull();
+    expect(screen.getByLabelText('בוצעו 1 מתוך 1')).toHaveStyle({ backgroundColor: THEMES.gold.goldLight });
+    expect(screen.getByText('1/1')).toHaveStyle({ color: THEMES.gold.goldText });
   });
 
   describe('a custom mitzvah whose window starts after midnight', () => {

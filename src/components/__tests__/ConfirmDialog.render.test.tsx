@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../ConfirmDialog';
 import { QuietBlockContext } from '../ShabbatScreen';
 import { findBackdrop, renderWithTheme } from '@/testing/render';
 import { THEMES, THEME_NAMES } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 import type { HolyBlock } from '@/types/zmanim';
 
@@ -33,6 +34,12 @@ describe('ConfirmDialog', () => {
     expect(screen.getByText('Reset?')).toBeOnTheScreen();
     expect(screen.getByText('This clears every mark.')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Reset' })).toBeOnTheScreen();
+  });
+
+  it('draws both buttons as pills', () => {
+    setup();
+    expect(screen.getByRole('button', { name: 'Reset' })).toHaveStyle({ borderRadius: radius.full });
+    expect(screen.getByRole('button', { name: 'ביטול' })).toHaveStyle({ borderRadius: radius.full });
   });
 
   it('renders no body line when body is omitted', () => {

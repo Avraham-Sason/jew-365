@@ -62,9 +62,11 @@ import {
 } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChokWeekControls } from '@/components/ChokWeekControls';
 import { MitzvahIcon } from '@/components/MitzvahIcon';
-import { HEADER_PILL_BG, ScreenHeader } from '@/components/ScreenHeader';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { ScrollSpeedStepper } from '@/components/ScrollSpeedStepper';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useQuietBlock } from '@/components/ShabbatScreen';
@@ -119,7 +121,9 @@ const AUTO_SCROLL_DRIFT_PX = 24;
 const AUTO_SCROLL_MAX_FRAME_MS = 100;
 const DONE_ICON_SIZE = 18;
 const PIXEL_RATIO = PixelRatio.get();
-const PILL_BORDER = 'rgba(255,255,255,0.18)';
+const CONTROL_SIZE = 34;
+const CHEVRON_SIZE = 16;
+const CHEVRON_STROKE = 2.5;
 const PLAY_PATH = 'M8 5v14l11-7z';
 const PAUSE_PATH = 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z';
 const PRAYER_MODES = ['minyan', 'alone'] as const;
@@ -650,15 +654,11 @@ export default function SiddurScreen() {
     const makeUp = makeUpFolds.find((fold) => fold.label.he === section.title.he);
     if (!makeUp) return null;
     return (
-      <Pressable
+      <Button
+        label={t('chok.makeUpDone', { day: t(`chok.slot.${makeUp.slot}`) })}
         onPress={() => finishMakeUp(makeUp)}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.doneBtn, { backgroundColor: colors.gold, opacity: pressed ? 0.85 : 1 }]}
-      >
-        <Text style={[typography.heading, { color: colors.onGold }]}>
-          {t('chok.makeUpDone', { day: t(`chok.slot.${makeUp.slot}`) })}
-        </Text>
-      </Pressable>
+        style={styles.doneAction}
+      />
     );
   };
   const optionalSection = (
@@ -713,9 +713,7 @@ export default function SiddurScreen() {
     if (section.optional) return optionalSection(section, section.optional, folds, makeUpDone(section));
     return (
       <>
-        <Text style={[typography.heading, { color: colors.goldText, marginBottom: spacing.sm }]}>
-          {titleOf(section)}
-        </Text>
+        <Text style={[typography.title, styles.sectionTitle, { color: colors.goldText }]}>{titleOf(section)}</Text>
         {sectionBody(section, folds, colors.text)}
       </>
     );
@@ -761,13 +759,11 @@ export default function SiddurScreen() {
       return (
         <View style={styles.center}>
           <Text style={[typography.body, { color: colors.textSub }]}>{t('siddur.error')}</Text>
-          <Pressable
+          <Button
+            label={t('errors.retry')}
             onPress={() => setAttempt((value) => value + 1)}
-            accessibilityRole="button"
-            style={[styles.pill, { backgroundColor: colors.gold, marginTop: spacing.md }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('errors.retry')}</Text>
-          </Pressable>
+            style={styles.retryAction}
+          />
         </View>
       );
     }
@@ -805,38 +801,22 @@ export default function SiddurScreen() {
               accessibilityLabel={`${t('siddur.pickSection')}: ${titleOf(currentEntry)}`}
               style={({ pressed }) => [
                 styles.picker,
-                { backgroundColor: pressed ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)' },
+                { backgroundColor: pressed ? colors.surface2 : colors.surface },
+                shadowStyle(colors.shadow, shadowPresets.cardSoft),
               ]}
             >
-              <Text style={[typography.bodyBold, styles.pickerLabel, { color: colors.headerText }]} numberOfLines={1}>
+              <Text style={[typography.bodyBold, styles.pickerLabel, { color: colors.text }]} numberOfLines={1}>
                 {titleOf(currentEntry)}
               </Text>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M6 9l6 6 6-6"
-                  stroke={colors.headerText}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
+              <MitzvahIcon
+                name="chevronDown"
+                size={CHEVRON_SIZE}
+                color={colors.textMuted}
+                strokeWidth={CHEVRON_STROKE}
+              />
             </Pressable>
           ) : null}
           <View style={styles.toolbar}>
-            <PlayToggle on={autoScrollOn} onPress={toggleAutoScroll} accessibilityLabel={t('siddur.autoScroll')} />
-            <ScrollSpeedStepper compact tone="header" level={scrollSpeed} onChange={setScrollSpeed} />
-            <SizeButton
-              label="A−"
-              accessibilityLabel={t('siddur.smaller')}
-              disabled={currentIndex === 0}
-              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.max(0, currentIndex - 1)])}
-            />
-            <SizeButton
-              label="A+"
-              accessibilityLabel={t('siddur.larger')}
-              disabled={currentIndex === SIDDUR_FONT_SIZES.length - 1}
-              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.min(SIDDUR_FONT_SIZES.length - 1, currentIndex + 1)])}
-            />
             {hasMinyanPassages ? (
               <View
                 accessibilityRole="radiogroup"
@@ -844,13 +824,26 @@ export default function SiddurScreen() {
                 style={styles.prayerMode}
               >
                 <SegmentedControl
-                  tone="header"
                   options={PRAYER_MODES.map((mode) => ({ value: mode, label: t(`prayerMode.${mode}`) }))}
                   value={prayerMode}
                   onChange={changePrayerMode}
                 />
               </View>
             ) : null}
+            <SizeButton
+              label="A+"
+              accessibilityLabel={t('siddur.larger')}
+              disabled={currentIndex === SIDDUR_FONT_SIZES.length - 1}
+              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.min(SIDDUR_FONT_SIZES.length - 1, currentIndex + 1)])}
+            />
+            <SizeButton
+              label="A−"
+              accessibilityLabel={t('siddur.smaller')}
+              disabled={currentIndex === 0}
+              onPress={() => setFontSize(SIDDUR_FONT_SIZES[Math.max(0, currentIndex - 1)])}
+            />
+            <ScrollSpeedStepper compact level={scrollSpeed} onChange={setScrollSpeed} />
+            <PlayToggle on={autoScrollOn} onPress={toggleAutoScroll} accessibilityLabel={t('siddur.autoScroll')} />
           </View>
         </View>
       </ScreenHeader>
@@ -891,15 +884,9 @@ export default function SiddurScreen() {
                   {nameOf(heading)}
                 </Text>
               ))}
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface },
-                  shadowStyle(colors.shadow, shadowPresets.cardSoft),
-                ]}
-              >
+              <Card padded style={styles.sectionCard}>
                 {sectionCard(section)}
-              </View>
+              </Card>
             </>
           )}
           ListFooterComponent={
@@ -911,16 +898,11 @@ export default function SiddurScreen() {
                     <Text style={[typography.bodyBold, { color: colors.safe }]}>{t('siddur.doneAlready')}</Text>
                   </View>
                 ) : (
-                  <Pressable
+                  <Button
+                    label={t('siddur.done')}
                     onPress={() => finish(doneTarget.id, doneTarget.date)}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.doneBtn,
-                      { backgroundColor: colors.gold, opacity: pressed ? 0.85 : 1 },
-                    ]}
-                  >
-                    <Text style={[typography.heading, { color: colors.onGold }]}>{t('siddur.done')}</Text>
-                  </Pressable>
+                    style={styles.doneAction}
+                  />
                 )
               ) : null}
 
@@ -1014,9 +996,9 @@ function SizeButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       hitSlop={6}
-      style={[styles.sizeBtn, { backgroundColor: HEADER_PILL_BG, opacity: disabled ? 0.4 : 1 }]}
+      style={[styles.sizeBtn, { backgroundColor: colors.surface2, opacity: disabled ? 0.4 : 1 }]}
     >
-      <Text style={[typography.captionBold, { color: colors.headerText }]}>{label}</Text>
+      <Text style={[typography.captionBold, { color: colors.text }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -1040,14 +1022,12 @@ function PlayToggle({
       hitSlop={6}
       style={({ pressed }) => [
         styles.roundBtn,
-        on
-          ? { backgroundColor: colors.gold, borderColor: colors.gold }
-          : { backgroundColor: HEADER_PILL_BG, borderColor: PILL_BORDER },
+        { backgroundColor: on ? colors.gold : colors.surface2 },
         { opacity: pressed ? 0.7 : 1 },
       ]}
     >
       <Svg width={14} height={14} viewBox="0 0 24 24">
-        <Path d={on ? PAUSE_PATH : PLAY_PATH} fill={on ? colors.onGold : colors.headerText} />
+        <Path d={on ? PAUSE_PATH : PLAY_PATH} fill={on ? colors.onGold : colors.text} />
       </Svg>
     </Pressable>
   );
@@ -1084,15 +1064,12 @@ function OptionalToggle({
         <Text style={[large ? typography.heading : typography.bodyBold, { color: accent }]}>{label}</Text>
         {caption ? <Text style={[typography.caption, { color: accent }]}>{caption}</Text> : null}
       </View>
-      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-        <Path
-          d={expanded ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'}
-          stroke={accent}
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
+      <MitzvahIcon
+        name={expanded ? 'chevronUp' : 'chevronDown'}
+        size={14}
+        color={accent}
+        strokeWidth={CHEVRON_STROKE}
+      />
     </Pressable>
   );
 }
@@ -1154,20 +1131,19 @@ const styles = StyleSheet.create({
   },
   roundBtn: {
     flexShrink: 0,
-    width: 32,
-    height: 32,
+    width: CONTROL_SIZE,
+    height: CONTROL_SIZE,
     borderRadius: radius.full,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sizeBtn: {
     flexShrink: 0,
-    minWidth: 34,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    width: CONTROL_SIZE,
+    height: CONTROL_SIZE,
     borderRadius: radius.full,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   toolbarStack: {
     gap: spacing.sm,
@@ -1175,7 +1151,7 @@ const styles = StyleSheet.create({
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   prayerMode: {
     flex: 1,
@@ -1186,11 +1162,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    minHeight: 48,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.xl,
   },
   pickerLabel: {
     flex: 1,
@@ -1199,10 +1174,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
   },
-  card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+  sectionCard: {
     marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    marginBottom: spacing.sm,
   },
   sectionHeading: {
     textAlign: 'center',
@@ -1270,17 +1246,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xxl,
   },
-  pill: {
-    borderRadius: radius.full,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxl,
+  doneAction: {
+    marginTop: spacing.sm,
   },
-  doneBtn: {
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    marginTop: spacing.xs,
+  retryAction: {
+    marginTop: spacing.md,
+    alignSelf: 'center',
   },
   doneRow: {
     flexDirection: 'row',

@@ -1,9 +1,11 @@
+import { StyleSheet } from 'react-native';
 import { Path } from 'react-native-svg';
 import { screen, userEvent } from '@testing-library/react-native';
 import { DayStepper, formatDayLine } from '../DayStepper';
 import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 
 const TODAY = new Date(2026, 9, 14);
@@ -41,6 +43,21 @@ describe('DayStepper', () => {
     useUserStore.setState({ language: 'en' });
     renderWithTheme(<DayStepper value={TODAY} onChange={jest.fn()} />);
     expect(chevronsDrawn()).toEqual([LEFT, RIGHT]);
+  });
+
+  it('draws each arrow as a 44-point round surface button', () => {
+    renderWithTheme(<DayStepper value={TODAY} onChange={jest.fn()} />);
+    [YESTERDAY, TOMORROW].forEach((day) => {
+      const arrow = screen.getByRole('button', { name: formatDayLine(day, 'he') });
+      expect(arrow).toHaveStyle({
+        width: 44,
+        height: 44,
+        borderRadius: radius.full,
+        backgroundColor: THEMES.gold.surface,
+        shadowColor: THEMES.gold.shadow,
+      });
+      expect(StyleSheet.flatten(arrow.props.style).borderWidth).toBeUndefined();
+    });
   });
 
   it('names each arrow after the day it steps to', () => {

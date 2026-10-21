@@ -3,6 +3,7 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
+import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
 import { NavBar } from '@/components/NavBar';
 import { SectionLabel } from '@/components/SectionLabel';
@@ -12,7 +13,7 @@ import { HALACHA_LINES, callUrl, halachaRulingFor, phoneLabel, whatsappUrl } fro
 import { useNow } from '@/hooks/useNow';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { chokPortionAt, chokWeekName } from '@/utils/chok';
 import { useI18n } from '@/i18n';
@@ -37,7 +38,7 @@ export default function MoreScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <NavBar title={t('more.title')} />
       <ScrollView contentContainerStyle={styles.list}>
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card divided>
           <ListRow
             icon="calendar"
             title={t('schedule.title')}
@@ -68,7 +69,7 @@ export default function MoreScreen() {
             chevron
             onPress={() => setHalachaOpen(true)}
           />
-        </View>
+        </Card>
       </ScrollView>
 
       <BottomSheet
@@ -109,7 +110,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxxl,
   },
   lines: {
@@ -121,10 +123,5 @@ const styles = StyleSheet.create({
   lineName: {
     paddingHorizontal: 0,
     marginBottom: spacing.xs,
-  },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
 });

@@ -2,36 +2,34 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { ThemeColors } from '@/theme/colors';
-import { typography, fontFamilies } from '@/theme/typography';
-import { ribbonThresholds, spacing, radius } from '@/theme/tokens';
+import { typography } from '@/theme/typography';
+import { radius, spacing } from '@/theme/tokens';
 import { useI18n } from '@/i18n';
 
 type Props = {
   pct: number;
   timeLeft: string;
+  urgent?: boolean;
 };
 
-// Exported so the test can exercise the shipped implementation instead of re-declaring a copy.
-export function ribbonColor(pct: number, colors: Pick<ThemeColors, 'safe' | 'warning' | 'urgent'>): string {
-  const p = Math.max(0, Math.min(1, pct));
-  return p > ribbonThresholds.safe ? colors.safe : p > ribbonThresholds.warning ? colors.warning : colors.urgent;
+export function ribbonColors(
+  urgent: boolean,
+  colors: Pick<ThemeColors, 'gold' | 'goldText' | 'urgent'>,
+): { fill: string; text: string } {
+  return urgent ? { fill: colors.urgent, text: colors.urgent } : { fill: colors.gold, text: colors.goldText };
 }
 
-export function TimeRibbon({ pct, timeLeft }: Props) {
+export function TimeRibbon({ pct, timeLeft, urgent = false }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const p = Math.max(0, Math.min(1, pct));
-  const col = ribbonColor(pct, colors);
+  const { fill, text } = ribbonColors(urgent, colors);
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.labelRow}>
-        <Text style={[typography.small, { color: col, fontFamily: fontFamilies.heebo.semibold }]}>
-          {t('time.left', { value: timeLeft })}
-        </Text>
-      </View>
+      <Text style={[typography.captionBold, styles.label, { color: text }]}>{t('time.left', { value: timeLeft })}</Text>
       <View style={[styles.track, { backgroundColor: colors.surface2 }]}>
-        <View style={[styles.fill, { width: `${p * 100}%`, backgroundColor: col }]} />
+        <View style={[styles.fill, { width: `${p * 100}%`, backgroundColor: fill }]} />
       </View>
     </View>
   );
@@ -39,7 +37,7 @@ export function TimeRibbon({ pct, timeLeft }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { marginTop: spacing.md },
-  labelRow: { flexDirection: 'row', marginBottom: spacing.xs },
-  track: { height: 5, borderRadius: radius.xs, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: radius.xs },
+  label: { marginBottom: spacing.sm },
+  track: { height: 6, borderRadius: radius.full, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: radius.full },
 });

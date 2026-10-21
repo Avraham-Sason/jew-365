@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { spacing } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 
 type Props<T extends string | number> = {
@@ -27,7 +27,7 @@ export function ChipRow<T extends string | number>({ values, selected, onSelect,
             hitSlop={6}
             style={[styles.pill, { backgroundColor: active ? colors.gold : colors.surface2 }]}
           >
-            <Text style={[typography.small, { color: active ? colors.onGold : colors.textSub }]}>
+            <Text style={[typography.captionBold, { color: active ? colors.onGold : colors.text }]}>
               {renderLabel(value)}
             </Text>
           </Pressable>
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   pill: {
-    borderRadius: 20,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

@@ -54,6 +54,8 @@ import { useUserStore, type Gender, type PrayerMode } from '@/stores/useUserStor
 import { useShallow } from 'zustand/react/shallow';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ListRow } from '@/components/ListRow';
@@ -376,36 +378,38 @@ export default function SettingsScreen() {
       <NavBar title={t('settings.title')} />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View ref={contentRef}>
-          <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <MitzvahIcon name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              value={query}
-              onChangeText={changeQuery}
-              onSubmitEditing={() => (results[0] ? chooseResult(results[0]) : undefined)}
-              placeholder={t('settings.searchPlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              accessibilityLabel={t('settings.search')}
-              returnKeyType="search"
-              autoCorrect={false}
-              autoCapitalize="none"
-              style={[styles.searchInput, { color: colors.text, writingDirection: inputTone.writingDirection }]}
-            />
-            {query ? (
-              <Pressable
-                onPress={() => setQuery('')}
-                accessibilityRole="button"
-                accessibilityLabel={t('settings.searchClear')}
-                hitSlop={8}
-              >
-                <MitzvahIcon name="close" size={16} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
+          <Card style={styles.searchCard}>
+            <View style={styles.searchRow}>
+              <MitzvahIcon name="search" size={18} color={colors.textMuted} />
+              <TextInput
+                value={query}
+                onChangeText={changeQuery}
+                onSubmitEditing={() => (results[0] ? chooseResult(results[0]) : undefined)}
+                placeholder={t('settings.searchPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('settings.search')}
+                returnKeyType="search"
+                autoCorrect={false}
+                autoCapitalize="none"
+                style={[styles.searchInput, { color: colors.text, writingDirection: inputTone.writingDirection }]}
+              />
+              {query ? (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('settings.searchClear')}
+                  hitSlop={8}
+                >
+                  <MitzvahIcon name="close" size={16} color={colors.textMuted} />
+                </Pressable>
+              ) : null}
+            </View>
+          </Card>
 
           {searching ? (
             results.length > 0 ? (
-              <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                {results.map((item, index) => (
+              <Card divided style={styles.resultsGap}>
+                {results.map((item) => (
                   <ListRow
                     key={item.id}
                     icon={item.icon}
@@ -413,10 +417,9 @@ export default function SettingsScreen() {
                     caption={item.section ? t(`settings.${item.section}`) : t('settings.searchScreen')}
                     onPress={() => chooseResult(item)}
                     chevron
-                    style={index === results.length - 1 ? styles.lastRow : undefined}
                   />
                 ))}
-              </View>
+              </Card>
             ) : (
               <View style={styles.searchEmpty} accessibilityLiveRegion="polite">
                 <Text style={[typography.bodyBold, { color: colors.text }]}>
@@ -429,24 +432,24 @@ export default function SettingsScreen() {
             )
           ) : (
             <>
-              <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Card style={styles.mitzvotGap}>
                 <ListRow
-                  icon="custom"
+                  icon="star"
                   title={t('settings.mitzvot')}
                   caption={t('settings.mitzvotCaption', { count: enabledMitzvotCount })}
                   onPress={() => router.push('/mitzvot')}
                   chevron
-                  style={styles.lastRow}
                 />
-              </View>
+              </Card>
 
               <SettingsSection
                 title={t('settings.profile')}
                 subtitle={t(taharahVisible ? 'settings.profileSummaryTaharah' : 'settings.profileSummary')}
+                icon="user"
                 {...collapsible('profile')}
               >
                 <Anchor {...anchor('profileName')}>
-                  <SectionLabel text={t('settings.profileName')} style={styles.firstFieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.profileName')} />
                   <TextInput
                     value={nameDraft}
                     onChangeText={setNameDraft}
@@ -458,7 +461,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('profilePhone')}>
-                  <SectionLabel text={t('settings.profilePhone')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.profilePhone')} style={styles.fieldLabel} />
                   <TextInput
                     value={phoneDraft}
                     onChangeText={setPhoneDraft}
@@ -470,7 +473,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('gender')}>
-                  <SectionLabel text={t('profile.gender')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('profile.gender')} style={styles.fieldLabel} />
                   <ChipRow
                     values={GENDERS}
                     selected={user.gender}
@@ -479,7 +482,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('maritalStatus')}>
-                  <SectionLabel text={t('profile.maritalStatus')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('profile.maritalStatus')} style={styles.fieldLabel} />
                   <ChipRow
                     values={MARITAL_STATUSES}
                     selected={user.maritalStatus}
@@ -501,10 +504,11 @@ export default function SettingsScreen() {
               <SettingsSection
                 title={t('settings.prayer')}
                 subtitle={t('settings.prayerSummary')}
+                icon="siddur"
                 {...collapsible('prayer')}
               >
                 <Anchor {...anchor('nusach')}>
-                  <SectionLabel text={t('settings.nusach')} style={styles.firstFieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.nusach')} />
                   <ChipRow
                     values={NUSACHAOT}
                     selected={user.nusach}
@@ -513,7 +517,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('opinion')}>
-                  <SectionLabel text={t('settings.opinion')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.opinion')} style={styles.fieldLabel} />
                   <ChipRow
                     values={OPINIONS}
                     selected={user.halachicOpinions.ksSofZman}
@@ -522,7 +526,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('prayerMode')}>
-                  <SectionLabel text={t('settings.prayerMode')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.prayerMode')} style={styles.fieldLabel} />
                   <ChipRow
                     values={PRAYER_MODES}
                     selected={user.prayerMode}
@@ -534,7 +538,7 @@ export default function SettingsScreen() {
                   </Text>
                 </Anchor>
                 <Anchor {...anchor('reading')}>
-                  <SectionLabel text={t('settings.reading')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.reading')} style={styles.fieldLabel} />
                   <SwitchRow
                     label={t('settings.autoScroll')}
                     hint={t('settings.autoScrollHint')}
@@ -543,11 +547,7 @@ export default function SettingsScreen() {
                   />
                   <View style={[styles.row, styles.speedRow]}>
                     <Text style={[typography.bodyBold, { color: colors.text }]}>{t('settings.autoScrollSpeed')}</Text>
-                    <ScrollSpeedStepper
-                      tone="surface"
-                      level={user.siddurScrollSpeed}
-                      onChange={user.setSiddurScrollSpeed}
-                    />
+                    <ScrollSpeedStepper level={user.siddurScrollSpeed} onChange={user.setSiddurScrollSpeed} />
                   </View>
                 </Anchor>
               </SettingsSection>
@@ -555,6 +555,7 @@ export default function SettingsScreen() {
               <SettingsSection
                 title={t('settings.device')}
                 subtitle={t(taharahVisible ? 'settings.deviceSummaryTaharah' : 'settings.deviceSummary')}
+                icon="bell"
                 {...collapsible('device')}
               >
                 <Anchor {...anchor('location')}>
@@ -568,11 +569,11 @@ export default function SettingsScreen() {
                   <Text style={[typography.small, styles.hint, { color: colors.textMuted }]}>
                     {t(`settings.locationStatus.${user.locationStatus}`)}
                   </Text>
-                  <PrimaryButton label={t('settings.useCurrentLocation')} onPress={refreshLocation} />
+                  <Button label={t('settings.useCurrentLocation')} onPress={refreshLocation} style={styles.buttonGap} />
                   {statusText ? (
                     <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>{statusText}</Text>
                   ) : null}
-                  <SectionLabel text={t('settings.pickCity')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.pickCity')} style={styles.fieldLabel} />
                   <ChipRow
                     values={CITY_INDEXES}
                     selected={CITIES.findIndex((city) => city.cityId === savedCityId)}
@@ -611,7 +612,7 @@ export default function SettingsScreen() {
                     value={permGranted ? t('settings.notificationsGranted') : t('settings.notificationsDenied')}
                   />
                   {!permGranted ? (
-                    <PrimaryButton label={t('settings.openOsSettings')} onPress={openOsSettings} />
+                    <Button label={t('settings.openOsSettings')} onPress={openOsSettings} style={styles.buttonGap} />
                   ) : null}
                 </Anchor>
                 {/* Exact alarms are declared in the manifest, but OEM battery managers can still defer
@@ -621,9 +622,10 @@ export default function SettingsScreen() {
                     <Text style={[typography.small, styles.groupGap, { color: colors.textMuted }]}>
                       {t('settings.batteryHint')}
                     </Text>
-                    <PrimaryButton
+                    <Button
                       label={t('settings.batteryAction')}
                       onPress={() => openBatteryOptimizationSettings()}
+                      style={styles.buttonGap}
                     />
                   </Anchor>
                 ) : null}
@@ -642,7 +644,7 @@ export default function SettingsScreen() {
 
                 <SectionLabel text={t('settings.display')} style={[styles.subHeading, subHeadingTone]} />
                 <Anchor {...anchor('theme')}>
-                  <SectionLabel text={t('settings.theme')} style={styles.firstFieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.theme')} />
                   <ThemeSwatchRow
                     selected={user.theme}
                     onSelect={(value) => user.setTheme(value)}
@@ -650,7 +652,7 @@ export default function SettingsScreen() {
                   />
                 </Anchor>
                 <Anchor {...anchor('language')}>
-                  <SectionLabel text={t('settings.language')} style={styles.fieldLabel} />
+                  <SectionLabel variant="field" text={t('settings.language')} style={styles.fieldLabel} />
                   <ChipRow
                     values={LANGS}
                     selected={user.language}
@@ -661,13 +663,7 @@ export default function SettingsScreen() {
 
                 <SectionLabel text={t('settings.app')} style={[styles.subHeading, subHeadingTone]} />
                 <Anchor {...anchor('reset')}>
-                  <Pressable
-                    onPress={() => setResetVisible(true)}
-                    accessibilityRole="button"
-                    style={[styles.dangerBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-                  >
-                    <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('settings.logout')}</Text>
-                  </Pressable>
+                  <Button variant="danger" label={t('settings.logout')} onPress={() => setResetVisible(true)} />
                 </Anchor>
 
                 <Anchor {...anchor('version')}>
@@ -681,6 +677,7 @@ export default function SettingsScreen() {
                 <SettingsSection
                   title={t('settings.backup')}
                   subtitle={t('settings.backupSummary')}
+                  icon="cloud"
                   {...collapsible('backup')}
                 >
                   <Text style={[typography.small, { color: colors.textMuted }]}>
@@ -692,10 +689,10 @@ export default function SettingsScreen() {
                     </Text>
                   ) : null}
                   <Anchor {...anchor('backupExport')}>
-                    <PrimaryButton label={t('settings.backupExport')} onPress={exportBackupFile} />
+                    <Button label={t('settings.backupExport')} onPress={exportBackupFile} style={styles.buttonGap} />
                   </Anchor>
                   <Anchor {...anchor('backupImport')}>
-                    <PrimaryButton label={t('settings.backupImport')} onPress={chooseBackupFile} />
+                    <Button label={t('settings.backupImport')} onPress={chooseBackupFile} style={styles.buttonGap} />
                   </Anchor>
                   {backupStatus ? (
                     <Text
@@ -715,13 +712,14 @@ export default function SettingsScreen() {
               <SettingsSection
                 title={t('settings.contact')}
                 subtitle={t('settings.contactSummary')}
+                icon="chat"
                 {...collapsible('contact')}
               >
                 <Anchor {...anchor('contact')}>
                   <Text style={[typography.small, { color: colors.textMuted }]}>{t('settings.contactHint')}</Text>
                   {isContactConfigured() ? (
                     <>
-                      <SectionLabel text={t('settings.profileName')} style={styles.fieldLabel} />
+                      <SectionLabel variant="field" text={t('settings.profileName')} style={styles.fieldLabel} />
                       <TextInput
                         value={contactName}
                         onChangeText={setContactName}
@@ -731,7 +729,7 @@ export default function SettingsScreen() {
                         style={[styles.input, inputTone]}
                         autoCapitalize="words"
                       />
-                      <SectionLabel text={t('settings.profilePhone')} style={styles.fieldLabel} />
+                      <SectionLabel variant="field" text={t('settings.profilePhone')} style={styles.fieldLabel} />
                       <TextInput
                         value={contactPhone}
                         onChangeText={setContactPhone}
@@ -741,7 +739,7 @@ export default function SettingsScreen() {
                         keyboardType="phone-pad"
                         style={[styles.input, inputTone]}
                       />
-                      <SectionLabel text={t('settings.contactMessage')} style={styles.fieldLabel} />
+                      <SectionLabel variant="field" text={t('settings.contactMessage')} style={styles.fieldLabel} />
                       <TextInput
                         value={contactMessage}
                         onChangeText={setContactMessage}
@@ -756,10 +754,11 @@ export default function SettingsScreen() {
                       <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>
                         {t('settings.contactPrivacy')}
                       </Text>
-                      <PrimaryButton
+                      <Button
                         label={t(contactBusy ? 'settings.contactSending' : 'settings.contactSend')}
                         onPress={submitContact}
                         busy={contactBusy}
+                        style={styles.buttonGap}
                       />
                       {contactStatus ? (
                         <Text
@@ -824,14 +823,14 @@ function TaharahBlock({ enabled, gender, onOpen }: TaharahBlockProps) {
   const { t } = useI18n();
   return (
     <>
-      <SectionLabel text={t('settings.taharah')} style={styles.fieldLabel} />
+      <SectionLabel variant="field" text={t('settings.taharah')} style={styles.fieldLabel} />
       <SwitchRow
         label={t('settings.taharahEnabled')}
         hint={t(gender === 'female' ? 'taharah.optIn.woman.body' : 'taharah.optIn.husband.body')}
         value={enabled}
         onValueChange={setTaharahTracking}
       />
-      {enabled ? <PrimaryButton label={t('settings.taharahOpen')} onPress={onOpen} /> : null}
+      {enabled ? <Button label={t('settings.taharahOpen')} onPress={onOpen} style={styles.buttonGap} /> : null}
       <Text style={[typography.small, styles.note, { color: colors.textMuted }]}>{t('taharah.disclaimer')}</Text>
     </>
   );
@@ -899,21 +898,6 @@ function SwitchRow({ label, hint, value, onValueChange, style }: SwitchRowProps)
   );
 }
 
-function PrimaryButton({ label, onPress, busy = false }: { label: string; onPress: () => void; busy?: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={busy}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: busy, busy }}
-      style={[styles.primaryBtn, { backgroundColor: colors.gold, opacity: busy ? 0.6 : 1 }]}
-    >
-      <Text style={[typography.bodyBold, { color: colors.onGold }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -922,11 +906,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-  primaryBtn: {
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+  buttonGap: {
     marginTop: spacing.md,
   },
   row: {
@@ -960,13 +940,6 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    paddingHorizontal: 0,
-  },
-  firstFieldLabel: {
-    marginTop: 0,
-    marginBottom: spacing.sm,
-    paddingHorizontal: 0,
   },
   subHeading: {
     marginTop: spacing.xl,
@@ -980,13 +953,19 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     borderTopWidth: 0,
   },
-  searchBox: {
+  searchCard: {
+    marginBottom: spacing.md,
+  },
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  resultsGap: {
+    marginBottom: spacing.md,
+  },
+  mitzvotGap: {
     marginBottom: spacing.md,
   },
   searchInput: {
@@ -1003,15 +982,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
-  lastRow: {
-    borderBottomWidth: 0,
-  },
   input: {
     borderRadius: radius.md,
     borderWidth: 1,
@@ -1025,13 +995,6 @@ const styles = StyleSheet.create({
   emailLink: {
     alignSelf: 'flex-start',
     paddingVertical: spacing.sm,
-  },
-  dangerBtn: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   versionText: {
     textAlign: 'center',

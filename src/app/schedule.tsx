@@ -3,6 +3,7 @@ import { InteractionManager, Pressable, ScrollView, StyleSheet, Text, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
+import { Card } from '@/components/Card';
 import { MitzvahIcon, backIcon, forwardIcon } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -11,6 +12,7 @@ import { useDayModel } from '@/hooks/useDayModel';
 import { HebcalService } from '@/services/HebcalService';
 import { Completions, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { fontFamilies, typography } from '@/theme/typography';
 import { buildDayTimeline } from '@/utils/buildDayTimeline';
@@ -136,7 +138,6 @@ export default function ScheduleScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenHeader title={t('schedule.title')} subtitle={subtitle} onBack={goBack}>
         <SegmentedControl
-          tone="header"
           options={VIEW_MODES.map((value) => ({ value, label: t(`schedule.${value}`) }))}
           value={view}
           onChange={setView}
@@ -148,7 +149,7 @@ export default function ScheduleScreen() {
             onPress={() => setCursor((prev) => shift(prev, view, -1))}
             accessibilityLabel={t('common.previous')}
           />
-          <Text style={[typography.captionBold, { color: colors.headerText }]}>
+          <Text style={[typography.captionBold, { color: colors.text }]}>
             {view === 'month'
               ? t(`month.${cursor.month - 1}`)
               : cursor.setLocale(language).toFormat(language === 'he' ? 'cccc d LLL' : 'ccc LLL d')}
@@ -163,122 +164,120 @@ export default function ScheduleScreen() {
 
       {view === 'day' ? (
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {dayItems.map((item, index) => {
-            const highlight = index === highlightIndex;
-            const waiting =
-              item.type === 'mitzvah' && !item.done && Boolean(item.mitzvahId && pendingIds.has(item.mitzvahId));
-            const missed = isSelectedPast && item.type === 'mitzvah' && !item.done && !waiting;
-            const rowUrgent = missed || (isSelectedToday && item.urgent);
-            const statusText =
-              item.type === 'mitzvah'
-                ? waiting
-                  ? t('checkin.pending')
-                  : missed
-                    ? t('day.missed')
-                    : isSelectedPast && item.done
-                      ? t('state.completed')
-                      : isSelectedFuture
-                        ? t('day.scheduled')
-                        : undefined
-                : undefined;
-            const statusColor = missed ? colors.urgent : item.done ? colors.safe : colors.textMuted;
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() =>
-                  item.mitzvahId &&
-                  router.push(
-                    item.mitzvahId.startsWith('custom_')
-                      ? { pathname: '/custom-mitzvah', params: { id: item.mitzvahId } }
-                      : `/mitzvah/${item.mitzvahId}`,
-                  )
-                }
-                disabled={!item.mitzvahId}
-                style={[
-                  styles.timelineRow,
-                  {
-                    backgroundColor: highlight ? colors.goldWash : colors.surface,
-                    borderBottomColor: colors.border,
-                  },
-                ]}
-              >
-                {highlight ? <View style={[styles.nowLine, { backgroundColor: colors.urgent }]} /> : null}
-                <Text style={[typography.small, styles.timeCol, { color: colors.textMuted }]}>
-                  {clockOf(item.time)}
-                </Text>
-                <View style={styles.dotCol}>
-                  <View
-                    style={[
-                      styles.dot,
-                      {
-                        backgroundColor: item.done
-                          ? colors.gold
-                          : rowUrgent
-                            ? colors.urgent
-                            : item.type === 'zman'
-                              ? 'transparent'
-                              : colors.textMuted,
-                        borderColor: item.done
-                          ? colors.gold
-                          : rowUrgent
-                            ? colors.urgent
-                            : item.type === 'zman'
-                              ? colors.border
-                              : colors.textSub,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.rowMeta}>
-                  <Text
-                    style={[
-                      typography.body,
-                      {
-                        color: item.done
-                          ? colors.textMuted
-                          : rowUrgent
-                            ? colors.urgent
-                            : item.type === 'zman'
-                              ? colors.textSub
-                              : colors.text,
-                        fontFamily: item.type === 'mitzvah' ? fontFamilies.heebo.semibold : fontFamilies.heebo.regular,
-                        textDecorationLine: item.done ? 'line-through' : 'none',
-                      },
-                    ]}
+          {dayItems.length ? (
+            <Card divided>
+              {dayItems.map((item, index) => {
+                const highlight = index === highlightIndex;
+                const waiting =
+                  item.type === 'mitzvah' && !item.done && Boolean(item.mitzvahId && pendingIds.has(item.mitzvahId));
+                const missed = isSelectedPast && item.type === 'mitzvah' && !item.done && !waiting;
+                const rowUrgent = missed || (isSelectedToday && item.urgent);
+                const statusText =
+                  item.type === 'mitzvah'
+                    ? waiting
+                      ? t('checkin.pending')
+                      : missed
+                        ? t('day.missed')
+                        : isSelectedPast && item.done
+                          ? t('state.completed')
+                          : isSelectedFuture
+                            ? t('day.scheduled')
+                            : undefined
+                    : undefined;
+                const statusColor = missed ? colors.urgent : item.done ? colors.safe : colors.textMuted;
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() =>
+                      item.mitzvahId &&
+                      router.push(
+                        item.mitzvahId.startsWith('custom_')
+                          ? { pathname: '/custom-mitzvah', params: { id: item.mitzvahId } }
+                          : `/mitzvah/${item.mitzvahId}`,
+                      )
+                    }
+                    disabled={!item.mitzvahId}
+                    style={[styles.timelineRow, { backgroundColor: highlight ? colors.goldWash : 'transparent' }]}
                   >
-                    {item.name}
-                  </Text>
-                  {statusText ? (
-                    <Text
-                      style={[
-                        typography.micro,
-                        styles.statusText,
-                        { color: statusColor, fontFamily: fontFamilies.heebo.semibold },
-                      ]}
-                    >
-                      {statusText}
+                    {highlight ? <View style={[styles.nowLine, { backgroundColor: colors.urgent }]} /> : null}
+                    <Text style={[typography.small, styles.timeCol, { color: colors.textMuted }]}>
+                      {clockOf(item.time)}
                     </Text>
-                  ) : null}
-                </View>
-                {item.type === 'mitzvah' && (isSelectedToday || item.done) ? (
-                  <View
-                    style={[
-                      styles.trailing,
-                      {
-                        backgroundColor: item.done ? colors.gold : 'transparent',
-                        borderColor: item.done ? colors.gold : rowUrgent ? colors.urgent : colors.border,
-                      },
-                    ]}
-                  >
-                    {item.done ? <MitzvahIcon name="check" size={DONE_CHECK_SIZE} color={colors.onGold} /> : null}
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-          {!dayItems.length ? (
+                    <View style={styles.dotCol}>
+                      <View
+                        style={[
+                          styles.dot,
+                          {
+                            backgroundColor: item.done
+                              ? colors.gold
+                              : rowUrgent
+                                ? colors.urgent
+                                : item.type === 'zman'
+                                  ? 'transparent'
+                                  : colors.textMuted,
+                            borderColor: item.done
+                              ? colors.gold
+                              : rowUrgent
+                                ? colors.urgent
+                                : item.type === 'zman'
+                                  ? colors.border
+                                  : colors.textSub,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.rowMeta}>
+                      <Text
+                        style={[
+                          typography.body,
+                          {
+                            color: item.done
+                              ? colors.textMuted
+                              : rowUrgent
+                                ? colors.urgent
+                                : item.type === 'zman'
+                                  ? colors.textSub
+                                  : colors.text,
+                            fontFamily:
+                              item.type === 'mitzvah' ? fontFamilies.heebo.semibold : fontFamilies.heebo.regular,
+                            textDecorationLine: item.done ? 'line-through' : 'none',
+                          },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                      {statusText ? (
+                        <Text
+                          style={[
+                            typography.micro,
+                            styles.statusText,
+                            { color: statusColor, fontFamily: fontFamilies.heebo.semibold },
+                          ]}
+                        >
+                          {statusText}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {item.type === 'mitzvah' && (isSelectedToday || item.done) ? (
+                      <View
+                        style={[
+                          styles.trailing,
+                          {
+                            backgroundColor: item.done ? colors.gold : 'transparent',
+                            borderColor: item.done ? colors.gold : rowUrgent ? colors.urgent : colors.border,
+                          },
+                        ]}
+                      >
+                        {item.done ? <MitzvahIcon name="check" size={DONE_CHECK_SIZE} color={colors.onGold} /> : null}
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </Card>
+          ) : (
             <Text style={[typography.body, styles.emptyText, { color: colors.textSub }]}>{t('schedule.noItems')}</Text>
-          ) : null}
+          )}
         </ScrollView>
       ) : null}
 
@@ -290,10 +289,8 @@ export default function ScheduleScreen() {
               onPress={() => router.push({ pathname: '/day/[date]', params: { date: day.toISODate() ?? '' } })}
               style={[
                 styles.weekCard,
-                {
-                  backgroundColor: day.hasSame(today, 'day') ? colors.goldLight : colors.surface,
-                  borderColor: colors.border,
-                },
+                { backgroundColor: day.hasSame(today, 'day') ? colors.goldLight : colors.surface },
+                shadowStyle(colors.shadow, shadowPresets.cardSoft),
               ]}
             >
               <Text style={[typography.captionBold, { color: colors.text }]}>
@@ -349,8 +346,7 @@ export default function ScheduleScreen() {
                   style={[
                     styles.monthCell,
                     {
-                      backgroundColor: cell.day.hasSame(today, 'day') ? colors.goldWashStrong : colors.surface,
-                      borderColor: colors.border,
+                      backgroundColor: cell.day.hasSame(today, 'day') ? colors.goldLight : colors.surface,
                       opacity: cell.inMonth ? 1 : 0.45,
                     },
                   ]}
@@ -396,15 +392,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   scrollContent: {
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
   },
   timelineRow: {
     flexDirection: 'row',
     gap: spacing.md,
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     position: 'relative',
   },
   nowLine: {
@@ -455,7 +452,6 @@ const styles = StyleSheet.create({
     width: WEEK_CARD_WIDTH,
     minHeight: WEEK_CARD_MIN_HEIGHT,
     borderRadius: radius.xl,
-    borderWidth: 1,
     padding: spacing.lg,
     alignItems: 'center',
   },
@@ -504,8 +500,7 @@ const styles = StyleSheet.create({
   monthCell: {
     flex: 1,
     minHeight: MONTH_CELL_MIN_HEIGHT,
-    borderRadius: radius.lg,
-    borderWidth: 1,
+    borderRadius: radius.md,
     padding: spacing.xs,
   },
   monthBadgeRow: {

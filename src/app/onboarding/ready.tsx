@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { Button } from '@/components/Button';
 import { IconTile } from '@/components/IconTile';
 import { ONBOARDING_STEPS, OnboardingDots } from '@/components/OnboardingDots';
 import { MITZVOT } from '@/data/mitzvot';
@@ -10,7 +11,7 @@ import { reportError } from '@/services/errors';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { mitzvahName } from '@/utils/mitzvahName';
 import { useI18n } from '@/i18n';
@@ -60,9 +61,7 @@ export default function ReadyScreen() {
         </Pressable>
         <OnboardingDots step={4} total={ONBOARDING_STEPS} style={styles.dots} />
       </ScrollView>
-      <Pressable onPress={finish} accessibilityRole="button" style={[styles.cta, { backgroundColor: colors.gold }]}>
-        <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('onboarding.finish')}</Text>
-      </Pressable>
+      <Button label={t('onboarding.finish')} onPress={finish} />
     </SafeAreaView>
   );
 }
@@ -84,11 +83,5 @@ const styles = StyleSheet.create({
   },
   dots: {
     marginTop: spacing.xl,
-  },
-  cta: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
   },
 });

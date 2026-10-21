@@ -3,17 +3,28 @@ import { InteractionManager, Pressable, ScrollView, StyleSheet, Text, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
+import { Card } from '@/components/Card';
+import { Landscape } from '@/components/Landscape';
 import { NavBar } from '@/components/NavBar';
 import { HeaderPill } from '@/components/ScreenHeader';
 import { SectionLabel } from '@/components/SectionLabel';
+import { StreakRing } from '@/components/StreakRing';
 import { useDayModel } from '@/hooks/useDayModel';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { enabledSinceOf, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
-import { fontFamilies, typography } from '@/theme/typography';
+import { typography } from '@/theme/typography';
 import { computeStats, HistoryStats, isTrackedInRange } from '@/utils/historyStats';
+import { nextStreakGoal } from '@/utils/streakGoal';
 import { useI18n } from '@/i18n';
+
+const HISTORY_DAYS = 30;
+const GRID_COLUMNS = 5;
+const GRID_CELL_HEIGHT = 40;
+const HERO_HEIGHT = 320;
+const RING_SIZE = 220;
+const BAR_HEIGHT = 6;
 
 const EMPTY_STATS: HistoryStats = {
   streak: 0,
@@ -22,16 +33,11 @@ const EMPTY_STATS: HistoryStats = {
   missedYesterday: [],
 };
 
-function alphaFor(percent: number) {
-  if (percent <= 0) return '1A';
-  if (percent < 35) return '44';
-  if (percent < 70) return '88';
-  return 'DD';
-}
+type DayStat = HistoryStats['daily'][number];
 
 export default function HistoryScreen() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { enabled, location, settings, nameFor } = useDayModel();
   const router = useRouter();
   const activeMap = useMitzvotStore((s) => s.activeMitzvot);
@@ -46,7 +52,7 @@ export default function HistoryScreen() {
     let cancelled = false;
     setStatsReady(false);
     const task = InteractionManager.runAfterInteractions(() => {
-      const next = computeStats(enabled, completions, location, settings, 30, new Date(), {
+      const next = computeStats(enabled, completions, location, settings, HISTORY_DAYS, new Date(), {
         checkIns,
         archivedDays,
         skipped,
@@ -79,11 +85,52 @@ export default function HistoryScreen() {
     return mitzvah ? nameFor(mitzvah) : id;
   };
 
+  const goal = nextStreakGoal(stats.streak);
+  const remaining = goal - stats.streak;
+  const goalCaption = t(remaining === 1 ? 'history.goalCaption.once' : 'history.goalCaption', {
+    count: remaining,
+    goal,
+  });
+
+  const cells: (DayStat | null)[] = statsReady ? stats.daily : Array.from({ length: HISTORY_DAYS }, () => null);
+  const rows = Array.from({ length: Math.ceil(cells.length / GRID_COLUMNS) }, (_, row) =>
+    cells.slice(row * GRID_COLUMNS, row * GRID_COLUMNS + GRID_COLUMNS),
+  );
+  const todayKey = stats.daily[stats.daily.length - 1]?.date;
+
+  const renderCell = (day: DayStat | null, index: number) => {
+    if (!day) {
+      return <View key={index} style={[styles.gridCell, { backgroundColor: colors.surface2 }]} />;
+    }
+    const decided = day.totalCount - day.pendingCount;
+    const percent = decided > 0 ? Math.round((day.doneCount / decided) * 100) : 0;
+    const date = DateTime.fromISO(day.date);
+    const dateLabel = date.setLocale(language).toFormat(language === 'he' ? 'cccc d LLLL' : 'cccc, LLL d');
+    const level = decided <= 0 || day.doneCount <= 0 ? 'none' : day.doneCount >= decided ? 'full' : 'partial';
+    const fill = level === 'full' ? colors.gold : level === 'partial' ? colors.goldLight : colors.surface2;
+    const ink = level === 'full' ? colors.onGold : level === 'partial' ? colors.goldText : colors.textSub;
+    return (
+      <Pressable
+        key={day.date}
+        testID={`history-day-${day.date}`}
+        accessibilityRole="button"
+        accessibilityLabel={decided > 0 ? `${dateLabel} · ${t('history.percent', { percent })}` : dateLabel}
+        onPress={() => router.push({ pathname: '/day/[date]', params: { date: day.date } })}
+        style={[
+          styles.gridCell,
+          { backgroundColor: fill },
+          day.date === todayKey && { borderWidth: 1.5, borderColor: colors.gold },
+        ]}
+      >
+        <Text style={[typography.captionBold, { color: ink }]}>{date.isValid ? date.day : ''}</Text>
+      </Pressable>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <NavBar
         title={t('history.title')}
-        subtitle={t('history.gridTitle')}
         actions={
           <HeaderPill
             label={t('report.open')}
@@ -93,83 +140,75 @@ export default function HistoryScreen() {
         }
       />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.streakCard, { backgroundColor: colors.headerBg }]}>
-          <Text style={[styles.streakNumber, { color: colors.headerAccent }]}>{stats.streak}</Text>
-          <Text style={[typography.subheading, { color: colors.headerText }]}>
-            {t('history.streak', { count: stats.streak })}
-          </Text>
-        </View>
-
-        <SectionLabel text={t('history.gridTitle')} />
-        <View style={styles.grid}>
-          {statsReady
-            ? stats.daily.map((day) => {
-                const decided = day.totalCount - day.pendingCount;
-                const percent = decided > 0 ? Math.round((day.doneCount / decided) * 100) : 0;
-                const date = DateTime.fromISO(day.date);
-                return (
-                  <Pressable
-                    key={day.date}
-                    onPress={() => router.push({ pathname: '/day/[date]', params: { date: day.date } })}
-                    style={[
-                      styles.gridCell,
-                      {
-                        backgroundColor: decided ? `${colors.gold}${alphaFor(percent)}` : colors.surface2,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                  >
-                    <Text style={[typography.micro, { color: percent > 65 ? colors.onGold : colors.textSub }]}>
-                      {date.isValid ? date.day : ''}
-                    </Text>
-                  </Pressable>
-                );
-              })
-            : Array.from({ length: 30 }, (_, index) => (
-                <View
-                  key={index}
-                  style={[styles.gridCell, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-                />
-              ))}
-        </View>
-
-        <SectionLabel text={t('history.perMitzvah')} />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {byMitzvah.map(({ mitzvah, stat }) => (
-            <Pressable
-              key={mitzvah.id}
-              onPress={() => router.push({ pathname: '/mitzvah/[id]', params: { id: mitzvah.id } })}
-              style={[styles.statRow, { borderBottomColor: colors.border }]}
-            >
-              <Text style={[typography.bodyBold, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-                {nameFor(mitzvah)}
-              </Text>
-              <Text style={[typography.captionBold, { color: colors.goldText }]}>
-                {t('history.percent', { percent: stat.percent })}
-              </Text>
-            </Pressable>
-          ))}
-          {statsReady && !byMitzvah.length ? (
-            <Text style={[typography.body, styles.emptyText, { color: colors.textMuted }]}>{t('history.empty')}</Text>
+        <View style={styles.hero}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Landscape height={HERO_HEIGHT} />
+          </View>
+          <StreakRing streak={stats.streak} size={RING_SIZE} />
+          {statsReady ? (
+            <Text style={[typography.subheading, styles.goalCaption, { color: colors.text }]}>{goalCaption}</Text>
           ) : null}
         </View>
 
-        <SectionLabel text={t('history.missedYesterday')} />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {stats.missedYesterday.map((id) => (
-            <Pressable
-              key={id}
-              onPress={() => router.push({ pathname: '/mitzvah/[id]', params: { id } })}
-              style={[styles.statRow, { borderBottomColor: colors.border }]}
-            >
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{nameForId(id)}</Text>
-            </Pressable>
-          ))}
-          {!stats.missedYesterday.length ? (
-            <Text style={[typography.body, styles.emptyText, { color: colors.textMuted }]}>
-              {t('history.noMissedYesterday')}
-            </Text>
-          ) : null}
+        <View style={styles.body}>
+          <SectionLabel text={t('history.gridTitle')} />
+          <View testID="history-grid" style={styles.grid}>
+            {rows.map((row, index) => (
+              <View key={index} style={styles.gridRow}>
+                {row.map(renderCell)}
+              </View>
+            ))}
+          </View>
+
+          <SectionLabel text={t('history.perMitzvah')} />
+          <Card divided>
+            {byMitzvah.map(({ mitzvah, stat }) => (
+              <Pressable
+                key={mitzvah.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${nameFor(mitzvah)}, ${t('history.percent', { percent: stat.percent })}`}
+                onPress={() => router.push({ pathname: '/mitzvah/[id]', params: { id: mitzvah.id } })}
+                style={styles.statRow}
+              >
+                <View style={styles.statTop}>
+                  <Text style={[typography.bodyBold, styles.statName, { color: colors.text }]} numberOfLines={1}>
+                    {nameFor(mitzvah)}
+                  </Text>
+                  <Text style={[typography.captionBold, { color: colors.goldText }]}>
+                    {t('history.percent', { percent: stat.percent })}
+                  </Text>
+                </View>
+                <View style={[styles.barTrack, { backgroundColor: colors.surface2 }]}>
+                  <View
+                    testID={`history-bar-${mitzvah.id}`}
+                    style={[styles.barFill, { width: `${stat.percent}%`, backgroundColor: colors.gold }]}
+                  />
+                </View>
+              </Pressable>
+            ))}
+            {statsReady && !byMitzvah.length ? (
+              <Text style={[typography.body, styles.emptyText, { color: colors.textMuted }]}>{t('history.empty')}</Text>
+            ) : null}
+          </Card>
+
+          <SectionLabel text={t('history.missedYesterday')} />
+          <Card divided>
+            {stats.missedYesterday.map((id) => (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: '/mitzvah/[id]', params: { id } })}
+                style={styles.missRow}
+              >
+                <Text style={[typography.bodyBold, { color: colors.text }]}>{nameForId(id)}</Text>
+              </Pressable>
+            ))}
+            {!stats.missedYesterday.length ? (
+              <Text style={[typography.body, styles.emptyText, { color: colors.textMuted }]}>
+                {t('history.noMissedYesterday')}
+              </Text>
+            ) : null}
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -181,49 +220,64 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-  streakCard: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+  hero: {
+    height: HERO_HEIGHT,
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    paddingTop: spacing.md,
   },
-  streakNumber: {
-    fontSize: 54,
-    fontFamily: fontFamilies.heebo.black,
-    lineHeight: 62,
+  goalCaption: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  body: {
+    paddingHorizontal: spacing.lg,
   },
   grid: {
+    gap: spacing.sm,
+  },
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   gridCell: {
-    width: '15%',
-    aspectRatio: 1,
-    borderRadius: radius.sm,
-    borderWidth: 1,
+    flex: 1,
+    height: GRID_CELL_HEIGHT,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
   emptyText: {
     padding: spacing.lg,
   },
   statRow: {
-    minHeight: 48,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing.sm,
+  },
+  statTop: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    justifyContent: 'space-between',
+  },
+  statName: {
+    flex: 1,
+  },
+  barTrack: {
+    height: BAR_HEIGHT,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    alignItems: 'flex-start',
+  },
+  barFill: {
+    height: BAR_HEIGHT,
+    borderRadius: radius.full,
+  },
+  missRow: {
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    justifyContent: 'center',
   },
 });

@@ -25,6 +25,8 @@ export const ICON_NAMES = [
   'tehillim',
   'chevronLeft',
   'chevronRight',
+  'chevronDown',
+  'chevronUp',
   'sparkle',
   'check',
   'close',
@@ -38,6 +40,9 @@ export const ICON_NAMES = [
   'user',
   'bell',
   'sliders',
+  'star',
+  'cloud',
+  'chat',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -54,6 +59,13 @@ export const backIcon = (language: AppLanguage): IconName => (language === 'he' 
 export const forwardIcon = (language: AppLanguage): IconName => (language === 'he' ? 'chevronLeft' : 'chevronRight');
 
 type Drawing = { fill: string; sw: number };
+
+const star = ({ fill }: Drawing) => (
+  <Path
+    d="M12,3.3L14.53,9.32L21.04,9.86L16.09,14.13L17.58,20.49L12,17.1L6.42,20.49L7.91,14.13L2.96,9.86L9.47,9.32Z"
+    fill={fill}
+  />
+);
 
 // Geometry is shared by both variants; `fill` is 'none' in outline and the tint in duotone.
 // Stroke colour, width, caps and joins come from the wrapping <G>.
@@ -153,12 +165,8 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Path d="M12,8Q15.73,8.56 17,5Q13.27,4.44 12,8Z" fill={fill} />
     </>
   ),
-  custom: ({ fill }) => (
-    <Path
-      d="M12,3.3L14.53,9.32L21.04,9.86L16.09,14.13L17.58,20.49L12,17.1L6.42,20.49L7.91,14.13L2.96,9.86L9.47,9.32Z"
-      fill={fill}
-    />
-  ),
+  custom: star,
+  star,
   hilula: ({ fill }) => (
     <>
       <Path d="M5.5,9V13Q5.5,20.5 12,20.5Q18.5,20.5 18.5,13V9Z" fill={fill} stroke="none" />
@@ -228,6 +236,8 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
   ),
   chevronLeft: () => <Path d="M15,6L9,12L15,18" />,
   chevronRight: () => <Path d="M9,6L15,12L9,18" />,
+  chevronDown: () => <Path d="M6,9L12,15L18,9" />,
+  chevronUp: () => <Path d="M6,15L12,9L18,15" />,
   sparkle: ({ fill }) => (
     <Path d="M12,2.8Q13.66,10.34 21.2,12Q13.66,13.66 12,21.2Q10.34,13.66 2.8,12Q10.34,10.34 12,2.8Z" fill={fill} />
   ),
@@ -284,6 +294,16 @@ const DRAWINGS: Record<IconName, (p: Drawing) => React.ReactElement> = {
       <Circle cx={9} cy={7} r={2} fill={fill} />
       <Circle cx={15} cy={12} r={2} fill={fill} />
       <Circle cx={8} cy={17} r={2} fill={fill} />
+    </>
+  ),
+  cloud: ({ fill }) => <Path d="M7,19H17A4,4 0 0 0 17.6,11.05A6,6 0 0 0 6.25,10.2A4.5,4.5 0 0 0 7,19Z" fill={fill} />,
+  chat: ({ fill }) => (
+    <>
+      <Path
+        d="M6,4.5H18A2.5,2.5 0 0 1 20.5,7V14.5A2.5,2.5 0 0 1 18,17H10.5L6.5,20.5V17H6A2.5,2.5 0 0 1 3.5,14.5V7A2.5,2.5 0 0 1 6,4.5Z"
+        fill={fill}
+      />
+      <Path d="M8,9H16M8,12.5H13" />
     </>
   ),
 };

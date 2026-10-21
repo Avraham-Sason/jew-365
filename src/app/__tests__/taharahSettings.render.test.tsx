@@ -13,6 +13,7 @@ import { renderWithTheme } from '@/testing/render';
 import { chooseGender, chooseMaritalStatus, setTaharahTracking } from '@/stores/taharahOptIn';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { THEMES } from '@/theme/colors';
 
 const he = (key: string) => translate(key, undefined, 'he', null);
 
@@ -48,6 +49,17 @@ describe('Taharah settings', () => {
       'reset',
     ]) {
       expect(screen.getByText(he(`taharah.affects.${key}`))).toBeOnTheScreen();
+    }
+  });
+
+  it('draws both resets as danger buttons', () => {
+    renderWithTheme(<TaharahSettingsScreen />);
+    const palette = THEMES[useUserStore.getState().theme];
+    for (const key of ['taharah.settings.deleteData', 'taharah.settings.reset']) {
+      expect(screen.getByRole('button', { name: he(key) })).toHaveStyle({
+        backgroundColor: palette.urgentBg,
+        borderColor: palette.urgent,
+      });
     }
   });
 

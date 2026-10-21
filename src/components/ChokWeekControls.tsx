@@ -28,7 +28,6 @@ export function ChokWeekControls({ slots, slot, onSlot, names, choice, onChoice,
     <View style={styles.rows}>
       <View accessibilityRole="radiogroup" accessibilityLabel={t('chok.slotPicker')}>
         <SegmentedControl
-          tone="header"
           options={slots.map((value) => ({
             value,
             label: t(`chok.slotShort.${value}`),
@@ -41,7 +40,6 @@ export function ChokWeekControls({ slots, slot, onSlot, names, choice, onChoice,
       {double ? (
         <View accessibilityRole="radiogroup" accessibilityLabel={t('chok.doubleWeek')}>
           <SegmentedControl
-            tone="header"
             options={CHOICES.map((value) => ({ value, label: choiceLabel(value) }))}
             value={choice}
             onChange={onChoice}

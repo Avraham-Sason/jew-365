@@ -11,9 +11,10 @@ import {
 } from '@/services/biometricLock';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
+import { Button } from './Button';
 
 type Props = { children: React.ReactNode; recheck?: number };
 
@@ -67,15 +68,9 @@ export function TaharahLock({ children, recheck = 0 }: Props) {
             <Text style={[typography.body, styles.text, { color: colors.textSub, marginTop: spacing.sm }]}>
               {t('taharah.locked.body')}
             </Text>
-            <Pressable
-              onPress={unlock}
-              accessibilityRole="button"
-              style={[styles.button, { backgroundColor: colors.gold }]}
-            >
-              <Text style={[typography.heading, { color: colors.onGold }]}>{t('taharah.locked.unlock')}</Text>
-            </Pressable>
+            <Button label={t('taharah.locked.unlock')} onPress={unlock} style={styles.unlock} />
             <Pressable onPress={goBack} accessibilityRole="button" hitSlop={12} style={styles.back}>
-              <Text style={[typography.caption, { color: colors.textMuted }]}>{t('common.back')}</Text>
+              <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('common.back')}</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -111,16 +106,12 @@ const styles = StyleSheet.create({
   text: {
     textAlign: 'center',
   },
-  button: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxxl,
+  unlock: {
     marginTop: spacing.xxl,
+    alignSelf: 'stretch',
   },
   back: {
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
     padding: spacing.sm,
   },
   banner: {

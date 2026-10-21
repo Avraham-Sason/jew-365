@@ -6,9 +6,11 @@ import { clockOf } from '@/utils/clock';
 import { holyBlockLabelKeys } from '@/utils/skipRules';
 import { useTheme } from '@/theme/ThemeProvider';
 import { typography } from '@/theme/typography';
-import { spacing } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { useI18n } from '@/i18n';
 import { IconTile } from './IconTile';
+
+const EMBLEM_SIZE = 72;
 
 // The block the app is quiet inside, provided by the root layout. Every screen-level Modal closes
 // while it holds: a native modal sits above any in-tree view, and on iOS a second one cannot be
@@ -48,19 +50,19 @@ export function ShabbatScreen({ block, subtitle }: Props) {
     <View style={[StyleSheet.absoluteFill, styles.overlay, { backgroundColor: colors.bg }]} accessibilityViewIsModal>
       <SafeAreaView style={[styles.safe, { direction: language === 'he' ? 'rtl' : 'ltr' }]} edges={['top', 'bottom']}>
         <View style={styles.center}>
-          <IconTile name="candles" tone="accent" size={64} />
-          <Text style={[typography.display, styles.centered, { color: colors.text, marginTop: spacing.xl }]}>
+          <IconTile name="candles" tone="accent" size={EMBLEM_SIZE} />
+          <Text style={[typography.display, styles.centered, styles.title, { color: colors.text }]}>
             {t(labels.title)}
           </Text>
           {subtitle ? (
-            <Text style={[typography.caption, styles.centered, { color: colors.textMuted, marginTop: spacing.sm }]}>
+            <Text style={[typography.caption, styles.centered, styles.subtitle, { color: colors.textMuted }]}>
               {subtitle}
             </Text>
           ) : null}
-          <Text style={[typography.heading, styles.centered, { color: colors.goldText, marginTop: spacing.xxl }]}>
-            {until}
-          </Text>
-          <Text style={[typography.body, styles.centered, { color: colors.textSub, marginTop: spacing.sm }]}>
+          <View testID="shabbat-until" style={[styles.untilPill, { backgroundColor: colors.goldLight }]}>
+            <Text style={[typography.heading, styles.centered, { color: colors.goldText }]}>{until}</Text>
+          </View>
+          <Text style={[typography.body, styles.centered, styles.quiet, { color: colors.textSub }]}>
             {t('holyBlock.screen.quiet')}
           </Text>
         </View>
@@ -86,5 +88,20 @@ const styles = StyleSheet.create({
   },
   centered: {
     textAlign: 'center',
+  },
+  title: {
+    marginTop: spacing.xl,
+  },
+  subtitle: {
+    marginTop: spacing.sm,
+  },
+  untilPill: {
+    marginTop: spacing.xxl,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  quiet: {
+    marginTop: spacing.lg,
   },
 });

@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { DateTime } from 'luxon';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconTile } from '@/components/IconTile';
 import { MitzvahIcon, iconFor } from '@/components/MitzvahIcon';
@@ -16,7 +18,6 @@ import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
-import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { ContentBlock, Reminder, UserSettings } from '@/types/mitzvah';
@@ -75,10 +76,13 @@ export default function MitzvahDetailScreen() {
     [mitzvah, reminders, location, settings, completions, skipped],
   );
 
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
+
   if (!mitzvah) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
-        <Text style={[typography.body, { color: colors.text, padding: spacing.lg }]}>{t('errors.generic')}</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader title={t('detail.notFound')} onBack={goBack} />
       </SafeAreaView>
     );
   }
@@ -126,11 +130,11 @@ export default function MitzvahDetailScreen() {
       <ScreenHeader
         title={name}
         subtitle={`${cycle} · ${timeRange}`}
-        onBack={() => router.back()}
+        onBack={goBack}
         leading={<IconTile name={iconFor(mitzvah.icon)} tone="accent" size={46} />}
       >
         {nextTrigger ? (
-          <Text style={[typography.micro, { color: colors.headerAccent }]}>
+          <Text style={[typography.micro, { color: colors.goldText }]}>
             {t('detail.previewNext', { time: DateTime.fromJSDate(nextTrigger).toFormat('dd/MM HH:mm') })}
           </Text>
         ) : null}
@@ -138,19 +142,14 @@ export default function MitzvahDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         {showText && window ? (
-          <Pressable
+          <Button
+            label={t('siddur.open')}
             onPress={() =>
               router.push({ pathname: '/siddur/[id]', params: { id: mitzvah.id, date: dateKey(window.date) } })
             }
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.openTextBtn, { backgroundColor: colors.gold, opacity: pressed ? 0.85 : 1 }]}
-          >
-            <Text style={[typography.heading, { color: colors.onGold }]}>{t('siddur.open')}</Text>
-          </Pressable>
+          />
         ) : null}
-        <View
-          style={[styles.card, { backgroundColor: colors.surface }, shadowStyle(colors.shadow, shadowPresets.cardSoft)]}
-        >
+        <Card padded>
           <Text style={[typography.captionBold, { color: colors.textSub, marginBottom: spacing.md }]}>
             {t('detail.timeWindow')}
           </Text>
@@ -186,34 +185,18 @@ export default function MitzvahDetailScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </Card>
 
         {mitzvah.description ? (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface },
-              shadowStyle(colors.shadow, shadowPresets.cardSoft),
-            ]}
-          >
+          <Card padded>
             <Text style={[typography.body, { color: colors.text }]}>
               {language === 'en' && mitzvah.description.en ? mitzvah.description.en : mitzvah.description.he}
             </Text>
-          </View>
+          </Card>
         ) : null}
 
         {mitzvah.contentBlocks?.length ? (
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: params.highlightContent === '1' ? colors.goldLight : colors.surface,
-                borderWidth: params.highlightContent === '1' ? 1 : 0,
-                borderColor: params.highlightContent === '1' ? colors.gold : 'transparent',
-              },
-              shadowStyle(colors.shadow, shadowPresets.cardSoft),
-            ]}
-          >
+          <Card padded style={params.highlightContent === '1' ? { backgroundColor: colors.goldLight } : undefined}>
             <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.md }]}>
               {t('detail.content')}
             </Text>
@@ -235,12 +218,10 @@ export default function MitzvahDetailScreen() {
                 trackColor={{ false: colors.border, true: colors.gold }}
               />
             </View>
-          </View>
+          </Card>
         ) : null}
 
-        <View
-          style={[styles.card, { backgroundColor: colors.surface }, shadowStyle(colors.shadow, shadowPresets.cardSoft)]}
-        >
+        <Card padded>
           <View style={styles.row}>
             <Text style={[typography.subheading, { color: colors.text }]}>{t('detail.settings')}</Text>
             <Switch
@@ -253,15 +234,9 @@ export default function MitzvahDetailScreen() {
           <InfoRow label={t('detail.nusach')} value={t(`nusach.${nusach}`)} />
           <InfoRow label={t('detail.cycle')} value={cycle} />
           <InfoRow label={t('detail.enabled')} value={active.enabled ? t('state.enabled') : t('state.disabled')} />
-        </View>
+        </Card>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.surface, paddingBottom: 0 },
-            shadowStyle(colors.shadow, shadowPresets.cardSoft),
-          ]}
-        >
+        <Card padded>
           <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.md }]}>
             {t('detail.reminders')}
           </Text>
@@ -307,13 +282,13 @@ export default function MitzvahDetailScreen() {
             </View>
             <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('detail.addReminder')}</Text>
           </Pressable>
-          <Pressable
+          <Button
+            variant="secondary"
+            label={t('detail.defaultReset')}
             onPress={() => resetToDefault(mitzvah.id)}
-            style={[styles.resetBtn, { backgroundColor: colors.surface2 }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.textSub }]}>{t('detail.defaultReset')}</Text>
-          </Pressable>
-        </View>
+            style={styles.resetAction}
+          />
+        </Card>
       </ScrollView>
 
       <ReminderEditor
@@ -410,11 +385,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  card: {
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
   windowRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -474,19 +444,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  openTextBtn: {
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.md,
-  },
-  resetBtn: {
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+  resetAction: {
+    marginTop: spacing.md,
   },
   contentBlock: {
     borderRadius: radius.md,

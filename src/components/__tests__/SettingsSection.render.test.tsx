@@ -1,8 +1,12 @@
 import { Text } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
+import { Card } from '../Card';
+import { IconTile } from '../IconTile';
+import { MitzvahIcon } from '../MitzvahIcon';
 import { SettingsSection } from '../SettingsSection';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
+import { typography } from '@/theme/typography';
 import { useUserStore } from '@/stores/useUserStore';
 
 describe('SettingsSection', () => {
@@ -80,6 +84,63 @@ describe('SettingsSection', () => {
     );
     expect(screen.getByText('Name field')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Profile' })).toBeExpanded();
+  });
+
+  it('draws the icon tile at the start of the header and keeps the button named by the title', () => {
+    renderWithTheme(
+      <SettingsSection title="Profile" icon="user" collapsible expanded onToggle={jest.fn()}>
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    const tile = screen.UNSAFE_getByType(IconTile);
+    expect(tile.props.name).toBe('user');
+    expect(tile.props.tone).toBeUndefined();
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeOnTheScreen();
+  });
+
+  it('draws no tile without an icon', () => {
+    renderWithTheme(
+      <SettingsSection title="Profile">
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    expect(screen.UNSAFE_queryByType(IconTile)).toBeNull();
+  });
+
+  it('points the chevron down while closed and up while open', () => {
+    const { rerender } = renderWithTheme(
+      <SettingsSection title="Profile" collapsible expanded={false} onToggle={jest.fn()}>
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    expect(screen.UNSAFE_getAllByType(MitzvahIcon).map((icon) => icon.props.name)).toEqual(['chevronDown']);
+    rerender(
+      <SettingsSection title="Profile" collapsible expanded onToggle={jest.fn()}>
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    expect(screen.UNSAFE_getAllByType(MitzvahIcon).map((icon) => icon.props.name)).toEqual(['chevronUp']);
+  });
+
+  it('draws through a padded Card', () => {
+    renderWithTheme(
+      <SettingsSection title="Profile">
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    expect(screen.UNSAFE_getByType(Card).props.padded).toBe(true);
+  });
+
+  it('reads the subtitle in textSub caption type', () => {
+    renderWithTheme(
+      <SettingsSection title="Profile" subtitle="Name and phone">
+        <Text>Name field</Text>
+      </SettingsSection>,
+    );
+    expect(screen.getByText('Name and phone')).toHaveStyle({
+      color: THEMES.gold.textSub,
+      fontSize: typography.caption.fontSize,
+    });
   });
 
   it('draws the title in the palette text colour', () => {

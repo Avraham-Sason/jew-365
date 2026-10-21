@@ -2,6 +2,8 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 
 import { screen, within } from '@testing-library/react-native';
 import SiddurScreen from '../(tabs)/siddur';
+import { Card } from '@/components/Card';
+import { ListRow } from '@/components/ListRow';
 import { CITIES } from '@/data/cities';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -95,6 +97,14 @@ describe('the siddur tab’s "now" card', () => {
     useCompletionsStore.setState({ completions: { '2027-06-15': { maariv: 1 } } });
     expect(nowCard('2027-06-16T00:30')).toEqual([BEDTIME, LEVANA]);
     expect(nowCard('2027-06-16T21:30')).toEqual([MAARIV, BEDTIME, LEVANA]);
+  });
+
+  it('draws every row of the tab as its own card', () => {
+    jest.useFakeTimers({ now: at(JERUSALEM, '2027-06-15T07:30'), doNotFake: [...ONLY_DATE] });
+    renderWithTheme(<SiddurScreen />);
+    const rows = screen.UNSAFE_getAllByType(ListRow);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(screen.UNSAFE_getAllByType(Card)).toHaveLength(rows.length);
   });
 
   it('is absent while nothing is said', () => {

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { Button } from '@/components/Button';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -13,7 +14,7 @@ import { resetTaharahTracking } from '@/stores/taharahOptIn';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { BRAND } from '@/theme/colors';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { TaharahRole } from '@/types/taharah';
 import { useI18n } from '@/i18n';
@@ -84,7 +85,7 @@ export default function TaharahSettingsScreen() {
             {t('taharah.settings.rulesHint')}
           </Text>
           {affects('preset')}
-          <SectionLabel text={t('taharah.rule.hefsekEarliestDay')} style={styles.fieldLabel} />
+          <SectionLabel variant="field" text={t('taharah.rule.hefsekEarliestDay')} style={styles.fieldLabel} />
           <ChipRow
             values={HEFSEK_DAYS}
             selected={rules.hefsekEarliestDay}
@@ -92,7 +93,7 @@ export default function TaharahSettingsScreen() {
             renderLabel={String}
           />
           {affects('hefsekEarliestDay')}
-          <SectionLabel text={t('taharah.rule.mochDachuk')} style={styles.fieldLabel} />
+          <SectionLabel variant="field" text={t('taharah.rule.mochDachuk')} style={styles.fieldLabel} />
           <ChipRow
             values={MOCH_RULES}
             selected={rules.mochDachuk}
@@ -100,7 +101,7 @@ export default function TaharahSettingsScreen() {
             renderLabel={(value) => t(`taharah.moch.${value}`)}
           />
           {affects('mochDachuk')}
-          <SectionLabel text={t('taharah.rule.onahBeinonitDays')} style={styles.fieldLabel} />
+          <SectionLabel variant="field" text={t('taharah.rule.onahBeinonitDays')} style={styles.fieldLabel} />
           <ChipRow
             values={ONAH_DAY_IDS}
             selected={rules.onahBeinonitDays.includes(31) ? '3031' : '30'}
@@ -108,7 +109,7 @@ export default function TaharahSettingsScreen() {
             renderLabel={(id) => t(`taharah.onahBeinonit.${id}`)}
           />
           {affects('onahBeinonitDays')}
-          <SectionLabel text={t('taharah.rule.onahBeinonitSpan')} style={styles.fieldLabel} />
+          <SectionLabel variant="field" text={t('taharah.rule.onahBeinonitSpan')} style={styles.fieldLabel} />
           <ChipRow
             values={SPANS}
             selected={rules.onahBeinonitSpan}
@@ -122,7 +123,7 @@ export default function TaharahSettingsScreen() {
             value={rules.ohrZarua}
             onValueChange={(value) => store.setRule('ohrZarua', value)}
           />
-          <SectionLabel text={t('taharah.rule.haflagaMethod')} style={styles.fieldLabel} />
+          <SectionLabel variant="field" text={t('taharah.rule.haflagaMethod')} style={styles.fieldLabel} />
           <ChipRow
             values={HAFLAGA_METHODS}
             selected={rules.haflagaMethod}
@@ -163,7 +164,7 @@ export default function TaharahSettingsScreen() {
           />
           {LEAD_FIELDS.map((field) => (
             <React.Fragment key={field.key}>
-              <SectionLabel text={t(field.label)} style={styles.fieldLabel} />
+              <SectionLabel variant="field" text={t(field.label)} style={styles.fieldLabel} />
               <ChipRow
                 values={LEAD_MINUTES}
                 selected={store[field.key]}
@@ -174,30 +175,22 @@ export default function TaharahSettingsScreen() {
           ))}
         </SettingsSection>
 
-        <Pressable
-          onPress={() => router.push('/taharah/calendar')}
-          accessibilityRole="button"
-          style={[styles.primaryBtn, { backgroundColor: colors.gold }]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('taharah.settings.calendar')}</Text>
-        </Pressable>
+        <Button label={t('taharah.settings.calendar')} onPress={() => router.push('/taharah/calendar')} />
 
-        <Pressable
+        <Button
+          variant="danger"
+          label={t('taharah.settings.deleteData')}
           onPress={() => setDeleteVisible(true)}
-          accessibilityRole="button"
-          style={[styles.dangerBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('taharah.settings.deleteData')}</Text>
-        </Pressable>
+          style={styles.dangerAction}
+        />
         {affects('deleteData')}
 
-        <Pressable
+        <Button
+          variant="danger"
+          label={t('taharah.settings.reset')}
           onPress={() => setResetVisible(true)}
-          accessibilityRole="button"
-          style={[styles.dangerBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.urgent }]}>{t('taharah.settings.reset')}</Text>
-        </Pressable>
+          style={styles.dangerAction}
+        />
         {affects('reset')}
       </ScrollView>
 
@@ -268,12 +261,6 @@ const styles = StyleSheet.create({
   affects: {
     marginTop: spacing.sm,
   },
-  primaryBtn: {
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -284,12 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingEnd: spacing.md,
   },
-  dangerBtn: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+  dangerAction: {
     marginTop: spacing.xl,
   },
 });

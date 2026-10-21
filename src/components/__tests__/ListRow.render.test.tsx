@@ -1,10 +1,12 @@
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Path } from 'react-native-svg';
 import { screen, userEvent } from '@testing-library/react-native';
 import { ListRow } from '../ListRow';
 import { IconTile } from '../IconTile';
+import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
+import { typography } from '@/theme/typography';
 import { useUserStore } from '@/stores/useUserStore';
 
 describe('ListRow', () => {
@@ -87,6 +89,28 @@ describe('ListRow', () => {
     const row = screen.getByRole('button', { name: 'Birkat Hamazon' });
     expect(row).toBeEnabled();
     expect(row).toHaveStyle({ opacity: 1 });
+  });
+
+  it('draws no fill and no divider of its own', () => {
+    renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" onPress={jest.fn()} />);
+    const row = screen.getByRole('button', { name: 'Birkat Hamazon' });
+    const style = StyleSheet.flatten(row.props.style);
+    expect(style.backgroundColor).toBeUndefined();
+    expect(style.borderBottomWidth).toBeUndefined();
+  });
+
+  it('draws a default 44-point tile', () => {
+    renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" />);
+    expect(screen.UNSAFE_getByType(IconTile).props.size).toBeUndefined();
+    expect(screen.UNSAFE_getByType(MitzvahIcon).parent!).toHaveStyle({ width: 44 });
+  });
+
+  it('reads the caption in textSub caption type', () => {
+    renderWithTheme(<ListRow icon="siddur" title="Birkat Hamazon" caption="After a meal" />);
+    expect(screen.getByText('After a meal')).toHaveStyle({
+      color: THEMES.gold.textSub,
+      fontSize: typography.caption.fontSize,
+    });
   });
 
   it('renders the trailing node after the title', () => {

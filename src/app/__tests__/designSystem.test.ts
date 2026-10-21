@@ -109,6 +109,20 @@ describe('design system tripwires', () => {
     ).toEqual([]);
   });
 
+  it('no translucent white; header controls draw on theme tokens', () => {
+    expect(offenders(allFiles, ({ source }) => /rgba\(\s*255\s*,\s*255\s*,\s*255/.test(source))).toEqual([]);
+  });
+
+  it('no file reads a header colour; the header tokens no longer exist', () => {
+    expect(offenders(allFiles, ({ source }) => /colors\.header/.test(source))).toEqual([]);
+  });
+
+  it('no screen keeps its own card or button style; cards are Card and actions Button', () => {
+    expect(
+      offenders(appFiles, ({ source }) => /\b(card|primaryBtn|dangerBtn|secondaryBtn|cta)\s*:\s*\{/.test(source)),
+    ).toEqual([]);
+  });
+
   it.each([
     ['he', he],
     ['en', en],

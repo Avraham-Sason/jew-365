@@ -3,16 +3,17 @@ import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { MitzvahCard } from '../MitzvahCard';
 import { IconTile } from '../IconTile';
 import { MitzvahIcon } from '../MitzvahIcon';
+import { TimeRibbon } from '../TimeRibbon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
-import { spacing } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 
 const BASE = { name: 'תפילין', timeLeft: '2 שעות', pct: 0.8 };
 const BODY_NAME = 'תפילין, 2 שעות';
 const CHECK_LABEL = 'סמן תפילין כהושלם';
 const OPEN_TEXT_LABEL = 'פתח נוסח';
-const BUTTON_STEP = 30 + spacing.md;
+const BUTTON_STEP = 32 + spacing.sm;
 
 type Node = ReturnType<typeof screen.getByRole>;
 
@@ -146,15 +147,16 @@ describe('MitzvahCard', () => {
     it('draws the completed line with the check icon in the safe colour, never a text glyph', () => {
       renderWithTheme(<MitzvahCard {...BASE} done onPress={jest.fn()} />);
       const checks = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check');
-      expect(checks).toHaveLength(1);
-      expect(checks[0].props.color).toBe(THEMES.gold.safe);
+      expect(checks.map((icon) => icon.props.color)).toEqual([THEMES.gold.safe, THEMES.gold.onGold]);
       expect(screen.getByText('בוצע')).toHaveStyle({ color: THEMES.gold.safe });
       expect(screen.queryByText(/✓/)).toBeNull();
     });
 
-    it('draws no check icon on an open card', () => {
+    it('draws one check icon on an open card: the check button, in textSub', () => {
       renderWithTheme(<MitzvahCard {...BASE} onPress={jest.fn()} onComplete={jest.fn()} />);
-      expect(screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check')).toHaveLength(0);
+      const checks = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check');
+      expect(checks).toHaveLength(1);
+      expect(checks[0].props.color).toBe(THEMES.gold.textSub);
     });
 
     it('exposes only the body as a button on a done card: no enabled check button', () => {
@@ -387,12 +389,74 @@ describe('MitzvahCard', () => {
       const [row] = hostsWith('onLayout');
       const actions = () => hostsWith('pointerEvents').find((node) => node.props.pointerEvents === 'box-none');
       expect(StyleSheet.flatten(actions()?.props.style)).toMatchObject({
-        height: 38,
+        height: 40,
         top: spacing.lg,
         end: spacing.lg,
       });
       fireEvent(row, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 52 } } });
       expect(StyleSheet.flatten(actions()?.props.style).height).toBe(52);
+    });
+  });
+
+  describe('look', () => {
+    it('draws a borderless surface card, radius xl', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onPress={jest.fn()} />);
+      const card = cardOf(screen.getByRole('button', { name: BODY_NAME }));
+      expect(card).toHaveStyle({ backgroundColor: THEMES.gold.surface, borderRadius: radius.xl });
+      expect(StyleSheet.flatten(card.props.style).borderWidth).toBeUndefined();
+    });
+
+    it('paints an urgent card on urgentBg', () => {
+      renderWithTheme(<MitzvahCard {...BASE} urgent onPress={jest.fn()} />);
+      expect(cardOf(screen.getByRole('button', { name: BODY_NAME }))).toHaveStyle({
+        backgroundColor: THEMES.gold.urgentBg,
+      });
+    });
+
+    it('draws the check button as a 32-point circle with a 1.5-point border ring', () => {
+      renderWithTheme(<MitzvahCard {...BASE} onComplete={jest.fn()} />);
+      expect(screen.getByLabelText(CHECK_LABEL)).toHaveStyle({
+        width: 32,
+        height: 32,
+        borderRadius: radius.full,
+        borderWidth: 1.5,
+        borderColor: THEMES.gold.border,
+      });
+    });
+
+    it('draws the done mark as a 32-point gold tile with the onGold check', () => {
+      renderWithTheme(<MitzvahCard {...BASE} done onPress={jest.fn()} />);
+      const mark = hostsWith('pointerEvents').find((node) => node.props.pointerEvents === 'none');
+      expect(mark).toHaveStyle({
+        backgroundColor: THEMES.gold.gold,
+        borderRadius: radius.sm,
+        width: 32,
+        height: 32,
+      });
+      const checks = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check');
+      expect(checks[checks.length - 1].props.color).toBe(THEMES.gold.onGold);
+    });
+
+    it('draws the open-text button with the siddur icon in textSub, urgent while urgent', () => {
+      const { rerender } = renderWithTheme(<MitzvahCard {...BASE} onOpenText={jest.fn()} />);
+      const siddur = () => screen.UNSAFE_getAllByType(MitzvahIcon).find((icon) => icon.props.name === 'siddur');
+      expect(siddur()?.props.color).toBe(THEMES.gold.textSub);
+      expect(screen.getByLabelText(OPEN_TEXT_LABEL)).toHaveStyle({ borderColor: THEMES.gold.border });
+      rerender(<MitzvahCard {...BASE} urgent onOpenText={jest.fn()} />);
+      expect(siddur()?.props.color).toBe(THEMES.gold.urgent);
+      expect(screen.getByLabelText(OPEN_TEXT_LABEL)).toHaveStyle({ borderColor: THEMES.gold.urgent });
+    });
+
+    it('passes urgent to the time ribbon', () => {
+      const { rerender } = renderWithTheme(<MitzvahCard {...BASE} urgent onPress={jest.fn()} />);
+      expect(screen.UNSAFE_getByType(TimeRibbon).props.urgent).toBe(true);
+      rerender(<MitzvahCard {...BASE} onPress={jest.fn()} />);
+      expect(screen.UNSAFE_getByType(TimeRibbon).props.urgent).toBeFalsy();
+    });
+
+    it('draws the stamp in goldText', () => {
+      renderWithTheme(<MitzvahCard {...BASE} stamping onPress={jest.fn()} />);
+      expect(screen.getByText('נעשה!')).toHaveStyle({ color: THEMES.gold.goldText });
     });
   });
 

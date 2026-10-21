@@ -1,8 +1,10 @@
+import { StyleSheet } from 'react-native';
 import { screen, userEvent } from '@testing-library/react-native';
 import { CompletedRow } from '../CompletedRow';
 import { MitzvahIcon } from '../MitzvahIcon';
 import { renderWithTheme } from '@/testing/render';
 import { THEMES } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 
 const BASE = { name: 'תפילין', time: '07:42' };
@@ -24,6 +26,43 @@ describe('CompletedRow', () => {
     renderWithTheme(<CompletedRow {...BASE} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(undoIcons()).toHaveLength(0);
+  });
+
+  it('draws the tick as a 28-point gold tile with the onGold check icon', () => {
+    renderWithTheme(<CompletedRow {...BASE} />);
+    const [check] = screen.UNSAFE_getAllByType(MitzvahIcon).filter((icon) => icon.props.name === 'check');
+    expect(check.props.color).toBe(THEMES.gold.onGold);
+    expect(check.parent!).toHaveStyle({
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      backgroundColor: THEMES.gold.gold,
+    });
+  });
+
+  it('shows the name plain in text, not struck through, and the time in textSub', () => {
+    renderWithTheme(<CompletedRow {...BASE} />);
+    expect(screen.getByText('תפילין')).toHaveStyle({ color: THEMES.gold.text });
+    expect(StyleSheet.flatten(screen.getByText('תפילין').props.style).textDecorationLine).toBeUndefined();
+    expect(screen.getByText('07:42')).toHaveStyle({ color: THEMES.gold.textSub });
+  });
+
+  it('draws the undo as a borderless goldLight pill', () => {
+    renderWithTheme(<CompletedRow {...BASE} onUndo={jest.fn()} />);
+    const pill = screen.getByRole('button', { name: 'בטל' });
+    expect(pill).toHaveStyle({ backgroundColor: THEMES.gold.goldLight, borderRadius: radius.full });
+    expect(StyleSheet.flatten(pill.props.style).borderWidth).toBeUndefined();
+  });
+
+  it('draws the undo label in goldText on that pill', () => {
+    renderWithTheme(<CompletedRow {...BASE} onUndo={jest.fn()} undoLabel="בטל" />);
+    expect(screen.getByText('בטל')).toHaveStyle({ color: THEMES.gold.goldText });
+  });
+
+  it('draws no divider of its own', () => {
+    renderWithTheme(<CompletedRow {...BASE} />);
+    const row = screen.getByText('תפילין').parent!;
+    expect(StyleSheet.flatten(row.props.style).borderBottomWidth).toBeUndefined();
   });
 
   describe('with no undoLabel', () => {

@@ -2,12 +2,10 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { IconName, MitzvahIcon, backIcon } from '@/components/MitzvahIcon';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadowPresets, shadowStyle } from '@/theme/shadowStyle';
 import { radius, spacing } from '@/theme/tokens';
 import { typography } from '@/theme/typography';
 import { useI18n } from '@/i18n';
-
-export const HEADER_PILL_BG = 'rgba(255,255,255,0.12)';
-export const HEADER_PILL_BG_PRESSED = 'rgba(255,255,255,0.22)';
 
 type ScreenHeaderProps = {
   title: string;
@@ -18,12 +16,15 @@ type ScreenHeaderProps = {
   children?: React.ReactNode;
 };
 
+const BACK_ICON_SIZE = 14;
+const BACK_ICON_STROKE = 2.5;
+
 export function ScreenHeader({ title, subtitle, onBack, actions, leading, children }: ScreenHeaderProps) {
   const { colors } = useTheme();
   const { language, t } = useI18n();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.headerBg }]}>
+    <View style={styles.wrap}>
       {onBack || actions ? (
         <View style={styles.topRow}>
           {onBack ? (
@@ -33,25 +34,37 @@ export function ScreenHeader({ title, subtitle, onBack, actions, leading, childr
               accessibilityLabel={t('common.back')}
               hitSlop={10}
               style={({ pressed }) => [
-                styles.backBtn,
-                { backgroundColor: pressed ? HEADER_PILL_BG_PRESSED : HEADER_PILL_BG },
+                styles.pill,
+                { backgroundColor: pressed ? colors.surface2 : colors.surface },
+                shadowStyle(colors.shadow, shadowPresets.cardSoft),
               ]}
             >
-              <MitzvahIcon name={backIcon(language)} size={14} color={colors.headerText} strokeWidth={2.5} />
-              <Text style={[typography.captionBold, { color: colors.headerText }]}>{t('common.back')}</Text>
+              <MitzvahIcon
+                name={backIcon(language)}
+                size={BACK_ICON_SIZE}
+                color={colors.textSub}
+                strokeWidth={BACK_ICON_STROKE}
+              />
+              <Text style={[typography.captionBold, { color: colors.text }]}>{t('common.back')}</Text>
             </Pressable>
           ) : null}
           {actions ? <View style={styles.actions}>{actions}</View> : null}
         </View>
       ) : null}
-      <View style={styles.titleRow}>
-        {leading}
-        <View style={styles.titleBlock}>
-          <Text style={[typography.title, { color: colors.headerText }]} numberOfLines={2}>
-            {title}
+      <View style={styles.titleBlock}>
+        {leading ? <View style={styles.leading}>{leading}</View> : null}
+        <Text
+          accessibilityRole="header"
+          style={[typography.title, styles.centered, { color: colors.text }]}
+          numberOfLines={2}
+        >
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text style={[typography.caption, styles.centered, styles.subtitle, { color: colors.textSub }]}>
+            {subtitle}
           </Text>
-          {subtitle ? <Text style={[typography.caption, { color: colors.headerSub }]}>{subtitle}</Text> : null}
-        </View>
+        ) : null}
       </View>
       {children ? <View style={styles.extra}>{children}</View> : null}
     </View>
@@ -79,7 +92,7 @@ export function HeaderPill({
   disabled = false,
 }: HeaderPillProps) {
   const { colors } = useTheme();
-  const color = selected ? colors.headerBg : colors.headerText;
+  const color = selected ? colors.onGold : colors.text;
   return (
     <Pressable
       onPress={onPress}
@@ -88,9 +101,13 @@ export function HeaderPill({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected, disabled }}
       hitSlop={8}
-      style={[
+      style={({ pressed }) => [
         styles.pill,
-        { backgroundColor: selected ? colors.headerAccent : HEADER_PILL_BG, opacity: disabled ? 0.5 : 1 },
+        {
+          backgroundColor: selected ? colors.gold : pressed ? colors.surface2 : colors.surface,
+          opacity: disabled ? 0.5 : 1,
+        },
+        shadowStyle(colors.shadow, shadowPresets.cardSoft),
       ]}
     >
       {icon ? <MitzvahIcon name={icon} size={PILL_ICON_SIZE} color={color} strokeWidth={PILL_ICON_STROKE} /> : null}
@@ -99,25 +116,32 @@ export function HeaderPill({
   );
 }
 
+type CounterPillProps = { label: string; accessibilityLabel?: string };
+
+export function CounterPill({ label, accessibilityLabel }: CounterPillProps) {
+  const { colors } = useTheme();
+  return (
+    <View
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      style={[styles.counter, { backgroundColor: colors.goldLight }]}
+    >
+      <Text style={[typography.bodyBold, { color: colors.goldText }]}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.full,
+    marginBottom: spacing.sm,
   },
   actions: {
     marginStart: 'auto',
@@ -126,14 +150,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
   titleBlock: {
-    flex: 1,
-    minWidth: 0,
+    alignItems: 'center',
+  },
+  leading: {
+    marginBottom: spacing.sm,
+  },
+  centered: {
+    textAlign: 'center',
+  },
+  subtitle: {
+    marginTop: 2,
   },
   extra: {
     marginTop: spacing.md,
@@ -146,5 +173,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
+  },
+  counter: {
+    minWidth: 48,
+    minHeight: 34,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

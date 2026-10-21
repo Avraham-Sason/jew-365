@@ -5,6 +5,8 @@ import { Stack, useRouter } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { Banner } from '@/components/Banner';
 import { BottomSheet } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
 import { formatDayLine } from '@/components/DayStepper';
 import { MitzvahIcon } from '@/components/MitzvahIcon';
@@ -135,7 +137,6 @@ export default function TaharahDashboard() {
   const showHefsek = !husband && (stage === 'niddah' || stage === 'awaitingHefsek');
   const showTevila = !husband && (stage === 'tevilaNight' || stage === 'awaitingTevila');
   const paused = stage === 'paused';
-  const listCard = [styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -152,7 +153,7 @@ export default function TaharahDashboard() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card padded>
           <Text style={[typography.title, { color: colors.text }]}>{t(`taharah.stage.${stage}`)}</Text>
           {hint ? (
             <Text style={[typography.body, { color: colors.textSub, marginTop: spacing.xs }]}>{hint}</Text>
@@ -162,23 +163,21 @@ export default function TaharahDashboard() {
               {t('taharah.tevilaDeferred')}
             </Text>
           ) : null}
-        </View>
+        </Card>
 
         {!husband && state.stage === 'safek' && state.safekReason ? (
           <View>
             <Banner tone="accent" text={`${t(`taharah.safek.${state.safekReason}`)}\n${t('taharah.askRav')}`} />
             <View style={styles.rulingActions}>
               {(['continue', 'restart'] as const).map((decision) => (
-                <Pressable
+                <Button
                   key={decision}
+                  variant="danger"
+                  size="compact"
+                  label={t(`taharah.ruling.${decision}`)}
                   onPress={() => addEvent({ type: 'ruling', day: todayAbs, decision })}
-                  accessibilityRole="button"
-                  style={[styles.rulingBtn, { backgroundColor: colors.surface, borderColor: colors.urgent }]}
-                >
-                  <Text style={[typography.captionBold, { color: colors.urgent }]}>
-                    {t(`taharah.ruling.${decision}`)}
-                  </Text>
-                </Pressable>
+                  style={styles.ruling}
+                />
               ))}
             </View>
           </View>
@@ -199,20 +198,19 @@ export default function TaharahDashboard() {
 
         <View>
           <SectionLabel text={t('taharah.today')} />
-          <View style={listCard}>
+          <Card divided>
             {tasks.length ? (
               tasks.map((task, index) => (
                 <TaskRow
                   key={`${task.kind}-${task.day}-${index}`}
                   task={task}
-                  last={index === tasks.length - 1}
                   onPress={isActionable(task) ? () => openTask(task) : undefined}
                 />
               ))
             ) : (
               <Text style={[typography.body, styles.empty, { color: colors.textSub }]}>{t('taharah.todayEmpty')}</Text>
             )}
-          </View>
+          </Card>
         </View>
 
         {!husband && state.cleanDays.length ? (
@@ -235,18 +233,9 @@ export default function TaharahDashboard() {
         {upcoming.length ? (
           <View>
             <SectionLabel text={t('taharah.perishaList')} />
-            <View style={listCard}>
-              {upcoming.slice(0, UPCOMING_LIMIT).map((entry, index, list) => (
-                <View
-                  key={onahIndex(entry.onah)}
-                  style={[
-                    styles.row,
-                    index < list.length - 1 && {
-                      borderBottomColor: colors.border,
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                    },
-                  ]}
-                >
+            <Card divided>
+              {upcoming.slice(0, UPCOMING_LIMIT).map((entry) => (
+                <View key={onahIndex(entry.onah)} style={styles.row}>
                   <View style={styles.rowMain}>
                     <Text style={[typography.bodyBold, { color: colors.text }]}>
                       {formatDayLine(onahStartDate(entry.onah), language)}
@@ -263,25 +252,16 @@ export default function TaharahDashboard() {
                   </Text>
                 </View>
               ))}
-            </View>
+            </Card>
           </View>
         ) : null}
 
         {recent.length ? (
           <View>
             <SectionLabel text={t('taharah.history.title')} />
-            <View style={listCard}>
+            <Card divided>
               {recent.map((event, index) => (
-                <View
-                  key={event.id}
-                  style={[
-                    styles.row,
-                    index < recent.length - 1 && {
-                      borderBottomColor: colors.border,
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                    },
-                  ]}
-                >
+                <View key={event.id} style={styles.row}>
                   <View style={styles.rowMain}>
                     <Text style={[typography.bodyBold, { color: colors.text }]}>
                       {t(`taharah.event.${event.type}`)}
@@ -295,7 +275,7 @@ export default function TaharahDashboard() {
                       onPress={() => removeEvent(event.id)}
                       hitSlop={8}
                       accessibilityRole="button"
-                      style={[styles.undoBtn, { borderColor: colors.border }]}
+                      style={[styles.undoBtn, { backgroundColor: colors.goldLight }]}
                     >
                       <Text style={[typography.small, { color: colors.goldText, fontFamily: fontFamilies.heebo.bold }]}>
                         {t('taharah.log.undo')}
@@ -304,30 +284,49 @@ export default function TaharahDashboard() {
                   ) : null}
                 </View>
               ))}
-            </View>
+            </Card>
           </View>
         ) : null}
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.bg, borderTopColor: colors.border }]}>
-        <Pressable
-          onPress={() => goLog('onset')}
-          accessibilityRole="button"
-          style={[styles.primaryBtn, { backgroundColor: colors.gold }]}
-        >
-          <Text style={[typography.heading, { color: colors.onGold }]}>{t('taharah.log.onset')}</Text>
-        </Pressable>
+        <Button label={t('taharah.log.onset')} onPress={() => goLog('onset')} />
         {husband ? null : (
           <View style={styles.secondaryRow}>
-            {showHefsek ? <SecondaryButton label={t('taharah.task.hefsek')} onPress={() => goLog('hefsek')} /> : null}
-            {showTevila ? <SecondaryButton label={t('taharah.log.tevila')} onPress={() => goLog('tevila')} /> : null}
+            {showHefsek ? (
+              <Button
+                variant="secondary"
+                size="compact"
+                label={t('taharah.task.hefsek')}
+                onPress={() => goLog('hefsek')}
+                style={styles.secondaryAction}
+              />
+            ) : null}
+            {showTevila ? (
+              <Button
+                variant="secondary"
+                size="compact"
+                label={t('taharah.log.tevila')}
+                onPress={() => goLog('tevila')}
+                style={styles.secondaryAction}
+              />
+            ) : null}
             {paused ? (
-              <SecondaryButton
+              <Button
+                variant="secondary"
+                size="compact"
                 label={t('taharah.log.resume')}
                 onPress={() => addEvent({ type: 'resume', day: todayAbs })}
+                style={styles.secondaryAction}
               />
             ) : (
-              <SecondaryButton label={t('taharah.log.pause')} onPress={() => goLog('pause')} />
+              <Button
+                variant="secondary"
+                size="compact"
+                label={t('taharah.log.pause')}
+                onPress={() => goLog('pause')}
+                style={styles.secondaryAction}
+              />
             )}
           </View>
         )}
@@ -347,22 +346,7 @@ export default function TaharahDashboard() {
   );
 }
 
-function SecondaryButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={[styles.secondaryBtn, { backgroundColor: colors.surface2, borderColor: colors.border }]}
-    >
-      <Text style={[typography.captionBold, { color: colors.text }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function TaskRow({ task, last, onPress }: { task: TaharahTask; last: boolean; onPress?: () => void }) {
+function TaskRow({ task, onPress }: { task: TaharahTask; onPress?: () => void }) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const timeLine =
@@ -380,11 +364,7 @@ function TaskRow({ task, last, onPress }: { task: TaharahTask; last: boolean; on
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      style={[
-        styles.row,
-        { opacity: task.done ? 0.6 : 1 },
-        !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
-      ]}
+      style={[styles.row, { opacity: task.done ? 0.6 : 1 }]}
     >
       <View style={styles.rowMain}>
         <Text style={[typography.bodyBold, { color: colors.text }]}>{t(`taharah.task.${task.kind}`)}</Text>
@@ -442,8 +422,9 @@ function CleanDayCell({
       style={[
         styles.cleanCell,
         {
-          backgroundColor: current ? colors.goldWashStrong : colors.surface,
-          borderColor: current ? colors.gold : colors.border,
+          backgroundColor: current ? colors.goldLight : colors.surface,
+          borderWidth: current ? 1.5 : 0,
+          borderColor: colors.gold,
           opacity: enabled ? 1 : 0.55,
         },
       ]}
@@ -517,13 +498,11 @@ function BedikaSheet({ target, index, past, onClose, onSave }: SheetProps) {
         </Text>
       ) : null}
       <View style={styles.sheetActions}>
-        <Pressable
+        <Button
+          label={t('common.save')}
           onPress={() => target && onSave(target.day, slot, result)}
-          accessibilityRole="button"
-          style={[styles.sheetBtn, { backgroundColor: colors.gold }]}
-        >
-          <Text style={[typography.bodyBold, { color: colors.onGold }]}>{t('common.save')}</Text>
-        </Pressable>
+          style={styles.sheetAction}
+        />
       </View>
     </BottomSheet>
   );
@@ -538,11 +517,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: spacing.md,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
   flush: {
     marginBottom: 0,
   },
@@ -551,18 +525,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  rulingBtn: {
+  ruling: {
     flexGrow: 1,
-    alignItems: 'center',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  listCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
@@ -592,7 +556,6 @@ const styles = StyleSheet.create({
   },
   undoBtn: {
     borderRadius: radius.full,
-    borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
@@ -607,7 +570,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     borderRadius: radius.lg,
-    borderWidth: 1,
     paddingVertical: spacing.sm,
   },
   dots: {
@@ -628,23 +590,12 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     gap: spacing.sm,
   },
-  primaryBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-  },
   secondaryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  secondaryBtn: {
+  secondaryAction: {
     flex: 1,
-    alignItems: 'center',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
   },
   resultRow: {
     marginTop: spacing.md,
@@ -657,10 +608,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.xl,
   },
-  sheetBtn: {
+  sheetAction: {
     flex: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
   },
 });

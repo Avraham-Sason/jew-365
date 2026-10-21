@@ -15,7 +15,7 @@ import {
   paletteForGender,
   ThemeColors,
 } from '../colors';
-import { ribbonThresholds, durations, spacing, radius } from '../tokens';
+import { durations, spacing, radius } from '../tokens';
 import { APP_FONTS, fontFamilies, typography } from '../typography';
 import he from '@/i18n/he.json';
 import en from '@/i18n/en.json';
@@ -25,14 +25,15 @@ const COLOR = /^(#[0-9A-F]{6}(?:[0-9A-F]{2})?|rgba\(.*\))$/i;
 const READABLE_PAIRS: readonly (readonly [keyof ThemeColors, keyof ThemeColors, number])[] = [
   ['text', 'bg', 4.5],
   ['text', 'surface', 4.5],
+  ['text', 'surface2', 4.5],
   ['textMuted', 'surface', 4.5],
   ['onGold', 'gold', 4.5],
   ['goldText', 'surface', 4.5],
   ['goldText', 'bg', 4.5],
   ['goldText', 'goldLight', 4.5],
   ['onUrgent', 'urgent', 4.5],
-  ['headerText', 'headerBg', 4.5],
-  ['headerAccent', 'headerBg', 4.5],
+  ['urgent', 'urgentBg', 4.5],
+  ['urgent', 'surface', 4.5],
   ['textSub', 'surface', 4.0],
 ];
 
@@ -116,29 +117,52 @@ describe('Theme', () => {
     }
   });
 
-  it('the light palettes share white surfaces and the status colours', () => {
+  it('pink shares the warm surface and tab bar with gold, purple and blue keep white ones', () => {
+    expect({ surface: T_PINK.surface, tabBg: T_PINK.tabBg }).toEqual({
+      surface: T_LIGHT.surface,
+      tabBg: T_LIGHT.tabBg,
+    });
+    for (const name of ['purple', 'blue'] as const) {
+      const { surface, tabBg } = THEMES[name];
+      expect({ name, surface, tabBg }).toEqual({ name, surface: '#FFFFFF', tabBg: '#FFFFFF' });
+    }
+  });
+
+  it('the light palettes share the status colours with gold', () => {
     for (const name of ['pink', 'purple', 'blue'] as const) {
-      const palette = THEMES[name];
-      expect({ name, surface: palette.surface, tabBg: palette.tabBg }).toEqual({
-        name,
-        surface: T_LIGHT.surface,
-        tabBg: T_LIGHT.tabBg,
-      });
       for (const token of ['urgent', 'onUrgent', 'urgentBg', 'urgentBorder', 'warning', 'safe'] as const) {
-        expect({ name, token, value: palette[token] }).toEqual({ name, token, value: T_LIGHT[token] });
+        expect({ name, token, value: THEMES[name][token] }).toEqual({ name, token, value: T_LIGHT[token] });
       }
     }
   });
 
-  it('the palettes differ in background, accent and header', () => {
-    for (const token of ['bg', 'gold', 'headerBg'] as const) {
+  it('the default and the night palettes keep the identity the owner chose', () => {
+    expect(T_LIGHT).toMatchObject({
+      bg: '#F6F1E8',
+      surface: '#FFFDF9',
+      gold: '#F08A3C',
+      goldLight: '#FDE9D5',
+      goldText: '#A04A0C',
+      text: '#1D2240',
+    });
+    expect(T_DARK).toMatchObject({ bg: '#0E1626', gold: '#F59A4A' });
+  });
+
+  it('the palettes differ in background and accent', () => {
+    for (const token of ['bg', 'gold'] as const) {
       const values = THEME_NAMES.map((name) => THEMES[name][token]);
       expect({ token, distinct: new Set(values).size }).toEqual({ token, distinct: values.length });
     }
   });
 
   it('BRAND is the gold palette identity, independent of the active theme', () => {
-    expect(BRAND).toEqual({ navy: T_LIGHT.text, gold: T_LIGHT.gold, parchment: T_LIGHT.bg, white: '#FFFFFF' });
+    expect(BRAND).toEqual({
+      navy: T_LIGHT.text,
+      gold: T_LIGHT.gold,
+      onGold: T_LIGHT.onGold,
+      parchment: T_LIGHT.bg,
+      white: '#FFFFFF',
+    });
   });
 
   it.each(THEME_NAMES)('text stays readable in the %s palette (WCAG contrast)', (name) => {
@@ -161,12 +185,6 @@ describe('Theme', () => {
         expect({ name, locale, label }).toEqual({ name, locale, label: expect.stringMatching(/\S/) });
       }
     }
-  });
-
-  it('8.3 ribbonThresholds are sane', () => {
-    expect(ribbonThresholds.safe).toBeGreaterThan(ribbonThresholds.warning);
-    expect(ribbonThresholds.safe).toBeLessThanOrEqual(1);
-    expect(ribbonThresholds.warning).toBeGreaterThanOrEqual(0);
   });
 
   it('animation durations defined + ordered', () => {

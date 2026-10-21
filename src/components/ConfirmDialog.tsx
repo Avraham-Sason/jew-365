@@ -38,7 +38,7 @@ export function ConfirmDialog({
       <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
         {/* A sibling of the card, not its ancestor: a plain child View does not stop a tap reaching a parent Pressable. */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessible={false} />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[typography.heading, { color: colors.text }]}>{title}</Text>
           {body ? <Text style={[typography.body, styles.body, { color: colors.textSub }]}>{body}</Text> : null}
           <View style={styles.actions}>
@@ -80,8 +80,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: radius.xl,
-    borderWidth: 1,
+    borderRadius: radius.xxl,
     padding: spacing.xl,
   },
   body: {
@@ -96,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     paddingVertical: spacing.md,
   },
 });

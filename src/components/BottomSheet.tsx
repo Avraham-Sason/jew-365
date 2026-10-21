@@ -24,7 +24,7 @@ export function BottomSheet({ visible, title, caption, onClose, children }: Bott
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
-          <View style={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             {title || caption ? (
               <View style={styles.heading}>
                 {title ? <Text style={[typography.heading, { color: colors.text }]}>{title}</Text> : null}
@@ -39,7 +39,7 @@ export function BottomSheet({ visible, title, caption, onClose, children }: Bott
               accessibilityRole="button"
               style={[styles.closeBtn, { backgroundColor: colors.surface2 }]}
             >
-              <Text style={[typography.bodyBold, { color: colors.textSub }]}>{t('common.close')}</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{t('common.close')}</Text>
             </Pressable>
           </View>
         </View>
@@ -86,7 +86,6 @@ const styles = StyleSheet.create({
   },
   sheet: {
     borderRadius: radius.xxl,
-    borderWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
@@ -100,7 +99,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     paddingVertical: spacing.md,
     marginTop: spacing.lg,
   },

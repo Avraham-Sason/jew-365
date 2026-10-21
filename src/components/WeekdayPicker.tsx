@@ -30,7 +30,7 @@ export function WeekdayPicker({ selected, onToggle, style }: Props) {
             hitSlop={6}
             style={[styles.pill, { backgroundColor: checked ? colors.gold : colors.surface2 }]}
           >
-            <Text style={[typography.captionBold, { color: checked ? colors.onGold : colors.textSub }]}>{label}</Text>
+            <Text style={[typography.captionBold, { color: checked ? colors.onGold : colors.text }]}>{label}</Text>
           </Pressable>
         );
       })}

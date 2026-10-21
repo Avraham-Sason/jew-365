@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import { Banner } from '@/components/Banner';
+import { Card } from '@/components/Card';
 import { iconFor } from '@/components/MitzvahIcon';
 import { ListRow } from '@/components/ListRow';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
@@ -16,7 +17,7 @@ import { RETENTION_DAYS, dateKey, useCompletionsStore } from '@/stores/useComple
 import { enabledSinceOf, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { addDays } from '@/utils/historyStats';
 import {
   calendarLocale,
@@ -141,7 +142,7 @@ export default function ReportScreen() {
                 onPress={() => router.push('/checkin')}
               />
             ) : null}
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Card divided style={styles.cardGap}>
               <ListRow
                 icon="check"
                 title={t('report.doneOf', { done: summary.done, total: summary.done + summary.missed })}
@@ -153,10 +154,10 @@ export default function ReportScreen() {
               {summary.bestDay ? (
                 <ListRow icon="sparkle" title={t('report.bestDay', { day: dayLabel(summary.bestDay, 'cccc') })} />
               ) : null}
-            </View>
+            </Card>
 
             <SectionLabel text={t('report.perMitzvah')} />
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Card divided style={styles.cardGap}>
               {summary.perMitzvah.flatMap((entry) => {
                 const mitzvah = mitzvahOf(entry.id);
                 if (!mitzvah) return [];
@@ -170,7 +171,7 @@ export default function ReportScreen() {
                   />
                 );
               })}
-            </View>
+            </Card>
 
             {summary.improve && improved ? (
               <>
@@ -192,7 +193,7 @@ export default function ReportScreen() {
 
         <SectionLabel text={t('report.upcoming')} />
         {events.length ? (
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Card divided style={styles.cardGap}>
             {events.map((event) => (
               <ListRow
                 key={event.key}
@@ -201,7 +202,7 @@ export default function ReportScreen() {
                 caption={event.labels.join(' · ')}
               />
             ))}
-          </View>
+          </Card>
         ) : (
           <Banner tone="info" text={t('report.nextWeekNone')} />
         )}
@@ -215,13 +216,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxxl,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
+  cardGap: {
     marginBottom: spacing.lg,
   },
 });

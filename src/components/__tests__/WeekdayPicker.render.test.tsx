@@ -65,6 +65,6 @@ describe('WeekdayPicker', () => {
     expect(screen.getByRole('checkbox', { name: labelOf(4) })).toHaveStyle({ backgroundColor: colors.gold });
     expect(screen.getByText(labelOf(4))).toHaveStyle({ color: colors.onGold });
     expect(screen.getByRole('checkbox', { name: labelOf(5) })).toHaveStyle({ backgroundColor: colors.surface2 });
-    expect(screen.getByText(labelOf(5))).toHaveStyle({ color: colors.textSub });
+    expect(screen.getByText(labelOf(5))).toHaveStyle({ color: colors.text });
   });
 });

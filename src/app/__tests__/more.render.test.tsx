@@ -10,6 +10,8 @@ jest.mock('@/data/chok', () => ({
 import { Linking } from 'react-native';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import MoreScreen from '../(tabs)/more';
+import { Card } from '@/components/Card';
+import { ListRow } from '@/components/ListRow';
 import { hasChokContent } from '@/data/chok';
 import { CITIES } from '@/data/cities';
 import { renderWithTheme } from '@/testing/render';
@@ -97,6 +99,14 @@ describe('More tab', () => {
     renderAt('2026-11-16T12:00');
     expect(screen.getByText('Tehillim')).toBeOnTheScreen();
     expect(screen.getByText('Divided by the days of the week')).toBeOnTheScreen();
+  });
+
+  it('lists every destination on one divided card', () => {
+    renderAt('2026-11-16T08:00');
+    const cards = screen.UNSAFE_getAllByType(Card);
+    expect(cards).toHaveLength(1);
+    expect(cards[0].props.divided).toBe(true);
+    expect(within(cards[0]).UNSAFE_getAllByType(ListRow)).toHaveLength(4);
   });
 });
 

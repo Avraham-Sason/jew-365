@@ -4,6 +4,7 @@ import { BottomSheet, SheetAction } from '../BottomSheet';
 import { QuietBlockContext } from '../ShabbatScreen';
 import { findBackdrop, renderWithTheme } from '@/testing/render';
 import { THEMES, THEME_NAMES } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { useUserStore } from '@/stores/useUserStore';
 import type { HolyBlock } from '@/types/zmanim';
 
@@ -47,6 +48,19 @@ describe('BottomSheet', () => {
       </BottomSheet>,
     );
     expect(screen.getByRole('button', { name: 'סגור' })).toBeOnTheScreen();
+  });
+
+  it('draws Close as a surface2 pill with its label in text', () => {
+    renderWithTheme(
+      <BottomSheet visible title="T" onClose={jest.fn()}>
+        <Text>Body</Text>
+      </BottomSheet>,
+    );
+    expect(screen.getByRole('button', { name: 'סגור' })).toHaveStyle({
+      backgroundColor: THEMES.gold.surface2,
+      borderRadius: radius.full,
+    });
+    expect(screen.getByText('סגור')).toHaveStyle({ color: THEMES.gold.text });
   });
 
   it('labels the Close button in English when the language is English', () => {

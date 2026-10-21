@@ -44,19 +44,15 @@ export function ListRow({
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={accessibilityLabel}
       android_ripple={onPress ? { color: colors.border } : undefined}
-      style={[
-        styles.row,
-        { backgroundColor: colors.surface, borderBottomColor: colors.border, opacity: disabled ? 0.5 : 1 },
-        style,
-      ]}
+      style={[styles.row, { opacity: disabled ? 0.5 : 1 }, style]}
     >
       <IconTile name={icon} tone={iconTone} />
       <View style={styles.meta}>
-        <Text style={[typography.bodyBold, { color: iconTone === 'muted' ? colors.textMuted : colors.text }]}>
+        <Text style={[typography.heading, { color: iconTone === 'muted' ? colors.textMuted : colors.text }]}>
           {title}
         </Text>
         {caption ? (
-          <Text style={[typography.small, styles.caption, { color: colors.textMuted }]}>{caption}</Text>
+          <Text style={[typography.caption, styles.caption, { color: colors.textSub }]}>{caption}</Text>
         ) : null}
       </View>
       {trailing ??
@@ -72,9 +68,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   meta: {
     flex: 1,

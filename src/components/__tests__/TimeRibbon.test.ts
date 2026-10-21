@@ -1,25 +1,12 @@
-import { ribbonColor } from '../TimeRibbon';
-import { ribbonThresholds } from '@/theme/tokens';
-import { T_LIGHT } from '@/theme/colors';
+import { ribbonColors } from '../TimeRibbon';
+import { THEMES, THEME_NAMES } from '@/theme/colors';
 
-// This suite used to re-declare `colorOf` and a `sortByEnd` "extracted from home.tsx" and assert
-// against those copies — it never imported TimeRibbon at all, so flipping the real thresholds
-// shipped green. It now exercises the shipped function.
-describe('TimeRibbon colour thresholds', () => {
-  it('moves safe → warning → urgent as the window drains', () => {
-    expect(ribbonColor(1, T_LIGHT)).toBe(T_LIGHT.safe);
-    expect(ribbonColor(0.75, T_LIGHT)).toBe(T_LIGHT.safe);
-    expect(ribbonColor(0.4, T_LIGHT)).toBe(T_LIGHT.warning);
-    expect(ribbonColor(0.1, T_LIGHT)).toBe(T_LIGHT.urgent);
+describe('TimeRibbon colours', () => {
+  it.each(THEME_NAMES)('%s: the accent fill and the accent text while not urgent', (name) => {
+    expect(ribbonColors(false, THEMES[name])).toEqual({ fill: THEMES[name].gold, text: THEMES[name].goldText });
   });
 
-  it('treats each threshold as exclusive at the boundary', () => {
-    expect(ribbonColor(ribbonThresholds.safe, T_LIGHT)).toBe(T_LIGHT.warning);
-    expect(ribbonColor(ribbonThresholds.warning, T_LIGHT)).toBe(T_LIGHT.urgent);
-  });
-
-  it('clamps out-of-range input instead of trusting it', () => {
-    expect(ribbonColor(5, T_LIGHT)).toBe(T_LIGHT.safe);
-    expect(ribbonColor(-3, T_LIGHT)).toBe(T_LIGHT.urgent);
+  it.each(THEME_NAMES)('%s: the urgent colour for both while urgent', (name) => {
+    expect(ribbonColors(true, THEMES[name])).toEqual({ fill: THEMES[name].urgent, text: THEMES[name].urgent });
   });
 });
