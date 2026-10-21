@@ -9,18 +9,6 @@
 <link rel="icon" href="favicon.png">
 <link rel="stylesheet" href="style.css">
 <style>
-:root {
-  --gold-ink: #8a5d00;
-  --note-bg: #f1e6cf;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --gold-ink: #e0ad46;
-    --note-bg: #203449;
-  }
-}
-
 header,
 main {
   max-width: 900px;
@@ -66,7 +54,7 @@ span.source {
   padding: 0 11px;
   border: 1.5px solid var(--gold);
   border-radius: 999px;
-  color: var(--gold-ink);
+  color: var(--gold-text);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.6;
@@ -121,7 +109,7 @@ span.source {
 }
 
 .card dt {
-  color: var(--gold-ink);
+  color: var(--gold-text);
   font-weight: 700;
 }
 
@@ -316,9 +304,10 @@ span.source {
     --text: #000;
     --text-sub: #333;
     --gold: #000;
-    --gold-ink: #000;
+    --gold-text: #000;
     --border: #999;
     --note-bg: #fff;
+    --shadow: transparent;
   }
 
   body {
