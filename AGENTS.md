@@ -131,6 +131,8 @@ Store copy lives in [release/](release).
 - [AUDIT.md](AUDIT.md) - Failure-point audit with per-finding status. Read before assuming a known defect is still open.
 - [not-close.md](not-close.md) - Every open item in one file: tasks, bugs, open questions, and other open items (reviews, external dependencies, unverified paths, cleanup). New open work goes here, never into a separate tasks, bugs or questions file; an item is deleted in the change that closes it.
 
+[.agents/skills/](.agents/skills) holds the Expo agent skills (EAS, Expo Router, Expo UI and others) that agents load for Expo work, pinned by [skills-lock.json](skills-lock.json). They are vendored as installed: ESLint and Prettier ignore them, so a commit never reformats them.
+
 [CLAUDE.md](CLAUDE.md) is the Claude Code compatibility bridge. This file remains the canonical cross-agent context.
 
 ## Architecture Rules

@@ -8,6 +8,8 @@ design
 docs
 assets
 .claude
+.agents
+skills-lock.json
 pnpm-lock.yaml
 src/data/siddurAssets.generated.ts
 scripts/siddur/.cache
