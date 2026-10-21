@@ -11,7 +11,7 @@
 - [privacy/en/index.html](privacy/en/index.html) is the English privacy policy and must stay a faithful equivalent of the Hebrew one.
 - [taharah-review.html](taharah-review.html) is the Hebrew review document for the rav who approves the halachic rules of the family-purity tracker. It is reached by direct URL only (nothing links to it, and it is `noindex`). It must match [../src/data/taharahPresets.ts](../src/data/taharahPresets.ts) exactly: a changed preset value, rule or `TAHARAH_RULES_VERSION` changes the table, the rules version in its meta line and the numbered list of items to verify in the same edit. It is a review document, not a user-facing policy, and not a claim about shipped behavior.
 - [style.css](style.css) is shared by every page here, [taharah-review.html](taharah-review.html) included. It keeps its own colours, the app's palettes from before the 2026-10-21 redesign, and does not follow `T_LIGHT` / `T_DARK` in [../src/theme/colors.ts](../src/theme/colors.ts): light background `#F5EFE4` and text `#1C2B4A`, dark background `#0D1925` and text `#EDE7DB`.
-- [favicon.png](favicon.png) is a copy of [../assets/favicon.png](../assets/favicon.png) that every page links as its icon; replace it when the app's favicon changes.
+- [favicon.png](favicon.png) is a copy of [../assets/favicon.png](../assets/favicon.png) that every page links as its icon; `pnpm logo:build` writes both, so never replace it by hand.
 - [fonts/](fonts) holds the Heebo Regular and Bold files [style.css](style.css) serves. Their licence is [fonts/OFL.txt](fonts/OFL.txt), the SIL Open Font License 1.1 with the copyright line the font files carry; it stays beside the fonts, because the licence requires it to travel with every copy.
 
 ## Local Contracts

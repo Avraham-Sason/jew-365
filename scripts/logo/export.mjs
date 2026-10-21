@@ -4,7 +4,7 @@
 import { Buffer } from 'node:buffer';
 import console from 'node:console';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -315,6 +315,7 @@ function main() {
     );
     write('notification-icon', fitBox(markMono.replaceAll('#000000', '#FFFFFF'), meta.mark.box, 96, 6), 96);
     write('favicon', fitBox(mark, meta.mark.box, 48, 2), 48);
+    copyFileSync(join(ASSETS, 'favicon.png'), join(ROOT, 'docs', 'favicon.png'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
