@@ -486,7 +486,7 @@
   "profile.maritalStatus.single.female": "Single",
   "profile.maritalStatus.single.neutral": "Single",
   "taharah.optIn.woman.title": "Family purity tracking",
-  "taharah.optIn.woman.body": "Track the count, the bedikot and the mikveh night, with reminders by halachic times. Everything stays encrypted on this device only.",
+  "taharah.optIn.woman.body": "Track the count, the bedikot and the mikveh night, with reminders by halachic times. Everything is kept encrypted.",
   "taharah.optIn.husband.title": "Reminders for the husband",
   "taharah.optIn.husband.body": "Separation onot and the mikveh night only, from the dates you enter. No bedika details.",
   "taharah.optIn.toggle": "Enable tracking",

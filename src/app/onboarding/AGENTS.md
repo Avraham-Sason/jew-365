@@ -23,7 +23,7 @@
 
 ## Work Guidance
 
-- Keep permission explanations accurate to [../../../app.json](../../../app.json) native permission strings and actual local/offline behavior.
+- Keep permission explanations accurate to [../../../app.json](../../../app.json) native permission strings and actual behavior.
 - Do not assume Expo Go can verify native notification/MMKV behavior.
 - A selectable option on a step is [ChoiceRow](../../components/ChoiceRow.tsx), as the profile and nusach steps use it, each set inside a `radiogroup` view named by its heading (`profile.gender`, `profile.maritalStatus`, `onboarding.nusachTitle`); the location step's city picker is [ChipRow](../../components/ChipRow.tsx). No step hand-rolls either.
 - Every step's Continue, the ready step's finish and the location refresh are the shared [Button](../../components/Button.tsx), disabled through its `disabled` prop; the location step's notifications button stays screen-local, because it shrinks while pressed and spins while the OS dialog is open. An accent card (the taharah opt-in, the notifications card) is `goldLight` with no border. The labels above the welcome fields and the profile's two choice groups are `field` [SectionLabel](../../components/SectionLabel.tsx)s.

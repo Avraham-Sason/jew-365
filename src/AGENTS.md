@@ -22,7 +22,6 @@
 
 - TypeScript is strict; keep the `@/*` alias aligned with [../tsconfig.json](../tsconfig.json) and [../babel.config.js](../babel.config.js).
 - Keep app logic in services, utils, stores, and data modules where possible; routes and components should mostly compose them.
-- Preserve local/offline-first behavior for zmanim, Hebrew calendar, history, completions, settings, and reminders.
 - Do not replace Hebrew source strings with English; normal user-facing copy should go through [i18n/AGENTS.md](i18n/AGENTS.md).
 
 ## Work Guidance
