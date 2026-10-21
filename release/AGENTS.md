@@ -8,6 +8,7 @@
 
 - [APP_STORE_METADATA_HE.md](APP_STORE_METADATA_HE.md) and [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md) own App Store listing copy. The English file also holds the App Privacy answers.
 - [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) owns Google Play listing copy (Hebrew default as `iw-IL`, English translation), the Data safety answers, the App content answers as submitted, the content rating notes, the store graphics in use, and the closed test (track, testers group, release notes, the testers' invitation). A change in the Play Console is recorded there in the same pass.
+- [RELEASE_LOG.md](RELEASE_LOG.md) is the chronological record of every step toward the stores: what was done, what it produced, and every failure that blocked progress with how it was cleared.
 - The published privacy policy lives in [../docs/privacy/index.html](../docs/privacy/index.html) and [../docs/privacy/en/index.html](../docs/privacy/en/index.html), not here. This folder owns store copy only.
 
 ## Local Contracts
@@ -24,6 +25,7 @@
 ## Work Guidance
 
 - Update release documents when app behavior, permissions, data collection, branding, or store-visible features change.
+- Log every store step and every blocking failure in [RELEASE_LOG.md](RELEASE_LOG.md) in the same pass, the owner's rule (2026-10-22): a build, an upload, a declaration, a submission, a review result, and anything Claude could not get past alone, with how it was cleared.
 - Store URLs and contact details must be real values. A placeholder in a field a store form consumes is a release blocker, not a note for later.
 - Field limits: Apple subtitle 30 characters, promotional text 170, keywords 100 with no space after the commas, description 4000; Play short description 80, full description 4000.
 

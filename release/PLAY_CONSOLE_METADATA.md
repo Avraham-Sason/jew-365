@@ -119,6 +119,8 @@ Submitted in the Play Console on 2026-10-20 (all ten declarations complete):
 - Government apps: no.
 - Financial features: none.
 - Health apps: period tracking only, for the on-device taharah tracker: nothing collected, no medical advice or diagnosis.
+- Exact alarms (asked once the first AAB declared `USE_EXACT_ALARM`, 2026-10-22): core functionality Calendar, the owner's call: a Hebrew calendar with day, week and month views and reminders at exact halachic times. Snooze, sounds and repeat stay within it; a full-screen ringing alarm would also need `USE_FULL_SCREEN_INTENT`, and then this answer moves to Alarm clock.
+- AI asset declaration (store listing, 2026-10-22): the app icon and the feature graphic are labelled created or edited using AI, since the logo was drawn after an AI-generated reference; the screenshots are not labelled.
 
 Store settings: category Lifestyle, contact email 365jew@gmail.com, website https://jew-365.github.io/jew-365/.
 
