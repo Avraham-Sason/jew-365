@@ -2,7 +2,7 @@
   "expo": {
     "name": "יהודי 365",
     "slug": "jew-365",
-    "version": "1.0.20",
+    "version": "1.0.21",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "jew365",

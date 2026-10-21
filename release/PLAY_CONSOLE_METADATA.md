@@ -138,7 +138,7 @@ Questionnaire notes:
 
 ## Store Graphics
 
-The redesigned set made on 2026-10-21 replaces the temporary graphics uploaded to the Hebrew default listing on 2026-10-20. The files live outside the repo, in the user's `Downloads\jew365-play-assets\redesign`:
+The redesigned set made on 2026-10-21 replaced the temporary graphics of 2026-10-20 in the Hebrew default listing the same day; the English translation has no graphics of its own, so Play shows these. The files live outside the repo, in the user's `Downloads\jew365-play-assets\redesign`:
 
 - App icon: 512x512, a downscale of [../assets/icon.png](../assets/icon.png), the launcher icon.
 - Feature graphic: 1024x500, a cream background with the full logo, the name, the tagline and a one-line description.

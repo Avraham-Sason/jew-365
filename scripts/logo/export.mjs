@@ -289,28 +289,19 @@ function main() {
     const icon = readSvg('mark-o-icon.svg');
     const iconMono = readSvg('mark-o-icon-mono.svg');
     const adaptiveRadius = 0.305 * SIZE;
+    const adaptiveFill = 0.255 * SIZE;
     const splashRadius = 0.48 * SIZE;
 
     write('icon', place(icon, meta.icon.center, meta.icon.reach, centre, 0.78 * SIZE), SIZE, {
       background: CREAM,
       opaque: true,
     });
-    write(
-      'adaptive-icon',
-      place(icon, meta.icon.center, meta.icon.reach, centre, 2 * (adaptiveRadius - EDGE_INSET)),
-      SIZE,
-      {
-        maxRadius: adaptiveRadius,
-      },
-    );
-    write(
-      'adaptive-monochrome',
-      place(iconMono, meta.icon.center, meta.icon.reach, centre, 2 * (adaptiveRadius - EDGE_INSET)),
-      SIZE,
-      {
-        maxRadius: adaptiveRadius,
-      },
-    );
+    write('adaptive-icon', place(icon, meta.icon.center, meta.icon.reach, centre, 2 * adaptiveFill), SIZE, {
+      maxRadius: adaptiveRadius,
+    });
+    write('adaptive-monochrome', place(iconMono, meta.icon.center, meta.icon.reach, centre, 2 * adaptiveFill), SIZE, {
+      maxRadius: adaptiveRadius,
+    });
     write(
       'splash',
       place(readSvg('mark-o.svg'), meta.mark.center, meta.mark.reach, centre, 2 * (splashRadius - EDGE_INSET)),
