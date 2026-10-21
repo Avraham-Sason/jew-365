@@ -17,7 +17,7 @@ Hebrew: כל מצווה בזמנה: זמני הלכה, תזכורות וסידו
 
 English:
 
-Jew 365 (יהודי 365): every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 365 (יהודי 365): every mitzvah in its time. The app calculates halachic times from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
@@ -43,19 +43,19 @@ Weekly report
 After Shabbat, a notification opens your report for the week: what you marked, what to improve and what the coming week holds. Past reports are in the history tab. On by default, and you can switch it off in Settings.
 
 Family purity tracking (optional)
-Track the count, the bedikot and the mikveh night, with reminders by halachic times and the minhag you choose. Offered to married users only and off until you turn it on. Notification wording is discreet, the screens are locked with biometrics, and the data is kept encrypted on your device only. The app does not rule on halacha; in any doubt, ask a rav.
+Track the count, the bedikot and the mikveh night, with reminders by halachic times and the minhag you choose. Offered to married users only and off until you turn it on. Notification wording is discreet, the screens are locked with biometrics, and the data is kept encrypted. The app does not rule on halacha; in any doubt, ask a rav.
 
 Private by design
-- No account and no server: your settings, history and data stay on your device
+- No account and no sign-up
 - 20 cities to choose from, or GPS
 - Halacha hotline: call or WhatsApp an Ashkenazi or Sephardi halacha line, by your nusach
 - Backup and restore: automatic backup to your Google account, and a backup file you can export and restore on any phone
 - Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
-- Personal information leaves your device only in a message you choose to send from Contact us; crash reports are technical, with no personal information
+- Crash reports are technical, with no personal information
 
 Hebrew:
 
-יהודי 365 (Jew 365) — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
+יהודי 365 (Jew 365) — כל מצווה בזמנה. האפליקציה מחשבת את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
 
 מצוות בזמנן
 - תשע מצוות תלויות זמן: תפילין, קריאת שמע, שחרית, מנחה, מעריב, ברכות השחר, הדלקת נרות, הבדלה וספירת העומר
@@ -81,35 +81,29 @@ Hebrew:
 במוצאי שבת מגיעה התראה שפותחת את סיכום השבוע: מה סימנת, במה להשתפר ומה מחכה בשבוע הבא. דוחות קודמים נמצאים בלשונית ההיסטוריה. פעיל כברירת מחדל וניתן לכבות בהגדרות.
 
 טהרת המשפחה (אופציונלי)
-מעקב אחר הספירה, הבדיקות והטבילה, עם תזכורות לפי זמני ההלכה והמנהג שתבחר. התכונה מוצעת רק למשתמשים נשואים וכבויה עד שתפעיל אותה. נוסח ההתראות דיסקרטי, המסכים נעולים בזיהוי ביומטרי והנתונים נשמרים מוצפנים על המכשיר בלבד. האפליקציה אינה פוסקת הלכה; בכל ספק יש לשאול רב.
+מעקב אחר הספירה, הבדיקות והטבילה, עם תזכורות לפי זמני ההלכה והמנהג שתבחר. התכונה מוצעת רק למשתמשים נשואים וכבויה עד שתפעיל אותה. נוסח ההתראות דיסקרטי, המסכים נעולים בזיהוי ביומטרי והנתונים נשמרים מוצפנים. האפליקציה אינה פוסקת הלכה; בכל ספק יש לשאול רב.
 
 פרטיות והתאמה
-- בלי חשבון ובלי שרת: ההגדרות, ההיסטוריה והנתונים נשמרים על המכשיר
+- בלי חשבון ובלי הרשמה
 - 20 ערים לבחירה או מיקום לפי GPS
 - קו ההלכה: חיוג או וואטסאפ לקו הלכה אשכנזי או ספרדי, לפי הנוסח
 - גיבוי ושחזור: גיבוי אוטומטי לחשבון Google, וקובץ גיבוי שאפשר לייצא ולשחזר בכל טלפון
 - עברית ואנגלית, ושש ערכות נושא: זהב, ורוד, סגול, כחול, כהה ושזיף
-- מידע אישי יוצא מהמכשיר רק בפנייה שאתה בוחר לשלוח מ״יצירת קשר״; דיווחי קריסה הם טכניים בלבד, בלי מידע אישי
+- דיווחי קריסה הם טכניים בלבד, בלי מידע אישי
 
 ## Data Safety Answers
 
 Declare exactly this. The source of truth is the published policy in [../docs/privacy/index.html](../docs/privacy/index.html) and [../docs/privacy/en/index.html](../docs/privacy/en/index.html).
 
-- Location: not declared. The app reads it only to compute zmanim on the device and never sends it off the device, and Play's form declares only data transmitted off the device.
+- Location: not declared. The app reads it to compute zmanim on the device and does not send it off the device, and Play's form declares only data transmitted off the device.
 - Crash logs and diagnostics: collected, in production builds only, and not shared: Sentry (Functional Software, Inc.) processes it as a service provider on the developer's behalf, which Play does not count as sharing. Content: stack trace, device model, OS version, app version and update id. Not linked to identity: no personal data, no taharah data, no screen content, no IP address stored. Purpose: analytics, the purpose Play files diagnosing crashes under. Collection is required, since the app has no in-app switch for it. Data is encrypted in transit.
-- Health info: the app stores menstrual-cycle related dates on the device only and does not collect them. Do not declare Health info as collected or shared.
+- Health info: the app stores menstrual-cycle related dates on the device and does not collect them. Do not declare Health info as collected or shared.
 - Personal info, Name and Phone number, and Messages, Other in-app messages: collected only when the user sends a message from Settings → Contact us, processed by Formspree (Formspree, Inc.), which forwards it to the developer's email; a service provider acting for the developer is not sharing. Collection is optional (the user chooses to send). Purpose: app functionality, since the Contact us form is an app feature (Play's developer communications means messages sent to users). Linked to the user (the message carries their name and phone). Not used for advertising. Data is encrypted in transit. Deletion: on request by email, described under the deletion URL the form carries, https://jew-365.github.io/jew-365/privacy/#delete.
 - Device or other IDs: collected, not shared, required, for app functionality and analytics. expo-updates sends a random installation identifier (the EAS client id) with every update check, which Expo, a service provider, uses to count installs. Declared because Play flags Expo apps that leave it out.
 - Not collected: gender and marital status (profile answers, kept on the device), contacts, emails, SMS or MMS, photos, files, audio, calendar, financial info, web history, purchase history.
 - Android backup: the app opts into Android Auto Backup for its preferences, enabled and custom mitzvot, history and profile answers; taharah data is excluded. The operating system stores the backup in the user's own Google account (end-to-end encrypted with the screen lock on Android 9 and later) and the developer never receives it, so it is not declared as collected. The exported backup file goes only where the user sends it through the share sheet and is not collected either.
 - Deletion: the app has no accounts. Settings, Reset the app, erases everything stored on the device; uninstalling does the same. Crash reports are not linked to a person, so they cannot be matched to a deletion request.
 - Security practices: data in transit is encrypted; no data is sold; no ads SDK.
-
-Default current app behavior:
-
-- Core mitzvah data remains on device
-- No account required
-- No data selling
 
 ## App Content Answers
 

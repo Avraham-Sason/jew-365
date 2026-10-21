@@ -10,11 +10,11 @@ Every mitzvah in its time
 
 ## Promotional Text
 
-Accurate zmanim, a reminder inside each mitzvah's exact window, a siddur in four nusachim, and an app that rests on Shabbat and Yom Tov. All on your device, no account.
+Accurate zmanim, a reminder inside each mitzvah's exact window, a siddur in four nusachim, and an app that rests on Shabbat and Yom Tov. No account needed.
 
 ## Description
 
-Jew 365: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 365: every mitzvah in its time. The app calculates halachic times from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
@@ -40,15 +40,15 @@ Weekly report
 After Shabbat, a notification opens your report for the week: what you marked, what to improve and what the coming week holds. Past reports are in the history tab. On by default, and you can switch it off in Settings.
 
 Family purity tracking (optional)
-Track the count, the bedikot and the mikveh night, with reminders by halachic times and the minhag you choose. Offered to married users only and off until you turn it on. Notification wording is discreet, the screens are locked with biometrics, and the data is kept encrypted on your device only. The app does not rule on halacha; in any doubt, ask a rav.
+Track the count, the bedikot and the mikveh night, with reminders by halachic times and the minhag you choose. Offered to married users only and off until you turn it on. Notification wording is discreet, the screens are locked with biometrics, and the data is kept encrypted. The app does not rule on halacha; in any doubt, ask a rav.
 
 Private by design
-- No account and no server: your settings, history and data stay on your device
+- No account and no sign-up
 - 20 cities to choose from, or GPS
 - Halacha hotline: call or WhatsApp an Ashkenazi or Sephardi halacha line, by your nusach
 - Backup and restore: through the device's iCloud backup, and a backup file you can export and restore on any phone
 - Hebrew and English, and six themes: gold, pink, purple, blue, dark and plum
-- Personal information leaves your device only in a message you choose to send from Contact us; crash reports are technical, with no personal information
+- Crash reports are technical, with no personal information
 
 ## Keywords
 
@@ -81,9 +81,9 @@ Expected rating: the rating App Store Connect computes from its questionnaire, d
 ## App Privacy Answers
 
 - Data collected: Diagnostics, Crash Data. Not linked to the user. Not used for tracking. Processor: Functional Software, Inc. (Sentry).
-- The device's iCloud backup and the exported backup file never reach the developer: the first is Apple's service in the user's account, the second goes only where the user sends it. Neither is data collection.
+- The device's iCloud backup and the exported backup file do not reach the developer: the first is Apple's service in the user's account, the second goes only where the user sends it. Neither is data collection.
 - Data collected: Contact Info, Name and Phone Number, and User Content, Other User Content (the message). Sent only when the user sends a message from Settings → Contact us, through Formspree (Formspree, Inc.) to the developer's email. Linked to the user. Used for App Functionality (customer support). Not used for tracking.
-- Not collected: location, health data (the taharah tracker keeps cycle-related dates on the device only), usage data, identifiers, purchases.
+- Not collected: location, health data (the taharah tracker keeps cycle-related dates on the device), usage data, identifiers, purchases.
 - Tracking: none.
 
 ## Screenshot Plan
