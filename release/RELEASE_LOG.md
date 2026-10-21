@@ -38,6 +38,8 @@ Every step toward the stores, in order: what was done, what it produced, and eve
 - Release `8 (1.0.21)` with Hebrew and English notes saved without errors (one non-blocking warning about a deobfuscation file), and all sixteen changes sent for Google's review. Play's quick checks run first, then the review (typically up to 7 days).
 - 02:11: Play's quick checks passed with no issues; Publishing overview shows "Your changes are now in review". The review itself is under way (typically up to 7 days).
 
+- The public site (support page, both privacy policies, the taharah review page) moved to the redesign's palette, and its favicon to the full mark with the four symbols, now written by `pnpm logo:build`; merged with the remaining local work and pushed in one push.
+
 ## Next
 
 - On approval: copy the Join on the web link from the track's Testers tab and send the invitation in [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) to 15 to 20 people; the 14 days count from each opt-in.
