@@ -17,7 +17,7 @@ Hebrew: כל מצווה בזמנה: זמני הלכה, תזכורות וסידו
 
 English:
 
-Jew 365: every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
+Jew 365 (יהודי 365): every mitzvah in its time. The app calculates halachic times on your device from your location and reminds you inside each mitzvah's exact window.
 
 Mitzvot, on time
 - Nine time-bound mitzvot: tefillin, Shema, Shacharit, Mincha, Maariv, morning blessings, candle lighting, Havdalah and the Omer
@@ -55,7 +55,7 @@ Private by design
 
 Hebrew:
 
-יהודי 365 — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
+יהודי 365 (Jew 365) — כל מצווה בזמנה. האפליקציה מחשבת על המכשיר את זמני ההלכה לפי המיקום שלך, ושולחת לכל מצווה תזכורת בתוך חלון הזמן שלה.
 
 מצוות בזמנן
 - תשע מצוות תלויות זמן: תפילין, קריאת שמע, שחרית, מנחה, מעריב, ברכות השחר, הדלקת נרות, הבדלה וספירת העומר
@@ -95,16 +95,15 @@ Hebrew:
 
 Declare exactly this. The source of truth is the published policy in [../docs/privacy/index.html](../docs/privacy/index.html) and [../docs/privacy/en/index.html](../docs/privacy/en/index.html).
 
-- Location, approximate and precise: optional (the user can pick a city instead), used for app functionality (zmanim). Processed on the device and never transmitted. Not shared.
-- Crash logs and diagnostics: collected, in production builds only, and shared with Sentry (Functional Software, Inc.), the crash-reporting processor. Content: stack trace, device model, OS version, app version and update id. Not linked to identity: no personal data, no taharah data, no screen content, no IP address stored. Purpose: app functionality. Collection is required, since the app has no in-app switch for it. Data is encrypted in transit.
+- Location: not declared. The app reads it only to compute zmanim on the device and never sends it off the device, and Play's form declares only data transmitted off the device.
+- Crash logs and diagnostics: collected, in production builds only, and not shared: Sentry (Functional Software, Inc.) processes it as a service provider on the developer's behalf, which Play does not count as sharing. Content: stack trace, device model, OS version, app version and update id. Not linked to identity: no personal data, no taharah data, no screen content, no IP address stored. Purpose: analytics, the purpose Play files diagnosing crashes under. Collection is required, since the app has no in-app switch for it. Data is encrypted in transit.
 - Health info: the app stores menstrual-cycle related dates on the device only and does not collect them. Do not declare Health info as collected or shared.
-- Personal info, Name and Phone number, and Messages, Other in-app messages: collected only when the user sends a message from Settings → Contact us, processed by Formspree (Formspree, Inc.), which forwards it to the developer's email; a service provider acting for the developer is not sharing. Collection is optional (the user chooses to send). Purpose: developer communications. Linked to the user (the message carries their name and phone). Not used for advertising. Data is encrypted in transit. Deletion: on request by email.
-- Not collected: gender and marital status (profile answers, kept on the device), contacts, emails, SMS or MMS, photos, files, audio, calendar, financial info, web history, device or other IDs, purchase history.
+- Personal info, Name and Phone number, and Messages, Other in-app messages: collected only when the user sends a message from Settings → Contact us, processed by Formspree (Formspree, Inc.), which forwards it to the developer's email; a service provider acting for the developer is not sharing. Collection is optional (the user chooses to send). Purpose: app functionality, since the Contact us form is an app feature (Play's developer communications means messages sent to users). Linked to the user (the message carries their name and phone). Not used for advertising. Data is encrypted in transit. Deletion: on request by email, described under the deletion URL the form carries, https://jew-365.github.io/jew-365/privacy/#delete.
+- Device or other IDs: collected, not shared, required, for app functionality and analytics. expo-updates sends a random installation identifier (the EAS client id) with every update check, which Expo, a service provider, uses to count installs. Declared because Play flags Expo apps that leave it out.
+- Not collected: gender and marital status (profile answers, kept on the device), contacts, emails, SMS or MMS, photos, files, audio, calendar, financial info, web history, purchase history.
 - Android backup: the app opts into Android Auto Backup for its preferences, enabled and custom mitzvot, history and profile answers; taharah data is excluded. The operating system stores the backup in the user's own Google account (end-to-end encrypted with the screen lock on Android 9 and later) and the developer never receives it, so it is not declared as collected. The exported backup file goes only where the user sends it through the share sheet and is not collected either.
 - Deletion: the app has no accounts. Settings, Reset the app, erases everything stored on the device; uninstalling does the same. Crash reports are not linked to a person, so they cannot be matched to a deletion request.
 - Security practices: data in transit is encrypted; no data is sold; no ads SDK.
-
-Also check Play Console, App content, for the Health apps declaration: the taharah tracker may trigger it. Answer it with the same facts: device-only, nothing collected, no medical advice or diagnosis.
 
 Default current app behavior:
 
@@ -112,9 +111,26 @@ Default current app behavior:
 - No account required
 - No data selling
 
+## App Content Answers
+
+Submitted in the Play Console on 2026-10-20 (all ten declarations complete):
+
+- Privacy policy: https://jew-365.github.io/jew-365/privacy/
+- Ads: the app contains no ads.
+- App access: some parts are restricted, one entry named "Family purity screens (device screen lock)", with these instructions: "No account, password or payment anywhere. Optional family purity screens: Settings > Profile > Marital status: Married, then Family purity > Tracking on. They open with the device's own fingerprint, face or PIN (on a device without biometrics the lock is off). To skip it: Tracking settings > Biometric lock off. Everything else opens without sign in." Google may not reuse these details on partner devices.
+- Content rating: the IARC questionnaire computed Everyone, PEGI 3.
+- Target audience: 13-15, 16-17 and 18+ (the user's call, because tefillin start at 13). This brings the Families policy wherever 13-15 count as children; the open item is in [../not-close.md](../not-close.md).
+- Data safety: the answers above.
+- Advertising ID: not used (no dependency manifest declares `AD_ID`).
+- Government apps: no.
+- Financial features: none.
+- Health apps: period tracking only, for the on-device taharah tracker: nothing collected, no medical advice or diagnosis.
+
+Store settings: category Lifestyle, contact email 365jew@gmail.com, website https://jew-365.github.io/jew-365/.
+
 ## Content Rating Draft
 
-Expected: suitable for general audiences, as computed by the IARC questionnaire. Take the band it computes.
+Result: Everyone, PEGI 3, as computed by the IARC questionnaire from these notes.
 
 Questionnaire notes:
 
@@ -126,9 +142,39 @@ Questionnaire notes:
 - No drug references
 - No user-to-user chat
 
-## Asset Checklist
+## Store Graphics
 
-- Feature graphic
-- Phone screenshots: Home (gold), Home (dark), Siddur tab, Reader, Schedule (day), Mitzvah detail, Settings
-- App icon
-- Privacy policy public URL: https://jew-365.github.io/jew-365/privacy/
+Uploaded to the Hebrew default listing on 2026-10-20 and temporary until the redesign, after which all of them are replaced. The source files live outside the repo, in the user's `Downloads\jew365-play-assets`:
+
+- App icon: 512x512, a resize of [../assets/icon.png](../assets/icon.png).
+- Feature graphic: 1024x500.
+- Phone screenshots, 1080x1920 from the web build, in this order: Home, Siddur tab, Reader, Schedule, Settings. The mitzvah detail screen is left out because the web build renders its switches broken.
+
+## Closed Test
+
+The Play Console account is personal, so production needs at least 12 testers opted in for 14 days in a row (see [../not-close.md](../not-close.md)).
+
+- Track: `Closed testing - Alpha`, available in all 178 countries Play offers, feedback to 365jew@gmail.com.
+- Testers: the Google Group `jew365-testers@googlegroups.com` ("יהודי 365 - בודקים", owned by 365jew). Anyone can find it and join it; only owners and managers can post or see the member list. Only group members can opt in or see the app on Play.
+- The 14 days count from each tester's opt-in, which needs an approved release on the track. Joining the group alone counts for nothing, and neither does an APK installed outside Play.
+
+Release notes of the first test release:
+
+```
+<iw-IL>גרסת ניסיון ראשונה של יהודי 365: זמני הלכה, תזכורות בתוך חלון הזמן של כל מצווה, סידור בארבעה נוסחים, מנוחה בשבת וסיכום שבועי. משוב: 365jew@gmail.com</iw-IL>
+<en-US>First test release of Jew 365: zmanim, reminders inside each mitzvah's time window, a siddur in four nusachim, Shabbat rest and a weekly report. Feedback: 365jew@gmail.com</en-US>
+```
+
+Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp):
+
+```
+היי! אני משיק אפליקציה חדשה, *יהודי 365*: זמני הלכה, תזכורות למצוות בזמן שלהן, סידור בארבעה נוסחים ומנוחה בשבת. אני צריך בודקים לפני ההשקה (רק אנדרואיד).
+כל השלבים עם החשבון של Google שמחובר ל-Play בטלפון:
+1. מצטרפים לקבוצה (לוחצים "Join group"):
+https://groups.google.com/g/jew365-testers
+2. מאשרים השתתפות בבדיקה ("Become a tester"):
+https://play.google.com/apps/testing/com.jew365.app
+3. מתקינים מ-Play:
+https://play.google.com/store/apps/details?id=com.jew365.app
+חשוב: להשאיר את האפליקציה מותקנת לפחות 14 יום. משוב: 365jew@gmail.com
+```
