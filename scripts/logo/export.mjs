@@ -286,30 +286,25 @@ function main() {
       );
     };
 
-    const icon = readSvg('mark-o-icon.svg');
-    const iconMono = readSvg('mark-o-icon-mono.svg');
+    const mark = readSvg('mark-o.svg');
+    const markMono = readSvg('mark-o-mono.svg');
     const adaptiveRadius = 0.305 * SIZE;
     const adaptiveFill = 0.255 * SIZE;
     const splashRadius = 0.48 * SIZE;
 
-    write('icon', place(icon, meta.icon.center, meta.icon.reach, centre, 0.78 * SIZE), SIZE, {
+    write('icon', place(mark, meta.mark.center, meta.mark.reach, centre, 0.78 * SIZE), SIZE, {
       background: CREAM,
       opaque: true,
     });
-    write('adaptive-icon', place(icon, meta.icon.center, meta.icon.reach, centre, 2 * adaptiveFill), SIZE, {
+    write('adaptive-icon', place(mark, meta.mark.center, meta.mark.reach, centre, 2 * adaptiveFill), SIZE, {
       maxRadius: adaptiveRadius,
     });
-    write('adaptive-monochrome', place(iconMono, meta.icon.center, meta.icon.reach, centre, 2 * adaptiveFill), SIZE, {
+    write('adaptive-monochrome', place(markMono, meta.mark.center, meta.mark.reach, centre, 2 * adaptiveFill), SIZE, {
       maxRadius: adaptiveRadius,
     });
-    write(
-      'splash',
-      place(readSvg('mark-o.svg'), meta.mark.center, meta.mark.reach, centre, 2 * (splashRadius - EDGE_INSET)),
-      SIZE,
-      {
-        maxRadius: splashRadius,
-      },
-    );
+    write('splash', place(mark, meta.mark.center, meta.mark.reach, centre, 2 * (splashRadius - EDGE_INSET)), SIZE, {
+      maxRadius: splashRadius,
+    });
     write(
       'splash-dark',
       place(readSvg('mark-o-dark.svg'), meta.mark.center, meta.mark.reach, centre, 2 * (splashRadius - EDGE_INSET)),
@@ -318,12 +313,8 @@ function main() {
         maxRadius: splashRadius,
       },
     );
-    write(
-      'notification-icon',
-      fitBox(readSvg('mark-o-notif.svg').replaceAll('#000000', '#FFFFFF'), meta.notif.box, 96, 6),
-      96,
-    );
-    write('favicon', fitBox(icon, meta.icon.box, 48, 2), 48);
+    write('notification-icon', fitBox(markMono.replaceAll('#000000', '#FFFFFF'), meta.mark.box, 96, 6), 96);
+    write('favicon', fitBox(mark, meta.mark.box, 48, 2), 48);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -337,7 +328,7 @@ function main() {
   const svgs = {
     mark: clean(readSvg('mark-o.svg')),
     markOnDark: clean(readSvg('mark-o-dark.svg')),
-    icon: clean(readSvg('mark-o-icon.svg')),
+    icon: clean(readSvg('mark-o.svg')),
     wordmark: clean(readSvg('wordmark-o.svg')),
     wordmarkOnDark: clean(readSvg('wordmark-o-dark.svg')),
   };

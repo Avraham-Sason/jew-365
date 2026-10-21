@@ -16,6 +16,7 @@
 - Keep filenames stable unless [../app.json](../app.json) is updated in the same change.
 - Preserve platform-specific constraints: the notification icon stays a white silhouette on a transparent background, the adaptive foreground and its monochrome twin keep all ink inside Android's 66/108 safe circle, and the splash images keep all ink inside 0.96 of their width (Android 12 masks the splash icon to a circle). [icon.png](icon.png) is opaque RGB. The export checks the ink radius and the transparency of each file and fails otherwise.
 - Do not introduce old branding into raster assets.
+- Every logo asset is drawn from the full mark with its four orange symbols (tefillin, tallit, Torah scroll, shofar), at any size: the launcher and store icons, the monochrome layer, the notification silhouette, the favicon and the splash (the owner's rule, 2026-10-22). A simplified variant without them is never exported.
 - Never edit a PNG here by hand: the next `pnpm logo:build` overwrites it.
 
 ## Work Guidance

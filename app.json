@@ -73,7 +73,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#F08A3C"
+          "color": "#012B97"
         }
       ],
       "./scripts/withMitzvahNotificationAction",

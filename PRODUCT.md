@@ -34,7 +34,7 @@ Zmanim, the Hebrew calendar, Shabbat and Yom Tov quiet and the check-in after a 
 ## Brand Commitments
 
 - Personality, from the product owner (2026-10-18): young, yet formal and dignified; an advanced lifestyle app.
-- The logo is mark `o` (chosen 2026-10-21): a blue stopwatch ring with a crown and hour ticks, JEW over 365° in dark blue with an orange degree ring, and orange tefillin, tallit, Torah scroll and shofar in the ring's opening between a check and a bell. Source: [design/references/2026-10-21/logo.jpg](design/references/2026-10-21/logo.jpg); generator: [design/jew365-concepts/vector/build.mjs](design/jew365-concepts/vector/build.mjs). The launcher icon is its simplified twin: ring, crown, ticks, JEW 365°, check and bell.
+- The logo is mark `o` (chosen 2026-10-21), always with its four symbols, in every size and asset (2026-10-22): a blue stopwatch ring with a crown and hour ticks, JEW over 365° in dark blue with an orange degree ring, and orange tefillin, tallit, Torah scroll and shofar in the ring's opening between a check and a bell. Source: [design/references/2026-10-21/logo.jpg](design/references/2026-10-21/logo.jpg); generator: [design/jew365-concepts/vector/build.mjs](design/jew365-concepts/vector/build.mjs). The launcher icon is its simplified twin: ring, crown, ticks, JEW 365°, check and bell.
 - The default look (2026-10-21), after [design/references/2026-10-21/ui-mockup.webp](design/references/2026-10-21/ui-mockup.webp): a cream page, warm white cards, peach icon tiles, an orange accent and dark ink text, with light headers on the page itself and a floating tab bar.
 - The female palette is the warm rose twin of that look; the dark palette is night navy with the orange accent, and plum stays the female dark.
 

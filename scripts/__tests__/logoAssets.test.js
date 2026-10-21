@@ -91,7 +91,7 @@ describe('app.json logo wiring', () => {
     const notifications = appConfig.expo.plugins.find(
       (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-notifications',
     );
-    expect(notifications[1]).toMatchObject({ icon: './assets/notification-icon.png', color: '#F08A3C' });
+    expect(notifications[1]).toMatchObject({ icon: './assets/notification-icon.png', color: '#012B97' });
     expect(fs.existsSync(resolveAsset(notifications[1].icon))).toBe(true);
   });
 
