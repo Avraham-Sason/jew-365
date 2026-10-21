@@ -17,7 +17,7 @@ Every step toward the stores, in order: what was done, what it produced, and eve
 
 ## 2026-10-21
 
-- Every promise of no server, no database or offline only removed from store copy, the site, the privacy policy, the app and the docs (`dcf802a`); the Play descriptions in Hebrew and English edited to match.
+- Every promise of no server, no database or offline only removed from store copy, the site, the privacy policy, the app and the docs (`dcf802a`); the Play descriptions in Hebrew and English edited to match. The owner's standing rule from then on: no text anywhere states or implies it, even while it is true; current data flows are described in the present tense. On 2026-10-22 the rule itself was taken out of the agent docs, so this log is its only written record in the repo.
 - Redesign (warm palette, premium UI, the Jew 365 logo) merged with the Expo SDK 54 patch upgrades into `main` (`93f2af4`) after typecheck, lint, DOX and 2,710 tests in four zones; pushed.
 - Builds 1.0.20: AAB `a0d84bad` (versionCode 4) and APK `811bbbb9` (versionCode 5).
 - Play App Signing: Play had generated its own key when the app was created (SHA-256 `47:2D:E3:57…`). Blocked: Claude Code's auto mode refused Claude's click on "Change app signing key". Cleared: after the owner's approval in chat the click passed. The PEPK zip was made by the owner running the export script (decrypts the keystore backup, checks the SHA-256, runs PEPK, cleans up). Blocked: the browser upload tool reads only this session's folders. Cleared: the owner uploaded the zip. Play now shows the EAS key `DC:62…00:B4` as the app signing key and the upload key.

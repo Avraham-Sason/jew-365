@@ -466,7 +466,6 @@ tree. It cannot judge whether the prose is still true — that part is still the
 - Task queues, PRDs, planning files, and similar planning artifacts must be written in English unless the user explicitly asks for another language.
 - In coding tasks, apply YAGNI: favor simple, concise solutions, including one-liners when they genuinely improve clarity without sacrificing quality, readability, maintainability, or design.
 - DOX indexes and durable file references should use Markdown links to the referenced files whenever practical.
-- Never state or imply that the app has no server, no database or works only offline: not in app copy, store listings or forms, the public site, the privacy policy or these docs, even while it is true (the user's call, 2026-10-21). Describe current data flows in the present tense, without promises such as 'only', 'never' or 'entirely'.
 
 ## Child DOX Index
 
