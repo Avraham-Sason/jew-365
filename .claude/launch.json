@@ -7,6 +7,13 @@
       "runtimeArgs": ["expo", "start", "--web", "--port", "8090", "--clear"],
       "port": 8090,
       "autoPort": true
+    },
+    {
+      "name": "docs-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8095", "--directory", "docs", "--bind", "127.0.0.1"],
+      "port": 8095,
+      "autoPort": true
     }
   ]
 }

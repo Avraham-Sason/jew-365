@@ -25,6 +25,7 @@
   --note-bg: #fde9d5;
   --border: #ebe3d6;
   --shadow: rgba(94, 62, 28, 0.08);
+  --on-gold: #1d2240;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +39,7 @@
     --note-bg: #3a2d26;
     --border: #26334d;
     --shadow: rgba(0, 0, 0, 0.35);
+    --on-gold: #1d2240;
   }
 }
 
