@@ -163,7 +163,7 @@ Release notes of the first test release:
 <en-US>First test release of Jew 365: zmanim, reminders inside each mitzvah's time window, a siddur in four nusachim, Shabbat rest and a weekly report. Feedback: 365jew@gmail.com</en-US>
 ```
 
-Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp; `*` marks bold, and each link stands on its own line so WhatsApp makes it tappable):
+Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp; `*` marks bold, and each link stands on its own line so WhatsApp makes it tappable). Its web version is [../docs/testers/index.html](../docs/testers/index.html), served at `https://jew-365.github.io/jew-365/testers/`; a changed link or step changes both:
 
 ```
 היי חברים יקרים! 👋
