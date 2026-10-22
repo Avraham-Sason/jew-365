@@ -24,6 +24,16 @@ jest.mock('react-native-mmkv', () => {
   };
 });
 
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: { uri: 'file:///var/mobile/Containers/Data/Application/A%20B/Library/Caches/' } },
+}));
+
+// jest-expo runs as iOS, where the fallback must stay out of the iCloud backup of Documents.
+const IOS_FALLBACK = {
+  id: 'jew-365-taharah-unencrypted',
+  path: '/var/mobile/Containers/Data/Application/A B/Library/Caches/mmkv',
+};
+
 const SecureStore = require('expo-secure-store');
 const KEY_OPTIONS = { keychainAccessible: 'afterFirstUnlockThisDeviceOnly' };
 const KEY_NAME = 'taharah-mmkv-key';
@@ -104,7 +114,7 @@ describe('TaharahStorage', () => {
 
       load();
 
-      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual(IOS_FALLBACK);
       expect(SecureStore.setItem).not.toHaveBeenCalled();
     });
 
@@ -115,6 +125,24 @@ describe('TaharahStorage', () => {
       });
 
       load();
+
+      expect(lastOpened().config).toEqual(IOS_FALLBACK);
+    });
+
+    it('keeps the Android fallback in the default folder, which the backup whitelist leaves out', () => {
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      SecureStore.getItem.mockImplementation(() => {
+        throw new Error('keychain locked');
+      });
+      try {
+        jest.isolateModules(() => {
+          jest.doMock('react-native', () => ({ Platform: { OS: 'android' } }));
+          jest.doMock('expo-secure-store', () => SecureStore);
+          require('../TaharahStorage');
+        });
+      } finally {
+        jest.dontMock('react-native');
+      }
 
       expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
     });
@@ -144,7 +172,7 @@ describe('TaharahStorage', () => {
         throw new Error('keychain locked');
       });
       const locked = load();
-      expect(lastOpened().config).toEqual({ id: 'jew-365-taharah-unencrypted' });
+      expect(lastOpened().config).toEqual(IOS_FALLBACK);
 
       locked.clearTaharahStorage();
       expect(mockFiles.get('jew-365')!.contains(locked.WIPE_PENDING_KEY)).toBe(true);

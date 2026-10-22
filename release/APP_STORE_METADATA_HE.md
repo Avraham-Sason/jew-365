@@ -91,4 +91,4 @@ https://jew-365.github.io/jew-365/privacy/
 Target sizes (Apple scales down from the largest of each family):
 
 - 6.9 inch iPhone — 1320x2868
-- 13 inch iPad — 2064x2752, required while `supportsTablet` is true in [../app.json](../app.json)
+- No iPad screenshots: `supportsTablet` is false in [../app.json](../app.json) (the owner's call, 2026-10-22), so the app is iPhone only and an iPad runs it in iPhone compatibility mode. Turning it on is a native build plus 13 inch iPad screenshots (2064x2752) and `ios.requireFullScreen`, since the app is portrait only; once a version with iPad support ships, the support cannot be removed.

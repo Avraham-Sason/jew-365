@@ -83,7 +83,8 @@ Expected rating: the rating App Store Connect computes from its questionnaire, d
 - Data collected: Diagnostics, Crash Data. Not linked to the user. Not used for tracking. Processor: Functional Software, Inc. (Sentry).
 - The device's iCloud backup and the exported backup file do not reach the developer: the first is Apple's service in the user's account, the second goes only where the user sends it. Neither is data collection.
 - Data collected: Contact Info, Name and Phone Number, and User Content, Other User Content (the message). Sent only when the user sends a message from Settings → Contact us, through Formspree (Formspree, Inc.) to the developer's email. Linked to the user. Used for App Functionality (customer support). Not used for tracking.
-- Not collected: location, health data (the taharah tracker keeps cycle-related dates on the device), usage data, identifiers, purchases.
+- Data collected: Identifiers, Device ID. expo-updates sends a random installation identifier (the EAS client id) with every update check, which Expo, a service provider, uses to count installs. Not linked to the user. Used for App Functionality and Analytics. Not used for tracking. The same answer as Play's Device or other IDs.
+- Not collected: location, health data (the taharah tracker keeps cycle-related dates on the device), usage data, User ID, purchases.
 - Tracking: none.
 
 ## Screenshot Plan
@@ -99,4 +100,4 @@ Expected rating: the rating App Store Connect computes from its questionnaire, d
 Sizes (Apple scales down from the largest of each family):
 
 - 6.9 inch iPhone — 1320x2868
-- 13 inch iPad — 2064x2752, required while `supportsTablet` is true in [../app.json](../app.json)
+- No iPad screenshots: `supportsTablet` is false in [../app.json](../app.json) (the owner's call, 2026-10-22), so the app is iPhone only and an iPad runs it in iPhone compatibility mode. Turning it on is a native build plus 13 inch iPad screenshots (2064x2752) and `ios.requireFullScreen`, since the app is portrait only; once a version with iPad support ships, the support cannot be removed.

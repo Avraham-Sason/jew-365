@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import * as Crypto from 'expo-crypto';
+import { Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import { StorageService } from '@/services/StorageService';
 
@@ -10,6 +11,14 @@ export const TAHARAH_KEY_NAME = 'taharah-mmkv-key';
 // Opened when no key can be had (web, or a keychain that cannot be read). A different file than the
 // encrypted one, so a launch that cannot read the key never decodes, appends to or discards it.
 const UNENCRYPTED_STORAGE_ID = `${TAHARAH_STORAGE_ID}-unencrypted`;
+
+// iOS backs up Documents, MMKV's default folder, to iCloud; Library/Caches never rides a backup.
+// Android keeps the file out of its backup through the whitelist in withAndroidBackupRules.js.
+function unencryptedConfig(): { id: string; path?: string } {
+  if (Platform.OS !== 'ios') return { id: UNENCRYPTED_STORAGE_ID };
+  const caches = decodeURI(Paths.cache.uri.replace(/^file:\/\//, '')).replace(/\/$/, '');
+  return { id: UNENCRYPTED_STORAGE_ID, path: `${caches}/mmkv` };
+}
 
 const KEY_LENGTH = 16;
 const KEY_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -52,7 +61,7 @@ function resolveKey(): void {
 resolveKey();
 
 export const taharahStorage = new MMKV(
-  activeKey ? { id: TAHARAH_STORAGE_ID, encryptionKey: activeKey } : { id: UNENCRYPTED_STORAGE_ID },
+  activeKey ? { id: TAHARAH_STORAGE_ID, encryptionKey: activeKey } : unencryptedConfig(),
 );
 
 // A key that was just made cannot open anything older: a file restored from a backup without its
