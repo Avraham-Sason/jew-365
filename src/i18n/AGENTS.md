@@ -27,7 +27,7 @@
 
 ## Verification
 
-- Run `pnpm test -- src/i18n/__tests__/i18n.test.ts` after any dictionary or locale wrapper change; it pins key parity, non-empty values, the `.f` lookup and interpolation.
+- Run `pnpm test -- src/i18n/__tests__/i18n.test.ts` after any dictionary or locale wrapper change; it pins key parity, non-empty values, the `.f` lookup and interpolation, and that `app.name` matches the native names: `expo.name` and `ios.infoPlist.CFBundleDisplayName` in [../../app.json](../../app.json) and both files in [../../locales/](../../locales), with an Xcode target name that keeps a Latin letter.
 - Run `pnpm typecheck` after [index.ts](index.ts) changes.
 
 ## Child DOX Index

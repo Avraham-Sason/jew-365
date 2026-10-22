@@ -34,7 +34,7 @@
 
 - Run `pnpm test -- src/i18n/__tests__/i18n.test.ts` after changing the app name, which the brand regression test pins.
 - Cross-check any permission or data claim against [../app.json](../app.json), the published policy in [../docs/](../docs), and the privacy behavior described in [../src/services/AGENTS.md](../src/services/AGENTS.md) before publishing.
-- Confirm the display name here matches [../app.json](../app.json) and `app.name` in [../src/i18n/en.json](../src/i18n/en.json); the store listing, the on-device name and this copy must agree.
+- Confirm the display names here match `app.name` in [../src/i18n/he.json](../src/i18n/he.json) and [../src/i18n/en.json](../src/i18n/en.json), which the i18n suite ties to the on-device names in [../app.json](../app.json) and [../locales/](../locales); the store listing, the on-device name and this copy must agree. `expo.name` in [../app.json](../app.json) is the English name only because the iOS build needs Latin letters there (see [../AGENTS.md](../AGENTS.md)); it is not the store name.
 
 ## Child DOX Index
 

@@ -3,6 +3,10 @@ jest.mock('react-native-mmkv', () => {
   return { MMKV: jest.fn(() => createMockMMKV()) };
 });
 
+import { IOSConfig } from 'expo/config-plugins';
+import appJson from '../../../app.json';
+import nativeHe from '../../../locales/he.json';
+import nativeEn from '../../../locales/en.json';
 import he from '../he.json';
 import en from '../en.json';
 import { useUserStore } from '@/stores/useUserStore';
@@ -60,6 +64,20 @@ describe('i18n', () => {
     for (const value of Object.values(en)) {
       expect(value.match(enBrand)?.length ?? 0).toBe(value.split(enName).length - 1);
     }
+  });
+
+  // Prebuild names the Xcode project and target after expo.name; an all-digit result ("365" from
+  // "יהודי 365") is read back as a number and EAS cannot find the target to sign.
+  it('the native names show the app name and give Xcode a target it can find', () => {
+    const heName = (he as Record<string, string>)['app.name'];
+    const enName = (en as Record<string, string>)['app.name'];
+    expect(appJson.expo.name).toBe(enName);
+    expect(IOSConfig.XcodeUtils.sanitizedName(appJson.expo.name)).toMatch(/[A-Za-z]/);
+    expect(appJson.expo.ios.infoPlist.CFBundleDisplayName).toBe(heName);
+    expect(nativeHe.ios.CFBundleDisplayName).toBe(heName);
+    expect(nativeHe.android.app_name).toBe(heName);
+    expect(nativeEn.ios.CFBundleDisplayName).toBe(enName);
+    expect(nativeEn.android.app_name).toBe(enName);
   });
 });
 

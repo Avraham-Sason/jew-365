@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "יהודי 365",
+    "name": "Jew 365",
     "slug": "jew-365",
     "version": "1.0.21",
     "orientation": "portrait",
@@ -16,6 +16,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.jew365.app",
       "infoPlist": {
+        "CFBundleDisplayName": "יהודי 365",
         "NSLocationWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים לפי האזור שלך.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "מיקום נדרש לחישוב זמני הלכה מדויקים ולרענון יומי של התראות.",
         "UIBackgroundModes": ["processing"],
