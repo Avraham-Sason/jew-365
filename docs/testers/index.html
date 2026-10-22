@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex">
 <title>יהודי 365 — הצטרפות לבודקים</title>
 <meta name="description" content="מחפשים בודקים ליהודי 365 לפני ההשקה: איך מצטרפים לבדיקה הסגורה ב-Google Play בשלושה שלבים קצרים.">
-<link rel="icon" href="../favicon.png">
+<link rel="icon" href="../favicon.png" sizes="48x48">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../style.css">
 <style>
 .hero {
@@ -16,11 +17,14 @@
   margin-bottom: 20px;
 }
 
-.hero img {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.hero picture {
   flex: none;
+}
+
+.hero img {
+  display: block;
+  width: 64px;
+  height: 64px;
 }
 
 .hero h1 {
@@ -260,7 +264,10 @@ details p {
 
 <main>
   <div class="hero">
-    <img src="../favicon.png" alt="">
+    <picture>
+      <source srcset="../logo-dark.svg" media="(prefers-color-scheme: dark)">
+      <img src="../logo.svg" alt="">
+    </picture>
     <div>
       <h1>מחפשים בודקים ליהודי 365</h1>
       <p class="meta">בשעה טובה ובעזרת השם, אפליקציה חדשה לזיכוי הרבים</p>

@@ -211,6 +211,21 @@ const viewBoxOf = (svg) =>
     .split(' ')
     .map(Number);
 
+function schemeAwareSvg(light, dark) {
+  const viewBox = viewBoxOf(light).join(' ');
+  if (viewBoxOf(dark).join(' ') !== viewBox) throw new Error('The light and dark marks must share one viewBox');
+  const body = (svg) =>
+    svg
+      .replace(/^<svg[^>]*>/, '')
+      .replace(/<\/svg>$/, '')
+      .replace(/<title>[\s\S]*?<\/title>/, '');
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">` +
+    '<style>.d{display:none}@media (prefers-color-scheme:dark){.l{display:none}.d{display:inline}}</style>' +
+    `<g class="l">${body(light)}</g><g class="d">${body(dark)}</g></svg>\n`
+  );
+}
+
 function place(svg, [cx, cy], reach, centre, diameter) {
   const [vx, vy, vw, vh] = viewBoxOf(svg);
   const k = diameter / 2 / reach;
@@ -316,6 +331,9 @@ function main() {
     write('notification-icon', fitBox(markMono.replaceAll('#000000', '#FFFFFF'), meta.mark.box, 96, 6), 96);
     write('favicon', fitBox(mark, meta.mark.box, 48, 2), 48);
     copyFileSync(join(ASSETS, 'favicon.png'), join(ROOT, 'docs', 'favicon.png'));
+    copyFileSync(join(VECTOR, 'mark-o.svg'), join(ROOT, 'docs', 'logo.svg'));
+    copyFileSync(join(VECTOR, 'mark-o-dark.svg'), join(ROOT, 'docs', 'logo-dark.svg'));
+    writeFileSync(join(ROOT, 'docs', 'favicon.svg'), schemeAwareSvg(mark, readSvg('mark-o-dark.svg')));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
