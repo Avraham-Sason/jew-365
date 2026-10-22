@@ -37,9 +37,12 @@ Every step toward the stores, in order: what was done, what it produced, and eve
   - The listing's AI asset declaration: icon and feature graphic labelled as created or edited using AI, screenshots not (the owner's call).
 - Release `8 (1.0.21)` with Hebrew and English notes saved without errors (one non-blocking warning about a deobfuscation file), and all sixteen changes sent for Google's review. Play's quick checks run first, then the review (typically up to 7 days).
 - 02:11: Play's quick checks passed with no issues; Publishing overview shows "Your changes are now in review". The review itself is under way (typically up to 7 days).
+- 02:21: Google approved the release. `8 (1.0.21)` is "Available to selected testers" on `Closed testing - Alpha`, and Play notified "App update published". The Testers tab's links are the ones in the invitation: Join on Android `https://play.google.com/store/apps/details?id=com.jew365.app`, Join on the web `https://play.google.com/apps/testing/com.jew365.app` (the opt-in page loads and names the app). The Dashboard shows 0 testers opted in; the group has one member, the owner.
+- 10:45: the first two testers opted in: the owner's own account `avi6190i` (also the Play Console owner, and it counts toward the 12) and one invited tester; the Dashboard shows 2. Blocked: the store link from the invitation kept opening "Item not found" for the owner, while the other tester saw the app. Cleared: the store link on the opt-in page ("You are a tester") opened the app; the invitation now sends testers there when the store link fails.
 
 - The public site (support page, both privacy policies, the taharah review page) moved to the redesign's palette, and its favicon to the full mark with the four symbols, now written by `pnpm logo:build`; merged with the remaining local work and pushed in one push.
 
 ## Next
 
-- On approval: copy the Join on the web link from the track's Testers tab and send the invitation in [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) to 15 to 20 people; the 14 days count from each opt-in.
+- Send the invitation in [PLAY_CONSOLE_METADATA.md](PLAY_CONSOLE_METADATA.md) to 15 to 20 people; its links are the ones the Testers tab shows. The 14 days count from each opt-in, and production needs at least 12 opted in for 14 days in a row; the Dashboard shows the count ("testers currently opted-in").
+- Then apply for production from the Dashboard.

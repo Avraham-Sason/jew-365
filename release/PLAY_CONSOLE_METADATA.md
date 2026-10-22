@@ -174,5 +174,8 @@ https://groups.google.com/g/jew365-testers
 https://play.google.com/apps/testing/com.jew365.app
 3. מתקינים מ-Play:
 https://play.google.com/store/apps/details?id=com.jew365.app
+
+⚠️ *אם כתוב "הפריט לא נמצא": פותחים שוב את קישור 2 ולוחצים שם על "download it on Google Play". לא ללחוץ על "Leave the program".*
+
 חשוב: להשאיר את האפליקציה מותקנת לפחות 14 יום. משוב: 365jew@gmail.com
 ```
