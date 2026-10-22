@@ -133,6 +133,8 @@ Store copy lives in [release/](release).
 
 [.agents/skills/](.agents/skills) holds the Expo agent skills (EAS, Expo Router, Expo UI and others) that agents load for Expo work, pinned by [skills-lock.json](skills-lock.json). They are vendored as installed: ESLint and Prettier ignore them, so a commit never reformats them.
 
+[.claude/skills/](.claude/skills) holds this repo's own Claude Code skills, outside the DOX tree like the rest of [.claude/](.claude): [android-native-verify](.claude/skills/android-native-verify/SKILL.md) verifies a change on a real Android build in the local emulator (its [native.ps1](.claude/skills/android-native-verify/native.ps1) prepares the `C:\work\kjn` copy, runs the dev build, takes screenshots, tears down and downloads the latest EAS APK), and [store-console](.claude/skills/store-console/SKILL.md) fills Google Play Console and App Store Connect through the browser and records each answer in [release/](release). [.claude/done-gate.json](.claude/done-gate.json) is this repo's config for the user's done-gate Claude Code mod: the gate commands (`typecheck`, `lint`, `check:dox`, `test:tz`), the he/en JSON dictionary pairs whose keys must match, and the EN/HE documents that change together.
+
 [CLAUDE.md](CLAUDE.md) is the Claude Code compatibility bridge. This file remains the canonical cross-agent context.
 
 ## Architecture Rules

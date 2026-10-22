@@ -1,0 +1,11 @@
+{
+  "checks": ["pnpm typecheck", "pnpm lint", "pnpm check:dox", "pnpm test:tz"],
+  "pairs": [
+    ["src/i18n/he.json", "src/i18n/en.json"],
+    ["locales/he.json", "locales/en.json"]
+  ],
+  "mirrors": [
+    ["release/APP_STORE_METADATA_HE.md", "release/APP_STORE_METADATA_EN.md"],
+    ["docs/privacy/index.html", "docs/privacy/en/index.html"]
+  ]
+}
