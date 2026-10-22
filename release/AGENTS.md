@@ -26,6 +26,7 @@
 
 - Update release documents when app behavior, permissions, data collection, branding, or store-visible features change.
 - Log every store step and every blocking failure in [RELEASE_LOG.md](RELEASE_LOG.md) in the same pass, the owner's rule (2026-10-22): a build, an upload, a declaration, a submission, a review result, and anything Claude could not get past alone, with how it was cleared.
+- Console form-filling through the browser follows the [store-console skill](../.claude/skills/store-console/SKILL.md): every answer submitted to a console is recorded in the owning file above in the same pass.
 - Store URLs and contact details must be real values. A placeholder in a field a store form consumes is a release blocker, not a note for later.
 - Field limits: Apple subtitle 30 characters, promotional text 170, keywords 100 with no space after the commas, description 4000; Play short description 80, full description 4000.
 

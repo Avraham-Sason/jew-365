@@ -163,19 +163,50 @@ Release notes of the first test release:
 <en-US>First test release of Jew 365: zmanim, reminders inside each mitzvah's time window, a siddur in four nusachim, Shabbat rest and a weekly report. Feedback: 365jew@gmail.com</en-US>
 ```
 
-Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp):
+Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp; `*` marks bold, and each link stands on its own line so WhatsApp makes it tappable):
 
 ```
-היי! אני משיק אפליקציה חדשה, *יהודי 365*: זמני הלכה, תזכורות למצוות בזמן שלהן, סידור בארבעה נוסחים ומנוחה בשבת. אני צריך בודקים לפני ההשקה (רק אנדרואיד).
-כל השלבים עם החשבון של Google שמחובר ל-Play בטלפון:
-1. מצטרפים לקבוצה (לוחצים "Join group"):
+היי חברים יקרים! 👋
+
+בשעה טובה ובעזרת השם, אנחנו משיקים אפליקציה חדשה לזיכוי הרבים:
+📱 *יהודי 365*
+
+מעקב אישי אחרי "מצוות היום" ומצוות התקופה, מותאם לזמני ההלכה במקום שלך.
+
+✨ *מה יש באפליקציה:*
+⏰ תזכורת לכל מצווה בזמן ההלכתי שלה
+➕ אפשר להוסיף מצוות אישיות עם תזמון משלך
+📊 תצוגה נוחה וסיכום של ההתקדמות שלך
+📖 סידור בארבעה נוסחים
+ועוד הרבה... ✨
+
+🙏 *מחפשים בודקים לפני ההשקה* (כרגע רק באנדרואיד)
+מי שמצטרף נהנה מהאפליקציה לפני כולם, לוקח חלק בזיכוי הרבים, וכמובן לא מפספס אף מצווה 💪🏼
+
+━━━━━━━━━━━━
+*איך מצטרפים? 3 שלבים קצרים*
+(את כל השלבים עושים עם חשבון ה-Google שמחובר ל-Play בטלפון)
+
+*1️⃣ מצטרפים לקבוצה*
+לוחצים על "Join group":
 https://groups.google.com/g/jew365-testers
-2. מאשרים השתתפות בבדיקה ("Become a tester"):
+
+*2️⃣ מאשרים השתתפות בבדיקה*
+לוחצים על "Become a tester":
 https://play.google.com/apps/testing/com.jew365.app
-3. מתקינים מ-Play:
+
+*3️⃣ מתקינים מ-Play*
 https://play.google.com/store/apps/details?id=com.jew365.app
 
-⚠️ *אם כתוב "הפריט לא נמצא": פותחים שוב את קישור 2 ולוחצים שם על "download it on Google Play". לא ללחוץ על "Leave the program".*
+⚠️ *מופיע "הפריט לא נמצא"?*
+חוזרים לקישור 2 ולוחצים שם על "download it on Google Play".
+❌ לא ללחוץ על "Leave the program"!
+━━━━━━━━━━━━
 
-חשוב: להשאיר את האפליקציה מותקנת לפחות 14 יום. משוב: 365jew@gmail.com
+📌 *חשוב:* להשאיר את האפליקציה מותקנת לפחות 14 יום.
+
+💬 *נשמח לשמוע מכם כדי לשפר:*
+365jew@gmail.com
+
+תודה רבה ובהצלחה! 🙌
 ```
