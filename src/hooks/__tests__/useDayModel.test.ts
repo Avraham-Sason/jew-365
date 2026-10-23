@@ -33,6 +33,7 @@ const state = (overrides: Partial<DayModelState> = {}): DayModelState => ({
   halachicOpinions: { ksSofZman: 'GRA' },
   activeMitzvot: {},
   customItems: {},
+  chokInstalled: false,
   ...overrides,
 });
 
@@ -48,6 +49,11 @@ describe('dayModelFrom', () => {
     const ids = model.allMitzvot.map((mitzvah) => mitzvah.id);
     expect(ids.slice(-3)).toEqual(['early', 'middle', 'late']);
     expect(ids.slice(0, -3)).toEqual(MITZVOT.map((mitzvah) => mitzvah.id).filter((id) => id !== 'chabad_only'));
+  });
+
+  it('passes the add-on install through', () => {
+    expect(dayModelFrom(state()).chokInstalled).toBe(false);
+    expect(dayModelFrom(state({ chokInstalled: true })).chokInstalled).toBe(true);
   });
 
   it('keeps only the mitzvot the nusach supports', () => {

@@ -1,4 +1,4 @@
-const { SLOTS, expectedKinds, expectedSlots, validateParasha } = require('../validate');
+const { SLOTS, expectedKinds, validateParasha } = require('../validate');
 const { VERSE_COUNT_EXCEPTIONS } = require('../manifest');
 
 const DAILY = ['mishnah', 'gemara', 'zohar', 'halacha', 'mussar'];
@@ -8,11 +8,17 @@ const COUNTS = { sun: 6, mon: 4, tue: 5, wed: 6, thu: 5, thuNight: 26, fri: 3 };
 const verseSegment = (c, p) => ({ he: [[{ t: `(${p}) `, s: 'n' }, { t: 'פָּסוּק' }]], verse: [c, p] });
 const proseSegment = () => ({ he: [[{ t: 'טֶקְסְט' }]] });
 
-function validParasha(parasha) {
-  const counts = { ...COUNTS, ...VERSE_COUNT_EXCEPTIONS[parasha] };
+const badges = (slots) =>
+  Object.values(slots)
+    .flat()
+    .flatMap((s) => s.segments)
+    .filter((g) => g.optional).length;
+
+function validParasha(parasha, overrides = {}) {
+  const counts = { ...COUNTS, ...VERSE_COUNT_EXCEPTIONS[parasha], ...overrides };
   let p = 0;
   const slots = {};
-  for (const slot of expectedSlots(parasha)) {
+  for (const slot of SLOTS) {
     slots[slot] = expectedKinds(parasha, slot).map((entry) => {
       const [kind, variant] = entry.split(':');
       const heading = `${kind} ${slot}${variant ? ` ${variant}` : ''}`;
@@ -33,10 +39,8 @@ function validParasha(parasha) {
 }
 
 describe('expected structure', () => {
-  it('lists the seven slots, and Vezot Haberakhah without Friday', () => {
+  it('lists the seven slots', () => {
     expect(SLOTS).toEqual(['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri']);
-    expect(expectedSlots('Noach')).toEqual(SLOTS);
-    expect(expectedSlots('Vezot Haberakhah')).toEqual(['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight']);
   });
 
   it.each([
@@ -49,7 +53,8 @@ describe('expected structure', () => {
     ['Nitzavim', 'thuNight', ['torah', 'haftarah']],
     ['Nitzavim', 'fri', DAILY],
     ["Ha'azinu", 'fri', DAILY],
-    ['Vezot Haberakhah', 'thuNight', ['torah', 'haftarah', ...DAILY]],
+    ['Vezot Haberakhah', 'thuNight', ['torah', 'haftarah']],
+    ['Vezot Haberakhah', 'fri', DAILY],
   ])('%s %s', (parasha, slot, kinds) => {
     expect(expectedKinds(parasha, slot)).toEqual(kinds);
   });
@@ -59,18 +64,20 @@ describe('validateParasha', () => {
   it.each(['Noach', 'Vayakhel', 'Tetzaveh', 'Pinchas', 'Nitzavim', 'Vezot Haberakhah'])(
     'accepts a well-formed %s',
     (parasha) => {
-      expect(validateParasha(parasha, validParasha(parasha))).toEqual([]);
+      const slots = validParasha(parasha);
+      expect(validateParasha(parasha, slots, badges(slots))).toEqual([]);
     },
   );
 
   it('applies a verse-count exception only to its own parasha', () => {
-    expect(validateParasha('Noach', validParasha('Pinchas'))).toEqual(['Noach mon: 5 Torah verses, expected 4']);
+    const slots = validParasha('Noach', { thuNight: 14 });
+    expect(validateParasha('Noach', slots, badges(slots))).toEqual(['Noach thuNight: 14 Torah verses, expected 26']);
   });
 
   it('reports a missing Torah verse twice: the count and the break in the order', () => {
     const noach = validParasha('Noach');
     noach.mon[0].segments.splice(2, 1);
-    expect(validateParasha('Noach', noach)).toEqual([
+    expect(validateParasha('Noach', noach, badges(noach))).toEqual([
       'Noach mon: 3 Torah verses, expected 4',
       'Noach mon: Torah verse 1:9 after 1:7',
     ]);
@@ -81,7 +88,7 @@ describe('validateParasha', () => {
     delete noach.fri;
     noach.sun.reverse();
     noach.mon[0].segments[1].optional = { he: 'פירוש אחר', en: 'Other' };
-    expect(validateParasha('Noach', noach)).toEqual([
+    expect(validateParasha('Noach', noach, badges(noach))).toEqual([
       'Noach: slots sun,mon,tue,wed,thu,thuNight instead of sun,mon,tue,wed,thu,thuNight,fri',
       'Noach sun: sections mussar,halacha,zohar,gemara,mishnah,ketuvim,neviim,torah',
       'Noach mon: unknown label פירוש אחר',
@@ -92,9 +99,16 @@ describe('validateParasha', () => {
     const noach = validParasha('Noach');
     noach.tue[3].segments[0].he[0].push({ t: '' });
     noach.wed[1].segments[1].verse = [5, 3];
-    expect(validateParasha('Noach', noach)).toEqual([
+    expect(validateParasha('Noach', noach, badges(noach))).toEqual([
       'Noach tue: empty paragraph or run in mishnah tue',
       'Noach wed: neviim wed: verse 5:3 after 5:1',
+    ]);
+  });
+
+  it('reports a commentary count that differs from the badges in the source', () => {
+    const noach = validParasha('Noach');
+    expect(validateParasha('Noach', noach, badges(noach) + 1)).toEqual([
+      'Noach: 7 commentaries, 8 badges in the source',
     ]);
   });
 });

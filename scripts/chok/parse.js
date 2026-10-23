@@ -31,7 +31,7 @@ const STYLED = ['span', 'small', 'b', 'strong', 'big', 'font'];
 const GEMATRIA = /^ק?(?:טו|טז|[יכלמנסעפצ]?[א-ט]?)$/;
 const LETTER = /[א-ת]/;
 
-function decodePage(bytes) {
+function decodeSource(bytes) {
   return new TextDecoder('windows-1255').decode(bytes).normalize('NFC');
 }
 
@@ -67,7 +67,10 @@ function tokenize(html) {
   return tokens;
 }
 
-const attr = (token, name) => new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, 'i').exec(token.attrs)?.[1];
+const attr = (token, name) => {
+  const m = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i').exec(token.attrs);
+  return m?.[1] ?? m?.[2];
+};
 const isTag = (t, kind, tag) => t.k === kind && t.tag === tag;
 const isVerseCode = (t) => t.k === 'code' && VERSE_CODES.includes(t.code);
 const blank = (t) => t.k === 'text' && !t.v.trim();
@@ -311,10 +314,8 @@ function repairClosings(tokens) {
   return out;
 }
 
-function verseSection(raw, kind, where, repairs) {
-  const stray = repairs.strayOpenings ?? [];
-  const noTargum = repairs.noTargum ?? [];
-  const kept = dropEmptyClosings(raw.filter((t) => !(t.k === 'code' && stray.includes(`${t.code} ${t.c}:${t.p}`))));
+function verseSection(raw, kind, where) {
+  const kept = dropEmptyClosings(raw);
   const tokens = repairClosings(kind === 'torah' ? repairOpenings(kept, where) : kept);
   const units = [];
   const preamble = [];
@@ -362,7 +363,7 @@ function verseSection(raw, kind, where, repairs) {
     if ([...targumTokens, ...after].some((t) => t.k === 'ep'))
       throw new Error(`${w}: an item without its opening code`);
     const targum = paragraphsOf(withoutMarkers(targumTokens), 't');
-    const needsTargum = kind !== 'haftarah' && !noTargum.includes(`${c}:${p}`);
+    const needsTargum = kind !== 'haftarah';
     if (needsTargum !== hasText(targum) || targum.length > 1)
       throw new Error(`${w}: targum has ${targum.length} paragraphs`);
     if (targum.length && /^[\u0591-\u05C7]/.test(targum[0][0].t)) {
@@ -415,58 +416,64 @@ function proseSection(tokens) {
   return segments;
 }
 
-const headingOf = (href) => normalizeText(href.replace(/^#/, '').replace(/!$/, '').replace(/\s+/g, ' ').trim());
+const DAY_HEADING = /(יום ראשון|יום שני|יום שלישי|יום שלשי|יום רביעי|יום חמישי|ליל שישי|יום שישי)/;
 
-function linkEnd(tokens, i) {
-  let j = i + 1;
-  while (j < tokens.length && !isTag(tokens[j], 'close', 'a')) j++;
-  return j;
+function parseHeader(line) {
+  const header = {};
+  for (const part of line.replace(/^&/, '').split(/&(?=[A-Za-z]+=)/)) {
+    const at = part.indexOf('=');
+    header[part.slice(0, at)] = part.slice(at + 1);
+  }
+  return header;
 }
 
-function parsePage(html, repairs = {}, where = 'page') {
-  const tokens = tokenize(html);
-  const anchors = [];
-  tokens.forEach((t, i) => {
-    const name = isTag(t, 'open', 'a') ? attr(t, 'name')?.trim() : undefined;
-    if (name && DAY_SLOTS[name]) anchors.push({ i, slot: DAY_SLOTS[name], href: attr(t, 'href') });
-  });
-  if (!anchors.length) throw new Error(`${where}: no day anchors`);
-  const dayHrefs = new Set(anchors.map((a) => a.href));
-  const lastAnchor = anchors[anchors.length - 1].i;
-  const tableEnd = tokens.findIndex((t, i) => i > lastAnchor && isTag(t, 'close', 'td'));
-  const end = tableEnd < 0 ? tokens.length : tableEnd;
-  const slots = {};
-  anchors.forEach((anchor, n) => {
-    const at = `${where} ${anchor.slot}`;
-    if (slots[anchor.slot]) throw new Error(`${at}: day appears twice`);
-    const stop = n + 1 < anchors.length ? anchors[n + 1].i : end;
-    const raw = [];
-    let current = { kind: 'torah', heading: 'תורה', tokens: [] };
-    for (let i = linkEnd(tokens, anchor.i) + 1; i < stop; i++) {
-      const t = tokens[i];
-      if (isTag(t, 'open', 'a')) {
-        const href = attr(t, 'href') ?? '';
-        const decoration =
-          !href.endsWith('!') || href.startsWith('#NOTE:') || dayHrefs.has(href) || / תורה$/.test(headingOf(href));
-        if (!decoration) {
-          raw.push(current);
-          const heading = headingOf(href);
-          const kind = KINDS.find(([prefix]) => heading.startsWith(prefix))?.[1];
-          if (!kind) throw new Error(`${at}: unknown heading "${heading}"`);
-          current = { kind, heading, tokens: [] };
-        }
-        i = linkEnd(tokens, i);
-        continue;
-      }
-      current.tokens.push(t);
+function macroRules(cosmetics) {
+  const rules = [];
+  for (const part of cosmetics.split('#')) {
+    if (!/^rep\d*=/.test(part)) continue;
+    for (const pair of part.slice(part.indexOf('=') + 1).split('^^')) {
+      const at = pair.indexOf('=');
+      if (at < 1) throw new Error(`bad macro "${pair}"`);
+      rules.push([pair.slice(0, at), pair.slice(at + 1)]);
     }
-    raw.push(current);
-    slots[anchor.slot] = raw
+  }
+  return rules;
+}
+
+function sourceRules(texts) {
+  const headers = texts.map((text) => parseHeader(text.split(/\r?\n/)[0]));
+  const cosmeticsOf = (header) => {
+    const value = header.CosmeticsType ?? '';
+    if (!value.startsWith('=')) return value;
+    const id = value.slice(1);
+    const target = headers.find((h) => h.UniqueId === id);
+    if (!target) throw new Error(`cosmetics reference ${id} not found`);
+    return cosmeticsOf(target);
+  };
+  return headers.map((header) => macroRules(cosmeticsOf(header)));
+}
+
+const badgeMacros = (rules) => rules.filter(([, to]) => to.includes('background-color')).map(([from]) => from);
+
+function expandLine(line, rules) {
+  let s = line;
+  for (const [from, to] of rules) s = s.split(from).join(to);
+  return s
+    .replace(/<QM>/g, '?')
+    .replace(/_nbsp;?/g, '&nbsp;')
+    .replace(/&nbsp(?!;)/g, '&nbsp;');
+}
+
+function buildSlots(where, rawSlots) {
+  const slots = {};
+  for (const [slot, raw] of Object.entries(rawSlots)) {
+    slots[slot] = raw
+      .map((s) => ({ ...s, tokens: tokenize(s.lines.join('')) }))
       .filter((s) => !(s.kind === 'torah' && !s.tokens.some((t) => t.k === 'code')))
       .map((s) => {
-        const w = `${at} ${s.heading}`;
+        const w = `${where} ${slot} ${s.heading}`;
         const body = extractCommentaries(s.tokens, w);
-        const segments = VERSE_KINDS.includes(s.kind) ? verseSection(body, s.kind, w, repairs) : proseSection(body);
+        const segments = VERSE_KINDS.includes(s.kind) ? verseSection(body, s.kind, w) : proseSection(body);
         if (!segments.length) throw new Error(`${w}: empty section`);
         const variant = s.heading.includes('כמנהג הספרדים')
           ? 'sephardi'
@@ -475,8 +482,76 @@ function parsePage(html, repairs = {}, where = 'page') {
             : null;
         return { kind: s.kind, heading: s.heading, ...(variant ? { variant } : {}), segments };
       });
-  });
+  }
   return slots;
 }
 
-module.exports = { decodePage, parsePage, gematria };
+function parseBook(text, rules, where) {
+  const macros = badgeMacros(rules);
+  const book = [];
+  let skipping = true;
+  let current = null;
+  let slot = null;
+  const finish = () => {
+    if (!current) return;
+    book.push({
+      heading: current.heading,
+      slots: buildSlots(`${where} ${current.heading}`, current.raw),
+      badges: current.badges,
+    });
+    current = null;
+  };
+  text.split(/\r?\n/).forEach((line, i) => {
+    if (i === 0) return;
+    const n = i + 1;
+    if (line.includes('<TF>')) throw new Error(`${where} line ${n}: the te'amim encoding <TF> has no decoder`);
+    if (line.startsWith('# ')) {
+      finish();
+      slot = null;
+      const name = /^# פרשת (.+)$/.exec(line)?.[1];
+      if (name) {
+        skipping = false;
+        current = { heading: name.trim(), raw: {}, badges: 0 };
+      } else if (line.trim() === '# הקדמות') skipping = true;
+      else throw new Error(`${where} line ${n}: unknown book heading "${line}"`);
+      return;
+    }
+    if (skipping || line.startsWith('$ ') || line.startsWith('**')) return;
+    current.badges += macros.reduce((sum, m) => sum + line.split(m).length - 1, 0);
+    const at = `${where} ${current.heading}`;
+    if (line.startsWith('@ ')) {
+      const day = DAY_HEADING.exec(line)?.[1];
+      if (!day) throw new Error(`${at}: unknown day heading "${line}"`);
+      slot = DAY_SLOTS[day];
+      if (current.raw[slot]) throw new Error(`${at} ${slot}: day appears twice`);
+      current.raw[slot] = [{ kind: 'torah', heading: 'תורה', lines: [] }];
+      return;
+    }
+    if (!slot) {
+      if (line.trim()) throw new Error(`${where} line ${n}: text before the first day of ${current.heading}`);
+      return;
+    }
+    const sections = current.raw[slot];
+    if (line.startsWith('~ ')) {
+      const heading = normalizeText(line.slice(2).replace(/\s+/g, ' ').trim());
+      const kind = KINDS.find(([prefix]) => heading.startsWith(prefix))?.[1];
+      if (!kind) throw new Error(`${at} ${slot}: unknown heading "${heading}"`);
+      sections.push({ kind, heading, lines: [] });
+      return;
+    }
+    sections[sections.length - 1].lines.push(`${expandLine(line, rules)}${line.trim() ? '<br>\n' : '\n'}`);
+  });
+  finish();
+  return book;
+}
+
+module.exports = {
+  decodeSource,
+  parseHeader,
+  macroRules,
+  sourceRules,
+  badgeMacros,
+  expandLine,
+  parseBook,
+  gematria,
+};

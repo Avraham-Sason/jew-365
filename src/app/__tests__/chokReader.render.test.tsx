@@ -1,5 +1,6 @@
 const mockParams: { id: string; date?: string; slot?: string } = { id: 'chok_leyisrael' };
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
@@ -12,20 +13,14 @@ jest.mock('expo-router', () => ({
     dismissAll: jest.fn(),
     navigate: jest.fn(),
     replace: mockReplace,
+    push: mockPush,
   }),
 }));
 jest.mock('expo-keep-awake', () => ({
   activateKeepAwakeAsync: () => Promise.resolve(),
   deactivateKeepAwake: () => Promise.resolve(),
 }));
-jest.mock('@/data/chokAssets.generated', () => {
-  const { parshiot } = require('@hebcal/core');
-  return {
-    CHOK_ASSETS: Object.fromEntries(
-      [...parshiot, 'Vezot Haberakhah'].map((parasha: string, index: number) => [parasha, index + 1]),
-    ),
-  };
-});
+jest.mock('@/services/ChokContentService', () => ({ verifyChokInstall: jest.fn(() => true) }));
 jest.mock('@/services/SiddurService', () => ({
   loadChokParasha: (parasha: string) => Promise.resolve(mockAsset(parasha)),
   loadSiddurText: jest.fn(),
@@ -36,7 +31,9 @@ import SiddurScreen from '../siddur/[id]';
 import { CITIES } from '@/data/cities';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
+import { useChokStore } from '@/stores/useChokStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import type { ChokAsset, ChokSlot } from '@/types/chok';
@@ -84,6 +81,8 @@ function reset(enabled: boolean) {
   mockParams.date = undefined;
   mockParams.slot = undefined;
   mockReplace.mockReset();
+  mockPush.mockReset();
+  installChokFixture();
   useUserStore.getState().reset();
   useUserStore.setState({ location: JERUSALEM, inIsrael: true, nusach: 'ashkenaz', language: 'he' });
   useCompletionsStore.getState().reset();
@@ -139,6 +138,12 @@ describe('the Chok LeYisrael reader with the mitzvah switched on', () => {
     expect(mockReplace).toHaveBeenCalledWith('/(tabs)/home');
   });
 
+  it('credits the Torat Emet database under its license once a portion has loaded', async () => {
+    await openAt('2026-11-18T12:00');
+    expect(screen.getByText(/מאגר תורת אמת/)).toBeOnTheScreen();
+    expect(screen.getByText('לנוסח הרישיון')).toBeOnTheScreen();
+  });
+
   it('shows a day already marked as done', async () => {
     useCompletionsStore.setState({ completions: { '2026-11-18': { chok_leyisrael: 1 } } });
     await openAt('2026-11-18T12:00');
@@ -187,5 +192,22 @@ describe('the Chok LeYisrael reader with the mitzvah switched off', () => {
     expect(screen.getByText('פסוק wed')).toBeOnTheScreen();
     expect(screen.queryByText('סיימתי')).toBeNull();
     expect(closedFold(/^השלמה/)).toBeNull();
+  });
+});
+
+describe('the Chok LeYisrael reader without the add-on', () => {
+  beforeEach(() => {
+    reset(true);
+    useChokStore.getState().reset();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('says the text is not on the device and leads to the download', () => {
+    jest.useFakeTimers({ now: at(JERUSALEM, '2026-11-18T12:00'), doNotFake: [...ONLY_DATE] });
+    renderWithTheme(<SiddurScreen />);
+    expect(screen.getByText('הטקסט של חק לישראל עוד לא הורד למכשיר.')).toBeOnTheScreen();
+    expect(screen.queryByText(/^פסוק /)).toBeNull();
+    fireEvent.press(screen.getByText('למסך ההורדה'));
+    expect(mockPush).toHaveBeenCalledWith('/mitzvah/chok_leyisrael');
   });
 });

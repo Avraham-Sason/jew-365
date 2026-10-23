@@ -1,11 +1,14 @@
-import { CHOK_ASSETS } from './chokAssets.generated';
+import { parshiot } from '@hebcal/core';
+import { useChokStore } from '@/stores/useChokStore';
 
 export const CHOK_TEXT_ID = 'chok_leyisrael';
 
-export function chokAsset(parasha: string): number | undefined {
-  return CHOK_ASSETS[parasha];
+export const CHOK_PARASHIYOT: readonly string[] = [...parshiot, 'Vezot Haberakhah'];
+
+export function chokAsset(parasha: string): string | undefined {
+  return useChokStore.getState().installed?.files[parasha];
 }
 
 export function hasChokContent(): boolean {
-  return Object.keys(CHOK_ASSETS).length > 0;
+  return useChokStore.getState().installed !== null;
 }

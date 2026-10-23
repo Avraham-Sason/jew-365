@@ -4,10 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, type Href } from 'expo-router';
 import { Card } from '@/components/Card';
 import { ChipRow } from '@/components/ChipRow';
+import { chokAddonCaption } from '@/components/ChokAddonCard';
 import { ListRow } from '@/components/ListRow';
 import { iconFor, type IconName } from '@/components/MitzvahIcon';
 import { HeaderPill, ScreenHeader } from '@/components/ScreenHeader';
+import { CHOK_TEXT_ID } from '@/data/chok';
 import { useDayModel } from '@/hooks/useDayModel';
+import { useChokStore } from '@/stores/useChokStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { BRAND } from '@/theme/colors';
@@ -32,9 +35,10 @@ type SettingRow = {
 export default function MitzvotScreen() {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const { allMitzvot, nameFor } = useDayModel();
+  const { allMitzvot, nameFor, chokInstalled } = useDayModel();
   const router = useRouter();
   const active = useMitzvotStore((s) => s.activeMitzvot);
+  const chokDownload = useChokStore((s) => s.download);
   const setEnabled = useMitzvotStore((s) => s.setEnabled);
   const hilulotEnabled = useUserStore((s) => s.hilulotEnabled);
   const setHilulotEnabled = useUserStore((s) => s.setHilulotEnabled);
@@ -101,7 +105,8 @@ export default function MitzvotScreen() {
         {items.length || visibleSettingRows.length ? (
           <Card divided>
             {items.map((item) => {
-              const enabled = active[item.id]?.enabled ?? false;
+              const awaitingAddon = item.id === CHOK_TEXT_ID && !chokInstalled;
+              const enabled = !awaitingAddon && (active[item.id]?.enabled ?? false);
               const label = nameFor(item);
               return (
                 <ListRow
@@ -109,14 +114,20 @@ export default function MitzvotScreen() {
                   icon={iconFor(item.icon)}
                   iconTone={enabled ? 'accent' : 'muted'}
                   title={label}
-                  caption={t(`library.category.${item.category}`)}
+                  caption={awaitingAddon ? chokAddonCaption(chokDownload, t) : t(`library.category.${item.category}`)}
                   onPress={() =>
                     item.isCustom
                       ? router.push({ pathname: '/custom-mitzvah', params: { id: item.id } })
                       : router.push(`/mitzvah/${item.id}`)
                   }
                   trailing={
-                    <EnabledSwitch value={enabled} onChange={() => setEnabled(item.id, !enabled)} label={label} />
+                    <EnabledSwitch
+                      value={enabled}
+                      onChange={
+                        awaitingAddon ? () => router.push(`/mitzvah/${item.id}`) : () => setEnabled(item.id, !enabled)
+                      }
+                      label={label}
+                    />
                   }
                 />
               );

@@ -98,9 +98,11 @@ import { StorageService } from '@/services/StorageService';
 import { HebcalService } from '@/services/HebcalService';
 import { useUserStore } from '@/stores/useUserStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
+import { useChokStore } from '@/stores/useChokStore';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import { CITIES } from '@/data/cities';
 import { customToMitzvah } from '@/data/customMitzvotAdapter';
+import { installChokFixture } from '@/testing/chok';
 import { at } from '@/testing/zmanim';
 import { t } from '@/i18n';
 import type { Mitzvah } from '@/types/mitzvah';
@@ -333,6 +335,30 @@ describe('NotificationScheduler', () => {
 
     rebuild.mockRestore();
     cancelAll.mockRestore();
+  });
+
+  it('6.4b installing or deleting the Chok LeYisrael add-on drives a rebuild, and only that', () => {
+    const rebuild = jest.spyOn(NotificationScheduler, 'rebuild').mockResolvedValue();
+    const teardown = initNotificationHandlers();
+    useChokStore.getState().reset();
+    rebuild.mockClear();
+
+    useChokStore.getState().setInstalled(installChokFixture());
+    expect(rebuild).toHaveBeenCalledTimes(1);
+
+    useChokStore.getState().setChecked(2, 1);
+    expect(rebuild).toHaveBeenCalledTimes(1);
+
+    useChokStore.getState().clearInstalled();
+    expect(rebuild).toHaveBeenCalledTimes(2);
+
+    teardown();
+    rebuild.mockClear();
+    useChokStore.getState().setInstalled(installChokFixture());
+    expect(rebuild).not.toHaveBeenCalled();
+
+    useChokStore.getState().reset();
+    rebuild.mockRestore();
   });
 
   it('6.5 granting permission after a denial triggers a rebuild', async () => {

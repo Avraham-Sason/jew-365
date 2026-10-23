@@ -28,6 +28,7 @@ import { SIDDUR_SCROLL_SPEEDS, scrollSpeedLevel, useUserStore } from '../useUser
 import { INACTIVE, selectActive, useMitzvotStore } from '../useMitzvotStore';
 import { useCompletionsStore, dateKey } from '../useCompletionsStore';
 import { useCustomMitzvotStore } from '../useCustomMitzvotStore';
+import { useChokStore } from '../useChokStore';
 import { CITIES } from '@/data/cities';
 import { Location } from '@/types/zmanim';
 
@@ -42,6 +43,7 @@ describe('stores', () => {
     ['mitzvot-store', useMitzvotStore],
     ['completions-store', useCompletionsStore],
     ['custom-mitzvot-store', useCustomMitzvotStore],
+    ['chok-store', useChokStore],
   ])('%s keeps a persisted state across a version bump (identity migrate)', (name, store) => {
     const options = store.persist.getOptions();
     expect(options.name).toBe(name);

@@ -1,25 +1,40 @@
 const mockPush = jest.fn();
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
-jest.mock('@/data/chok', () => ({
-  CHOK_TEXT_ID: 'chok_leyisrael',
-  chokAsset: () => undefined,
-  hasChokContent: jest.fn(() => true),
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+  useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]),
+}));
+jest.mock('@/services/ChokContentService', () => ({
+  ...jest.requireActual('@/services/ChokContentService'),
+  checkChokUpdate: jest.fn(async () => {}),
+  prepareChokDownload: jest.fn(),
+  installChok: jest.fn(async () => true),
 }));
 
 import { Linking } from 'react-native';
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import MoreScreen from '../(tabs)/more';
 import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
-import { hasChokContent } from '@/data/chok';
 import { CITIES } from '@/data/cities';
+import {
+  CHOK_SIZE_ESTIMATE_MB,
+  checkChokUpdate,
+  installChok,
+  prepareChokDownload,
+} from '@/services/ChokContentService';
+import { useChokStore } from '@/stores/useChokStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import { useUserStore } from '@/stores/useUserStore';
+import type { ChokManifest } from '@/types/chok';
 
 const JERUSALEM = CITIES[0];
-const mockHasContent = jest.mocked(hasChokContent);
+const mockCheck = jest.mocked(checkChokUpdate);
+const mockPrepare = jest.mocked(prepareChokDownload);
+const mockInstall = jest.mocked(installChok);
+const MANIFEST = { version: 3, bytes: 18_600_000 } as ChokManifest;
 const ONLY_DATE = [
   'nextTick',
   'queueMicrotask',
@@ -36,12 +51,19 @@ function renderAt(wallClock: string) {
   return renderWithTheme(<MoreScreen />);
 }
 
+afterEach(() => {
+  useChokStore.getState().reset();
+});
+
 describe('More tab', () => {
   beforeEach(() => {
     useUserStore.getState().reset();
     useUserStore.setState({ location: JERUSALEM, inIsrael: true });
     mockPush.mockReset();
-    mockHasContent.mockReturnValue(true);
+    mockCheck.mockClear();
+    mockPrepare.mockReset();
+    mockInstall.mockClear();
+    installChokFixture();
   });
 
   afterEach(() => {
@@ -72,19 +94,76 @@ describe('More tab', () => {
     expect(screen.getByText('Parashat Vayetzei · Monday')).toBeOnTheScreen();
   });
 
-  it('hides the row while no Chok LeYisrael content is bundled', () => {
-    mockHasContent.mockReturnValue(false);
+  it('starts the download from the Chok LeYisrael row while the add-on is not installed', async () => {
+    useChokStore.getState().reset();
+    mockPrepare.mockResolvedValue(MANIFEST);
     renderAt('2026-11-16T12:00');
-    expect(screen.queryByText('חק לישראל')).toBeNull();
-    expect(screen.getByText('לוח זמנים')).toBeOnTheScreen();
+    expect(screen.getByText('חק לישראל')).toBeOnTheScreen();
+    expect(screen.getByText(`תוסף להורדה · כ־${CHOK_SIZE_ESTIMATE_MB} MB`)).toBeOnTheScreen();
+    await act(async () => {
+      fireEvent.press(screen.getByText('חק לישראל'));
+    });
+    expect(mockPrepare).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByText('הורדת חק לישראל')).toBeOnTheScreen();
+    await act(async () => {
+      fireEvent.press(screen.getAllByText('הורדה').at(-1)!);
+    });
+    expect(mockInstall).toHaveBeenCalledWith(MANIFEST);
+  });
+
+  it('shows no dialog when the manifest could not be fetched', async () => {
+    useChokStore.getState().reset();
+    mockPrepare.mockResolvedValue(null);
+    renderAt('2026-11-16T12:00');
+    await act(async () => {
+      fireEvent.press(screen.getByText('חק לישראל'));
+    });
+    expect(mockPrepare).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('הורדת חק לישראל')).toBeNull();
+    expect(mockInstall).not.toHaveBeenCalled();
+  });
+
+  it('opens the mitzvah screen from the row while the download runs', () => {
+    useChokStore.getState().reset();
+    useChokStore.getState().setDownload({ status: 'downloading', done: 3, total: 54, bytes: 1, totalBytes: 2 });
+    renderAt('2026-11-16T12:00');
+    fireEvent.press(screen.getByText('חק לישראל'));
+    expect(mockPush).toHaveBeenCalledWith('/mitzvah/chok_leyisrael');
+    expect(mockPrepare).not.toHaveBeenCalled();
+  });
+
+  it('says in the row that the download failed and offers another try', async () => {
+    useChokStore.getState().reset();
+    useChokStore.getState().setDownload({ status: 'failed', reason: 'offline' });
+    mockPrepare.mockResolvedValue(null);
+    renderAt('2026-11-16T12:00');
+    expect(screen.getByText('ההורדה נכשלה · הקישו לניסיון נוסף')).toBeOnTheScreen();
+    await act(async () => {
+      fireEvent.press(screen.getByText('חק לישראל'));
+    });
+    expect(mockPrepare).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the download progress in the row', () => {
+    useChokStore.getState().reset();
+    useChokStore.getState().setDownload({ status: 'downloading', done: 3, total: 54, bytes: 1, totalBytes: 2 });
+    renderAt('2026-11-16T12:00');
+    expect(screen.getByText('בהורדה: 3/54')).toBeOnTheScreen();
+  });
+
+  it('checks for a newer add-on version when the tab is focused', () => {
+    renderAt('2026-11-16T12:00');
+    expect(mockCheck).toHaveBeenCalled();
   });
 
   it('lists Tehillim before the halacha hotline, with or without Chok LeYisrael, and opens it in the reader', () => {
     for (const chok of [true, false]) {
-      mockHasContent.mockReturnValue(chok);
+      if (chok) installChokFixture();
+      else useChokStore.getState().reset();
       const { unmount } = renderAt('2026-11-16T12:00');
       const rows = screen.getAllByRole('button');
-      expect(rows).toHaveLength(chok ? 4 : 3);
+      expect(rows).toHaveLength(4);
       expect(within(rows[rows.length - 2]).getByText('תהילים')).toBeOnTheScreen();
       expect(within(rows[rows.length - 2]).getByText('מחולק לפי ימי השבוע')).toBeOnTheScreen();
       expect(within(rows[rows.length - 1]).getByText('קו ההלכה')).toBeOnTheScreen();
@@ -116,7 +195,7 @@ describe('Halacha hotline', () => {
   beforeEach(() => {
     useUserStore.getState().reset();
     useUserStore.setState({ location: JERUSALEM, inIsrael: true });
-    mockHasContent.mockReturnValue(false);
+    useChokStore.getState().reset();
     openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
   });
 

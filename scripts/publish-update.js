@@ -6,7 +6,6 @@ const { expo } = require('../app.json');
 const PAGE = 50;
 const NUMBERED = /^"?\d+\.\d+\.\d+-(\d+):/;
 const MESSAGE_FLAGS = ['--message', '-m'];
-const CHOK_MAP = 'src/data/chokAssets.generated.ts';
 
 function nextUpdateNumber(messages) {
   const numbers = messages
@@ -25,10 +24,6 @@ function labelMessage(args, label) {
   if (args[at].includes('=')) labeled[at] = `--message=${label}: ${args[at].slice('--message='.length)}`;
   else labeled[at + 1] = `${label}: ${args[at + 1]}`;
   return labeled;
-}
-
-function chokMapCommitted(run = spawnSync) {
-  return run('git', ['diff', '--quiet', 'HEAD', '--', CHOK_MAP], { encoding: 'utf8' }).status === 0;
 }
 
 function eas(args, options = {}) {
@@ -65,11 +60,6 @@ function publishedMessages(branch, runtimeVersion) {
 }
 
 function main() {
-  if (!chokMapCommitted()) {
-    throw new Error(
-      `${CHOK_MAP} differs from the last commit: a local Chok LeYisrael build is in place. Run pnpm chok:build --empty before publishing.`,
-    );
-  }
   const [channel, ...rest] = process.argv.slice(2).filter((arg) => arg !== '--');
   if (!channel)
     throw new Error('Usage: node scripts/publish-update.js <channel> --message "<what changed>" [eas update flags]');
@@ -93,4 +83,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { nextUpdateNumber, labelMessage, chokMapCommitted };
+module.exports = { nextUpdateNumber, labelMessage };

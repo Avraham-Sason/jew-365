@@ -7,20 +7,12 @@ const {
 } = require('./manifest');
 
 const SLOTS = ['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri'];
-const VEZOT = 'Vezot Haberakhah';
 const WEEKDAY = ['torah', 'neviim', 'ketuvim', 'mishnah', 'gemara', 'zohar', 'halacha', 'mussar'];
 const DAILY = ['mishnah', 'gemara', 'zohar', 'halacha', 'mussar'];
 const LABELS = ['רש״י', 'ברטנורה', 'תרגום הזוהר'];
 
-function expectedSlots(parasha) {
-  return parasha === VEZOT ? SLOTS.filter((slot) => slot !== 'fri') : SLOTS;
-}
-
 function expectedKinds(parasha, slot) {
-  if (slot === 'thuNight') {
-    if (parasha === VEZOT) return ['torah', 'haftarah', ...DAILY];
-    return TORAH_ENDS_THURSDAY_NIGHT.includes(parasha) ? ['torah', 'haftarah'] : ['torah'];
-  }
+  if (slot === 'thuNight') return TORAH_ENDS_THURSDAY_NIGHT.includes(parasha) ? ['torah', 'haftarah'] : ['torah'];
   if (slot !== 'fri') return WEEKDAY;
   if (TORAH_ENDS_THURSDAY_NIGHT.includes(parasha)) return DAILY;
   if (NO_HAFTARAH_PARASHIYOT.includes(parasha)) return ['torah', ...DAILY];
@@ -31,11 +23,11 @@ function expectedKinds(parasha, slot) {
 
 const follows = ([c0, p0], [c1, p1]) => (c1 === c0 && p1 === p0 + 1) || (c1 === c0 + 1 && p1 === 1);
 
-function validateParasha(parasha, slots) {
+function validateParasha(parasha, slots, badges) {
   const problems = [];
   const at = (slot, text) => problems.push(`${parasha} ${slot}: ${text}`);
-  if (Object.keys(slots).join() !== expectedSlots(parasha).join()) {
-    problems.push(`${parasha}: slots ${Object.keys(slots).join()} instead of ${expectedSlots(parasha).join()}`);
+  if (Object.keys(slots).join() !== SLOTS.join()) {
+    problems.push(`${parasha}: slots ${Object.keys(slots).join()} instead of ${SLOTS.join()}`);
   }
   let previous = null;
   for (const [slot, sections] of Object.entries(slots)) {
@@ -75,7 +67,13 @@ function validateParasha(parasha, slots) {
       }
     }
   }
+  const commentaries = Object.values(slots)
+    .flat()
+    .flatMap((section) => section.segments)
+    .filter((segment) => segment.optional).length;
+  if (commentaries !== badges)
+    problems.push(`${parasha}: ${commentaries} commentaries, ${badges} badges in the source`);
   return problems;
 }
 
-module.exports = { SLOTS, expectedSlots, expectedKinds, validateParasha };
+module.exports = { SLOTS, expectedKinds, validateParasha };

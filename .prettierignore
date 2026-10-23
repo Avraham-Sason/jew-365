@@ -13,7 +13,5 @@ skills-lock.json
 pnpm-lock.yaml
 src/data/siddurAssets.generated.ts
 scripts/siddur/.cache
-src/data/chokAssets.generated.ts
-scripts/chok/.cache
-scripts/chok/__tests__/fixture.html
+scripts/chok/source
 *.md

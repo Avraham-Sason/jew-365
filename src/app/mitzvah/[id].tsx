@@ -6,13 +6,16 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { DateTime } from 'luxon';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ChokAddonCard } from '@/components/ChokAddonCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconTile } from '@/components/IconTile';
 import { MitzvahIcon, iconFor } from '@/components/MitzvahIcon';
 import { ReminderEditor } from '@/components/ReminderEditor';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { CHOK_TEXT_ID } from '@/data/chok';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
 import { hasSiddurText, isSiddurTextId, siddurPlace } from '@/data/siddur';
+import { useChokStore } from '@/stores/useChokStore';
 import { dateKey, useCompletionsStore } from '@/stores/useCompletionsStore';
 import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -51,6 +54,9 @@ export default function MitzvahDetailScreen() {
   const [editorVisible, setEditorVisible] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const isChok = mitzvah?.id === CHOK_TEXT_ID;
+  const chokInstalled = useChokStore((s) => s.installed !== null);
+  const awaitingAddon = isChok && !chokInstalled;
 
   const reminders = useMemo(
     () => active.customReminders ?? mitzvah?.defaultReminders ?? [],
@@ -62,18 +68,18 @@ export default function MitzvahDetailScreen() {
     [nusach, ksSofZman, inIsrael],
   );
   const window = useMemo(
-    () => (mitzvah ? currentOrNextWindow(mitzvah, location, settings) : null),
-    [mitzvah, location, settings],
+    () => (mitzvah && !awaitingAddon ? currentOrNextWindow(mitzvah, location, settings) : null),
+    [mitzvah, awaitingAddon, location, settings],
   );
   const showText = Boolean(
     mitzvah && window && hasSiddurText(mitzvah, nusach, window.date, siddurPlace(location, inIsrael)),
   );
   const nextTrigger = useMemo(
     () =>
-      mitzvah
+      mitzvah && !awaitingAddon
         ? nextReminderAt(mitzvah, reminders, { now: new Date(), location, settings, completions, skipped })
         : null,
-    [mitzvah, reminders, location, settings, completions, skipped],
+    [mitzvah, awaitingAddon, reminders, location, settings, completions, skipped],
   );
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
@@ -141,6 +147,7 @@ export default function MitzvahDetailScreen() {
       </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {isChok ? <ChokAddonCard /> : null}
         {showText && window ? (
           <Button
             label={t('siddur.open')}
@@ -227,68 +234,85 @@ export default function MitzvahDetailScreen() {
             <Switch
               value={active.enabled}
               onValueChange={(value) => setEnabled(mitzvah.id, value)}
+              disabled={awaitingAddon}
               thumbColor={BRAND.white}
               trackColor={{ false: colors.border, true: colors.gold }}
             />
           </View>
+          {awaitingAddon ? (
+            <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.xs }]}>
+              {t('chok.addon.enableAfterDownload')}
+            </Text>
+          ) : null}
           <InfoRow label={t('detail.nusach')} value={t(`nusach.${nusach}`)} />
           <InfoRow label={t('detail.cycle')} value={cycle} />
           <InfoRow label={t('detail.enabled')} value={active.enabled ? t('state.enabled') : t('state.disabled')} />
         </Card>
 
-        <Card padded>
-          <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.md }]}>
-            {t('detail.reminders')}
-          </Text>
-          {reminders.map((reminder, index) => (
-            <View key={`${reminder.label}-${index}`} style={[styles.reminderRow, { borderBottomColor: colors.border }]}>
-              <Pressable
-                onPress={() => {
-                  setEditIndex(index);
-                  setEditorVisible(true);
-                }}
-                style={{ flex: 1 }}
-              >
-                <Text style={[typography.bodyBold, { color: colors.text }]}>{reminder.label}</Text>
-                <Text style={[typography.micro, { color: colors.textMuted, marginTop: 2 }]}>
-                  {t(`reminder.anchor.${reminder.anchor}`)} · {reminderOffsetText(reminder, t('reminder.minutesShort'))}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setDeleteIndex(index)}
-                accessibilityRole="button"
-                accessibilityLabel={t('reminder.delete')}
-                hitSlop={10}
-                style={[styles.deleteBtn, { backgroundColor: colors.surface2 }]}
-              >
-                <MitzvahIcon name="close" size={DELETE_ICON_SIZE} color={colors.textMuted} strokeWidth={ICON_STROKE} />
-              </Pressable>
-            </View>
-          ))}
-          {!reminders.length ? (
-            <Text style={[typography.body, { color: colors.textMuted, paddingVertical: spacing.md }]}>
-              {t('detail.noReminders')}
+        {!awaitingAddon ? (
+          <Card padded>
+            <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.md }]}>
+              {t('detail.reminders')}
             </Text>
-          ) : null}
-          <Pressable
-            onPress={() => {
-              setEditIndex(null);
-              setEditorVisible(true);
-            }}
-            style={[styles.addRow, { borderTopColor: `${colors.gold}44` }]}
-          >
-            <View style={[styles.plus, { backgroundColor: colors.goldLight }]}>
-              <MitzvahIcon name="plus" size={ADD_ICON_SIZE} color={colors.gold} strokeWidth={ICON_STROKE} />
-            </View>
-            <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('detail.addReminder')}</Text>
-          </Pressable>
-          <Button
-            variant="secondary"
-            label={t('detail.defaultReset')}
-            onPress={() => resetToDefault(mitzvah.id)}
-            style={styles.resetAction}
-          />
-        </Card>
+            {reminders.map((reminder, index) => (
+              <View
+                key={`${reminder.label}-${index}`}
+                style={[styles.reminderRow, { borderBottomColor: colors.border }]}
+              >
+                <Pressable
+                  onPress={() => {
+                    setEditIndex(index);
+                    setEditorVisible(true);
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  <Text style={[typography.bodyBold, { color: colors.text }]}>{reminder.label}</Text>
+                  <Text style={[typography.micro, { color: colors.textMuted, marginTop: 2 }]}>
+                    {t(`reminder.anchor.${reminder.anchor}`)} ·{' '}
+                    {reminderOffsetText(reminder, t('reminder.minutesShort'))}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setDeleteIndex(index)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('reminder.delete')}
+                  hitSlop={10}
+                  style={[styles.deleteBtn, { backgroundColor: colors.surface2 }]}
+                >
+                  <MitzvahIcon
+                    name="close"
+                    size={DELETE_ICON_SIZE}
+                    color={colors.textMuted}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </Pressable>
+              </View>
+            ))}
+            {!reminders.length ? (
+              <Text style={[typography.body, { color: colors.textMuted, paddingVertical: spacing.md }]}>
+                {t('detail.noReminders')}
+              </Text>
+            ) : null}
+            <Pressable
+              onPress={() => {
+                setEditIndex(null);
+                setEditorVisible(true);
+              }}
+              style={[styles.addRow, { borderTopColor: `${colors.gold}44` }]}
+            >
+              <View style={[styles.plus, { backgroundColor: colors.goldLight }]}>
+                <MitzvahIcon name="plus" size={ADD_ICON_SIZE} color={colors.gold} strokeWidth={ICON_STROKE} />
+              </View>
+              <Text style={[typography.bodyBold, { color: colors.goldText }]}>{t('detail.addReminder')}</Text>
+            </Pressable>
+            <Button
+              variant="secondary"
+              label={t('detail.defaultReset')}
+              onPress={() => resetToDefault(mitzvah.id)}
+              style={styles.resetAction}
+            />
+          </Card>
+        ) : null}
       </ScrollView>
 
       <ReminderEditor

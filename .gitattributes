@@ -1,0 +1,2 @@
+scripts/chok/source/** -text -diff
+docs/chok/** -text

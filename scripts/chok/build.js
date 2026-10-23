@@ -2,33 +2,63 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { TextEncoder } = require('util');
-const { PAGES, CREDIT, DEDICATION, REPAIRS, pageUrl, assetFileName } = require('./manifest');
-const { decodePage, parsePage } = require('./parse');
+const { Buffer } = require('buffer');
+const { createHash } = require('crypto');
+const {
+  TEAMIM,
+  SOURCE_DIR,
+  SITE_DIR,
+  PARASHIYOT,
+  CREDIT,
+  MANIFEST_CREDIT,
+  LICENSE,
+  DEDICATION,
+  sourceFiles,
+  assetFileName,
+} = require('./manifest');
+const { decodeSource, sourceRules, parseBook } = require('./parse');
 const { validateParasha } = require('./validate');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const CACHE_DIR = path.join(__dirname, '.cache');
-const OUT_DIR = path.join(ROOT, 'assets', 'chok');
-const ASSET_MAP = path.join(ROOT, 'src', 'data', 'chokAssets.generated.ts');
+const MANIFEST_FILE = path.join(SITE_DIR, 'manifest.json');
+const LICENSE_FILE = path.join(SITE_DIR, 'LICENSE.txt');
 
-function assetMapSource(parashiyot) {
-  if (!parashiyot.length) return 'export const CHOK_ASSETS: Partial<Record<string, number>> = {};\n';
-  const lines = ['export const CHOK_ASSETS: Partial<Record<string, number>> = {'];
-  for (const parasha of parashiyot) {
-    lines.push(`  ${JSON.stringify(parasha)}: require('../../assets/chok/${assetFileName(parasha)}'),`);
+function readSources(teamim = TEAMIM, dir = SOURCE_DIR) {
+  const names = sourceFiles(teamim);
+  const missing = names.filter((name) => !fs.existsSync(path.join(dir, name)));
+  if (missing.length && teamim) {
+    throw new Error(
+      `te'amim source files missing: ${missing.join(', ')}. They are local only (gitignored): unpack them from InstallToratEmet.exe with 7-Zip into scripts/chok/source, or set TEAMIM to false`,
+    );
   }
-  lines.push('};', '');
-  return lines.join('\n');
+  if (missing.length) {
+    throw new Error(
+      `source files missing: ${missing.join(', ')}. They are committed in scripts/chok/source; restore them with git checkout -- scripts/chok/source`,
+    );
+  }
+  return names.map((name) => decodeSource(fs.readFileSync(path.join(dir, name))));
 }
 
-async function ensureCached({ file }) {
-  const cached = path.join(CACHE_DIR, `${file}.htm`);
-  if (fs.existsSync(cached)) return;
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-  const response = await fetch(pageUrl(file));
-  if (!response.ok) throw new Error(`download failed for ${file}: HTTP ${response.status}`);
-  fs.writeFileSync(cached, new Uint8Array(await response.arrayBuffer()));
+function readParashiyot() {
+  const names = sourceFiles();
+  const texts = readSources();
+  const rules = sourceRules(texts);
+  const books = texts.flatMap((text, n) => parseBook(text, rules[n], names[n]));
+  const expected = PARASHIYOT.map((entry) => entry.heading);
+  for (let i = 0; i < Math.max(books.length, expected.length); i++) {
+    if (books[i]?.heading !== expected[i]) {
+      throw new Error(`parasha ${i + 1}: "${books[i]?.heading}" instead of "${expected[i]}"`);
+    }
+  }
+  const parashiyot = books.map(({ heading, slots, badges }, i) => ({
+    parasha: PARASHIYOT[i].parasha,
+    heading,
+    slots,
+    badges,
+  }));
+  const problems = parashiyot.flatMap(({ parasha, slots, badges }) => validateParasha(parasha, slots, badges));
+  if (problems.length) throw new Error(`validation failed:\n${problems.join('\n')}`);
+  return parashiyot;
 }
 
 const assetSegment = ({ he, optional }) => (optional ? { he, optional } : { he });
@@ -42,56 +72,95 @@ function withoutVerses(slots) {
   );
 }
 
+function nextContentVersion(previous, files) {
+  if (previous === null) return 1;
+  const unchanged = Object.entries(files).every(([parasha, file]) => previous.files[parasha]?.sha256 === file.sha256);
+  return unchanged ? previous.version : previous.version + 1;
+}
+
+function licenseText(teamim = TEAMIM) {
+  const marksHe = teamim ? 'בניקוד ובטעמים' : 'בניקוד, בלי טעמים';
+  const marksEn = teamim ? 'with vowel points and cantillation marks' : 'with vowel points, without cantillation marks';
+  return [
+    'חק לישראל, מתוך מאגר תורת אמת',
+    `${MANIFEST_CREDIT.he}.`,
+    `קובצי ה-JSON בתיקייה זו הם עיבוד של יהודי 365 לטקסט של חק לישראל ממאגר תורת אמת (${marksHe}), ומפורסמים תחת אותו רישיון: ${LICENSE.name} (ייחוס, שימוש לא מסחרי, שיתוף זהה).`,
+    `נוסח הרישיון: ${LICENSE.urlHe}`,
+    '',
+    'Chok LeYisrael, from the Torat Emet database',
+    `${MANIFEST_CREDIT.en}.`,
+    `The JSON files in this folder are Jew 365's processing of the Chok LeYisrael text of the Torat Emet database (${marksEn}), published under the same license: ${LICENSE.name} (Attribution, NonCommercial, ShareAlike).`,
+    `License: ${LICENSE.url}`,
+    '',
+  ].join('\n');
+}
+
 function buildOutputs() {
   const outputs = new Map();
-  const problems = [];
-  for (const { parasha, file } of PAGES) {
-    const html = decodePage(fs.readFileSync(path.join(CACHE_DIR, `${file}.htm`)));
-    const slots = parsePage(html, REPAIRS[file] ?? {}, file);
-    problems.push(...validateParasha(parasha, slots));
-    const asset = { parasha, credit: CREDIT, dedication: DEDICATION, slots: withoutVerses(slots) };
-    outputs.set(path.join(OUT_DIR, assetFileName(parasha)), JSON.stringify(asset));
+  const files = {};
+  const parashiyot = readParashiyot();
+  for (const { parasha, slots } of parashiyot) {
+    const content = JSON.stringify({ parasha, credit: CREDIT, dedication: DEDICATION, slots: withoutVerses(slots) });
+    const sha256 = createHash('sha256').update(content, 'utf8').digest('hex');
+    const file = assetFileName(parasha, sha256.slice(0, 8));
+    const bytes = Buffer.byteLength(content);
+    outputs.set(path.join(SITE_DIR, file), content);
+    files[parasha] = { path: file, sha256, bytes };
   }
-  if (problems.length) throw new Error(`validation failed:\n${problems.join('\n')}`);
-  outputs.set(ASSET_MAP, assetMapSource(PAGES.map((page) => page.parasha)));
+  const previous = fs.existsSync(MANIFEST_FILE) ? JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8')) : null;
+  const manifest = {
+    format: 1,
+    version: nextContentVersion(previous, files),
+    credit: MANIFEST_CREDIT,
+    license: LICENSE,
+    bytes: Object.values(files).reduce((sum, file) => sum + file.bytes, 0),
+    files,
+  };
+  outputs.set(LICENSE_FILE, licenseText());
+  outputs.set(MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
   return outputs;
 }
 
 function writeOutputs(outputs) {
-  const existing = fs.existsSync(OUT_DIR) ? fs.readdirSync(OUT_DIR).map((name) => path.join(OUT_DIR, name)) : [];
-  for (const stale of existing.filter((file) => file.endsWith('.chok') && !outputs.has(file))) fs.rmSync(stale);
+  let written = 0;
+  fs.mkdirSync(SITE_DIR, { recursive: true });
   for (const [file, content] of outputs) {
     if (fs.existsSync(file) && fs.readFileSync(file, 'utf8') === content) continue;
-    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, content);
+    written++;
   }
+  for (const name of fs.readdirSync(SITE_DIR)) {
+    const file = path.join(SITE_DIR, name);
+    if (name.endsWith('.json') && file !== MANIFEST_FILE && !outputs.has(file)) fs.rmSync(file);
+  }
+  return written;
 }
 
-async function main() {
-  for (const page of PAGES) await ensureCached(page);
+function main() {
   const outputs = buildOutputs();
   const again = buildOutputs();
   for (const [file, content] of outputs) {
     if (again.get(file) !== content) throw new Error(`the build is not deterministic: ${path.relative(ROOT, file)}`);
   }
-  writeOutputs(outputs);
-  const encoder = new TextEncoder();
-  const assets = [...outputs].filter(([file]) => file.endsWith('.chok')).map(([, content]) => encoder.encode(content));
-  const raw = assets.reduce((sum, bytes) => sum + bytes.length, 0);
-  const gzipped = assets.reduce((sum, bytes) => sum + zlib.gzipSync(bytes, { level: 9 }).length, 0);
-  console.log(`${assets.length} assets, ${raw} bytes, ${gzipped} bytes gzipped`);
+  const assets = [...outputs].filter(([file]) => file !== MANIFEST_FILE && file !== LICENSE_FILE);
+  const raw = assets.reduce((sum, [, content]) => sum + Buffer.byteLength(content), 0);
+  const gzipped = assets.reduce(
+    (sum, [, content]) => sum + zlib.gzipSync(Buffer.from(content), { level: 9 }).length,
+    0,
+  );
+  const { version } = JSON.parse(outputs.get(MANIFEST_FILE));
+  const written = writeOutputs(outputs);
+  console.log(`${assets.length} files, ${raw} bytes, ${gzipped} bytes gzipped, content version ${version}`);
+  console.log(`wrote ${written} files`);
 }
 
-function writeEmpty() {
-  fs.rmSync(OUT_DIR, { recursive: true, force: true });
-  writeOutputs(new Map([[ASSET_MAP, assetMapSource([])]]));
-  console.log('wrote the empty asset map and removed the generated assets');
-}
-
-if (process.argv.includes('--empty')) writeEmpty();
-else {
-  main().catch((error) => {
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
     console.error(error.message);
     process.exit(1);
-  });
+  }
 }
+
+module.exports = { readSources, readParashiyot, buildOutputs, nextContentVersion, licenseText };

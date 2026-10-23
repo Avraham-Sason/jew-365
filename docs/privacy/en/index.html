@@ -16,9 +16,9 @@
 
 <main>
   <h1>Privacy Policy</h1>
-  <p class="meta">Effective 22 October 2026 · Developer: Avraham Sason · App: Jew 365 / יהודי 365 (com.jew365.app)</p>
+  <p class="meta">Effective 23 October 2026 · Developer: Avraham Sason · App: Jew 365 / יהודי 365 (com.jew365.app)</p>
 
-  <p class="lead">This policy describes what the app stores, where, and what leaves your device. There is no account. Nothing you enter and nothing the app computes is sent to us or to any third party, except in two cases described below: a technical crash report that carries no personal data, and a message you choose to send us from “Contact us”. The device backup your phone's operating system keeps in your Google or iCloud account, and the backup file you can export, are described under "Where data is stored".</p>
+  <p class="lead">This policy describes what the app stores, where, and what leaves your device. There is no account. Nothing you enter and nothing the app computes is sent to us or to any third party, except in two cases described below: a technical crash report that carries no personal data, and a message you choose to send us from “Contact us”. Downloading the optional Chok LeYisrael text sends nothing you entered either; it only fetches that text from our site. The device backup your phone's operating system keeps in your Google or iCloud account, and the backup file you can export, are described under "Where data is stored".</p>
 
   <h2>What the app stores</h2>
   <p>Every item below is kept only in the app's local storage on your device:</p>
@@ -31,6 +31,7 @@
     <li><strong>Name and phone number</strong> — fully optional fields. You may skip them, and they are not validated. They are shown in the app's Settings and serve only as the starting values of the “Contact us” form, where you can change them. They leave the device only when you send a message.</li>
     <li><strong>Gender and marital status</strong> — see the next section.</li>
     <li><strong>Family purity tracking data</strong>, if you turn that feature on — see the section after it.</li>
+    <li><strong>The Chok LeYisrael text</strong>, if you downloaded it — text files on the device, with no personal data. They are not in Android's automatic backup or in the backup file; on iOS they are in the device's iCloud backup.</li>
   </ul>
 
   <h2>Profile answers: gender and marital status</h2>
@@ -58,13 +59,16 @@
   </ul>
 
   <h2>What does leave the device</h2>
-  <p>Two technical components reach outward by themselves, and neither carries personal data:</p>
+  <p>Three technical components reach outward by themselves, and none carries personal data:</p>
   <ul>
     <li><strong>Update checks (EAS Update) with Expo's servers</strong> — the app asks whether a newer JavaScript bundle exists when it opens, when you return to it, and in the hourly background refresh. The check transmits technical values only: app version, platform, update identifier, and a random installation identifier Expo uses to count installs, which is not tied to your name or details. It carries no personal data, no location, and no mitzvah history.</li>
     <li><strong>Crash reports to Sentry</strong> — see the next section.</li>
+    <li><strong>The Chok LeYisrael version check</strong> — only while the add-on is installed; see “Downloading Chok LeYisrael” below.</li>
   </ul>
 
   <p><strong>A message from “Contact us”</strong> — under Settings → Contact us you can send us a message. Only when you tap “Send message” does the app send the name, phone number and message you filled in, together with the app version, the operating system and its version, and the interface language, to Formspree (Formspree, Inc., formspree.io), a form service that forwards the message to our email and keeps a copy of it in our account there. We use these details only to answer you. They are not used for marketing and are given to no one. To have a sent message deleted, email us at the address below. Formspree's privacy policy: <a href="https://formspree.io/legal/privacy-policy/">formspree.io/legal/privacy-policy</a>. You can also write to us straight from your own email app, without the form.</p>
+
+  <p><strong>Downloading Chok LeYisrael</strong> — Chok LeYisrael is an optional add-on. Only when you choose “Download” or “Update” on its mitzvah screen, and while it is installed for at most one version check a day when its screen or the More tab opens, the app contacts our site on GitHub Pages (GitHub, Inc., github.com). As with any request to a website, GitHub sees the device's IP address and the technical request details. No personal data, location or mitzvah history is sent. GitHub's privacy statement: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">docs.github.com</a>.</p>
 
   <p>The halacha hotline link on the More screen opens your dialer or WhatsApp with the line's number, as you choose. The app sends nothing itself: the call or message is yours, through those apps.</p>
 
@@ -99,9 +103,10 @@
   </ul>
 
   <h2 id="delete">Deleting your data</h2>
-  <p>Two ways, both entirely under your control:</p>
+  <p>Three ways, all entirely under your control:</p>
   <ul>
-    <li>In the app: Settings → Device and notifications → App → Reset the app. This clears all preferences, history, custom mitzvot, profile answers, family purity tracking data and scheduled reminders.</li>
+    <li>In the app: Settings → Device and notifications → App → Reset the app. This clears all preferences, history, custom mitzvot, profile answers, family purity tracking data and scheduled reminders, and the downloaded Chok LeYisrael text.</li>
+    <li>On the “Chok LeYisrael” mitzvah screen: Delete the add-on, which deletes the downloaded text.</li>
     <li>Uninstall the app, which deletes everything the app stored on the device.</li>
   </ul>
 

@@ -1,0 +1,9 @@
+חק לישראל, מתוך מאגר תורת אמת
+ר' פנחס ראובן שליט״א, ר' שגיב מחפוד שליט״א ו-J. Alan Groves Center, תחת רישיון CC BY-NC-SA 2.5, מתוך מאגר תורת אמת.
+קובצי ה-JSON בתיקייה זו הם עיבוד של יהודי 365 לטקסט של חק לישראל ממאגר תורת אמת (בניקוד, בלי טעמים), ומפורסמים תחת אותו רישיון: CC BY-NC-SA 2.5 (ייחוס, שימוש לא מסחרי, שיתוף זהה).
+נוסח הרישיון: https://creativecommons.org/licenses/by-nc-sa/2.5/
+
+Chok LeYisrael, from the Torat Emet database
+R' Pinchas Reuven, R' Sagiv Mahfud and the J. Alan Groves Center, under CC BY-NC-SA 2.5, from the Torat Emet database.
+The JSON files in this folder are Jew 365's processing of the Chok LeYisrael text of the Torat Emet database (with vowel points, without cantillation marks), published under the same license: CC BY-NC-SA 2.5 (Attribution, NonCommercial, ShareAlike).
+License: https://creativecommons.org/licenses/by-nc-sa/2.5/

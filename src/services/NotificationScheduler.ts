@@ -16,6 +16,7 @@ import { useUserStore } from '@/stores/useUserStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import { useTaharahStore } from '@/stores/useTaharahStore';
+import { useChokStore } from '@/stores/useChokStore';
 import {
   ANDROID_CHANNELS,
   CHECK_IN_KIND,
@@ -473,6 +474,10 @@ export function initNotificationHandlers(): () => void {
       ) {
         NotificationScheduler.rebuild().catch(reportScheduleError);
       }
+    }),
+    useChokStore.subscribe((state, prev) => {
+      if ((state.installed === null) !== (prev.installed === null))
+        NotificationScheduler.rebuild().catch(reportScheduleError);
     }),
   ];
   registerDailyRebuildTask().catch(() => {});

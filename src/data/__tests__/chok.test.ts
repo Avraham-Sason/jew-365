@@ -1,28 +1,39 @@
-function registryWith(assets: Partial<Record<string, number>>): typeof import('../chok') {
-  let registry!: typeof import('../chok');
-  jest.isolateModules(() => {
-    jest.doMock('../chokAssets.generated', () => ({ CHOK_ASSETS: assets }));
-    registry = require('../chok');
-  });
-  return registry;
-}
+import { parshiot } from '@hebcal/core';
+import { CHOK_PARASHIYOT, CHOK_TEXT_ID, chokAsset, hasChokContent } from '../chok';
+import { useChokStore } from '@/stores/useChokStore';
+
+afterEach(() => {
+  useChokStore.getState().reset();
+});
 
 describe('chok asset registry', () => {
-  it('has no content while the generated map is empty', () => {
-    const registry = registryWith({});
-    expect(registry.hasChokContent()).toBe(false);
-    expect(registry.chokAsset('Noach')).toBeUndefined();
+  it('has no content while nothing is installed', () => {
+    useChokStore.getState().reset();
+    expect(hasChokContent()).toBe(false);
+    expect(chokAsset('Noach')).toBeUndefined();
   });
 
-  it('finds the parashiyot the generated map lists, and only those', () => {
-    const registry = registryWith({ Noach: 7, 'Vezot Haberakhah': 9 });
-    expect(registry.hasChokContent()).toBe(true);
-    expect(registry.chokAsset('Noach')).toBe(7);
-    expect(registry.chokAsset('Vezot Haberakhah')).toBe(9);
-    expect(registry.chokAsset('Bo')).toBeUndefined();
+  it('finds the parashiyot the installed add-on lists, and only those', () => {
+    useChokStore.setState({
+      installed: {
+        version: 3,
+        bytes: 10,
+        installedAt: 1,
+        files: { Noach: 'noach.0000000a.json', 'Vezot Haberakhah': 'vezot-haberakhah.0000000b.json' },
+      },
+    });
+    expect(hasChokContent()).toBe(true);
+    expect(chokAsset('Noach')).toBe('noach.0000000a.json');
+    expect(chokAsset('Vezot Haberakhah')).toBe('vezot-haberakhah.0000000b.json');
+    expect(chokAsset('Bo')).toBeUndefined();
   });
 
   it('names the reader text chok_leyisrael', () => {
-    expect(registryWith({}).CHOK_TEXT_ID).toBe('chok_leyisrael');
+    expect(CHOK_TEXT_ID).toBe('chok_leyisrael');
+  });
+
+  it('lists the 54 parashiyot of the weekly cycle', () => {
+    expect(CHOK_PARASHIYOT).toEqual([...parshiot, 'Vezot Haberakhah']);
+    expect(CHOK_PARASHIYOT).toHaveLength(54);
   });
 });

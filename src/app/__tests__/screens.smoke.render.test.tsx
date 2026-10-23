@@ -63,7 +63,19 @@ jest.mock('@/services/SiddurService', () => {
   const { readSiddurText } = require('@/testing/siddur');
   return {
     loadSiddurText: (nusach: string, id: string) => Promise.resolve(readSiddurText(nusach, id)),
-    loadChokParasha: () => Promise.reject(new Error('no chok text in a smoke render')),
+    loadChokParasha: (parasha: string) =>
+      Promise.resolve({
+        parasha,
+        credit: { title: 'מקור לדוגמה', license: 'CC BY-NC-SA 2.5', url: 'https://example.org' },
+        dedication: null,
+        slots: Object.fromEntries(
+          ['sun', 'mon', 'tue', 'wed', 'thu', 'thuNight', 'fri'].map((slot) => [
+            slot,
+            [{ kind: 'torah', heading: 'תורה', segments: [{ he: [[{ t: 'פסוק לדוגמה' }]] }] }],
+          ]),
+        ),
+      }),
+    clearChokCache: () => {},
   };
 });
 jest.mock('expo-notifications', () => ({
@@ -164,11 +176,13 @@ import TaharahLogScreen from '../taharah/log';
 import TaharahSettingsScreen from '../taharah/settings';
 import { CITIES } from '@/data/cities';
 import { setLocale } from '@/i18n';
+import { useChokStore } from '@/stores/useChokStore';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useTaharahStore } from '@/stores/useTaharahStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import type { CustomMitzvah } from '@/types/mitzvah';
@@ -278,6 +292,7 @@ function seedStores(language: Locale, fresh: boolean, now: Date) {
   useCompletionsStore.getState().reset();
   useCustomMitzvotStore.getState().reset();
   useTaharahStore.getState().reset();
+  useChokStore.getState().reset();
   useUserStore.setState({ language, location: JERUSALEM, inIsrael: true, nusach: 'ashkenaz' });
   if (fresh) return;
 
@@ -438,6 +453,23 @@ const CASES: SmokeCase[] = [
     params: { id: CUSTOM_ID },
     check: text(CUSTOM_NAME, CUSTOM_NAME),
   },
+  {
+    file: 'mitzvah/[id]',
+    label: 'Chok LeYisrael before the add-on is downloaded',
+    Screen: MitzvahScreen,
+    params: { id: 'chok_leyisrael' },
+    check: text('הורדה', 'Download'),
+  },
+  {
+    file: 'mitzvah/[id]',
+    label: 'Chok LeYisrael with the add-on installed',
+    Screen: MitzvahScreen,
+    params: { id: 'chok_leyisrael' },
+    setup: () => {
+      installChokFixture();
+    },
+    check: text(/התוסף מותקן/, /Installed/),
+  },
   { file: 'mitzvot', label: 'default', Screen: MitzvotScreen, check: text('המצוות שלי', 'My mitzvot') },
   { file: 'report', label: 'latest week', Screen: ReportScreen, check: text('סיכום שבועי', 'Weekly report') },
   {
@@ -501,6 +533,26 @@ const CASES: SmokeCase[] = [
       await text('תיקון חצות', 'תיקון חצות')(language);
       await readerShows(10, 9)(language);
     },
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'Chok LeYisrael with the add-on installed',
+    Screen: SiddurReaderScreen,
+    params: { id: 'chok_leyisrael' },
+    setup: () => {
+      installChokFixture();
+    },
+    check: text(/מאגר תורת אמת/, /Torat Emet database/),
+  },
+  {
+    file: 'siddur/[id]',
+    label: 'Chok LeYisrael before the add-on is downloaded',
+    Screen: SiddurReaderScreen,
+    params: { id: 'chok_leyisrael' },
+    check: text(
+      'הטקסט של חק לישראל עוד לא הורד למכשיר.',
+      'The Chok LeYisrael text has not been downloaded to this device yet.',
+    ),
   },
   {
     file: 'siddur/[id]',

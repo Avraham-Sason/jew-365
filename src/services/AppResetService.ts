@@ -2,11 +2,14 @@ import { Platform } from 'react-native';
 import { storage } from '@/services/StorageService';
 import { clearTaharahStorage } from '@/services/TaharahStorage';
 import { clearLastError, reportError } from '@/services/errors';
+import { cancelChokDownload } from '@/services/ChokContentService';
+import { deleteChokFiles } from '@/services/chokFiles';
 import { useUserStore } from '@/stores/useUserStore';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
 import { useTaharahStore } from '@/stores/useTaharahStore';
+import { useChokStore } from '@/stores/useChokStore';
 import { NotificationScheduler, setSchedulingSuspended } from '@/services/NotificationScheduler';
 
 export const AppResetService = {
@@ -17,11 +20,13 @@ export const AppResetService = {
     setSchedulingSuspended(true);
     try {
       clearLastError();
+      cancelChokDownload();
       useUserStore.getState().reset();
       useMitzvotStore.getState().reset();
       useCompletionsStore.getState().reset();
       useCustomMitzvotStore.getState().reset();
       useTaharahStore.getState().reset();
+      useChokStore.getState().reset();
       try {
         await NotificationScheduler.cancelAll();
       } catch (error) {
@@ -35,6 +40,11 @@ export const AppResetService = {
         }
         try {
           clearTaharahStorage();
+        } catch (error) {
+          reportError('reset', error);
+        }
+        try {
+          deleteChokFiles();
         } catch (error) {
           reportError('reset', error);
         }

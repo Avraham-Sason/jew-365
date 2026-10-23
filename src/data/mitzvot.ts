@@ -93,12 +93,11 @@ export const CHOK_LEYISRAEL: Mitzvah = {
   nuschaotSupported: ALL_NUSCHAOT,
   defaultReminders: [
     {
-      anchor: 'start',
-      offsetMin: 240,
+      anchor: 'clock',
+      offsetMin: 9 * 60,
       label: 'זמן לימוד חק לישראל',
       bodyVariants: ['זמן לימוד חק לישראל', 'חק לישראל של היום מחכה לך', 'כמה דקות של תורה עם חק לישראל'],
     },
-    { anchor: 'clock', offsetMin: 20 * 60 + 30, label: 'תזכורת — עדיין לא למדת חק לישראל', skipIfDone: true },
   ],
   computeWindow: (ctx) => {
     const day = dayOf(ctx.zmanim, ctx.location);
@@ -300,7 +299,7 @@ export const MITZVOT: Mitzvah[] = [
       return win(nightfall(ctx.zmanim, ctx.location), nextAlot(ctx));
     },
   },
-  ...(hasChokContent() ? [CHOK_LEYISRAEL] : []),
+  CHOK_LEYISRAEL,
 ];
 
 export function findMitzvah(id: string): Mitzvah | undefined {

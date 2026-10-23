@@ -12,6 +12,9 @@ import { Card } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { MitzvahIcon } from '@/components/MitzvahIcon';
+import { CHOK_SIZE_ESTIMATE_MB } from '@/services/ChokContentService';
+import { useChokStore } from '@/stores/useChokStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
 import { useUserStore } from '@/stores/useUserStore';
@@ -29,6 +32,7 @@ describe('Mitzvot library', () => {
   beforeEach(() => {
     useUserStore.getState().reset();
     useMitzvotStore.getState().reset();
+    useChokStore.getState().reset();
     mockPush.mockReset();
   });
 
@@ -43,6 +47,26 @@ describe('Mitzvot library', () => {
   it('lists every registry mitzvah in registry order, then the two setting rows', () => {
     renderWithTheme(<MitzvotScreen />);
     expect(switchLabels()).toEqual([...MITZVOT.map((mitzvah) => mitzvah.name.he), HILULOT, ROSH_CHODESH]);
+  });
+
+  it('offers the Chok LeYisrael download while the add-on is not installed, and its switch opens the screen', () => {
+    renderWithTheme(<MitzvotScreen />);
+    expect(screen.getByText(`תוסף להורדה · כ־${CHOK_SIZE_ESTIMATE_MB} MB`)).toBeOnTheScreen();
+    const toggle = screen.getByRole('switch', { name: 'חק לישראל' });
+    expect(toggle).not.toBeChecked();
+    fireEvent(toggle, 'valueChange', true);
+    expect(mockPush).toHaveBeenCalledWith('/mitzvah/chok_leyisrael');
+    expect(useMitzvotStore.getState().activeMitzvot.chok_leyisrael.enabled).toBe(false);
+  });
+
+  it('lists Chok LeYisrael as a learning mitzvah once the add-on is installed, and its switch turns it on', () => {
+    installChokFixture();
+    renderWithTheme(<MitzvotScreen />);
+    expect(screen.queryByText(/תוסף להורדה/)).toBeNull();
+    expect(screen.getAllByText('לימוד')).toHaveLength(2);
+    fireEvent(screen.getByRole('switch', { name: 'חק לישראל' }), 'valueChange', true);
+    expect(useMitzvotStore.getState().activeMitzvot.chok_leyisrael.enabled).toBe(true);
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('draws a disabled mitzvah with a muted icon and an enabled one with the accent icon', () => {

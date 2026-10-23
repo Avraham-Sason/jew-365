@@ -43,6 +43,9 @@ jest.mock('expo-file-system', () => ({
   ),
 }));
 
+const mockReconcile = jest.fn();
+jest.mock('@/services/ChokContentService', () => ({ reconcileChokInstall: () => mockReconcile() }));
+
 const mockShareAsync = jest.fn(async (..._args: unknown[]) => {});
 jest.mock('expo-sharing', () => ({ shareAsync: (...args: unknown[]) => mockShareAsync(...args) }));
 
@@ -232,6 +235,22 @@ describe('BackupService', () => {
       expect(useCompletionsStore.getState().isDone('maariv', MARK_DAY)).toBe(false);
       expect(useCustomMitzvotStore.getState().items[custom.id]).toEqual(custom);
       expect(cancelAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('reconciles the Chok LeYisrael install once, before the schedule is rebuilt', async () => {
+      fillSource();
+      const backup = createBackup(CREATED);
+      const order: string[] = [];
+      mockReconcile.mockImplementation(() => order.push('reconcile'));
+      jest.spyOn(NotificationScheduler, 'rebuild').mockImplementation(async () => {
+        order.push('rebuild');
+      });
+
+      await restoreBackup(backup);
+
+      expect(mockReconcile).toHaveBeenCalledTimes(1);
+      expect(order[0]).toBe('reconcile');
+      expect(order).toContain('rebuild');
     });
 
     it('drops the schedule stamp, so a reload part-way rebuilds on the next launch', async () => {

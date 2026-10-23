@@ -8,6 +8,7 @@ import {
   setSchedulingSuspended,
   syncNotificationPermissionStatus,
 } from '@/services/NotificationScheduler';
+import { reconcileChokInstall } from '@/services/ChokContentService';
 import { reportError } from '@/services/errors';
 import type { AppLanguage } from '@/i18n';
 import { useUserStore } from '@/stores/useUserStore';
@@ -119,6 +120,7 @@ export async function restoreBackup(backup: Backup): Promise<void> {
       storage.set(name, raw);
       await store.persist.rehydrate();
     }
+    reconcileChokInstall();
     await syncNotificationPermissionStatus().catch((error) => reportError('schedule', error));
   } finally {
     setSchedulingSuspended(false);

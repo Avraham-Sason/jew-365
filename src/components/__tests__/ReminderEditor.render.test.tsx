@@ -12,15 +12,6 @@ jest.mock('expo-background-task', () => ({
   BackgroundTaskResult: { Success: 1, Failed: 2 },
   BackgroundTaskStatus: { Restricted: 1, Available: 2 },
 }));
-jest.mock('@/data/chokAssets.generated', () => {
-  const { parshiot } = require('@hebcal/core');
-  return {
-    CHOK_ASSETS: Object.fromEntries(
-      [...parshiot, 'Vezot Haberakhah'].map((parasha: string, index: number) => [parasha, index + 1]),
-    ),
-  };
-});
-
 import React from 'react';
 import { Dimensions, Modal, ScrollView, StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
@@ -31,6 +22,7 @@ import { customToMitzvah } from '@/data/customMitzvotAdapter';
 import { findMitzvah } from '@/data/mitzvot';
 import { t } from '@/i18n';
 import { useUserStore } from '@/stores/useUserStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import type { Reminder, ReminderAnchor, UserSettings } from '@/types/mitzvah';
@@ -49,6 +41,10 @@ const ONLY_DATE = [
 const JERUSALEM = CITIES[0];
 const SETTINGS: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
 const CHOK = findMitzvah('chok_leyisrael')!;
+
+beforeAll(() => {
+  installChokFixture();
+});
 const SHACHARIT = findMitzvah('shacharit')!;
 const OMER = findMitzvah('sefirat_haomer')!;
 const NAME = 'חק לישראל';

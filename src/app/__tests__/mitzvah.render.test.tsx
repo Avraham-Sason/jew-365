@@ -7,6 +7,11 @@ jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useRouter: () => ({ push: mockPush, back: mockBack, replace: mockReplace, canGoBack: () => true }),
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]),
+}));
+jest.mock('@/services/ChokContentService', () => ({
+  ...jest.requireActual('@/services/ChokContentService'),
+  checkChokUpdate: jest.fn(async () => {}),
 }));
 jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(async () => 'id'),
@@ -40,9 +45,11 @@ jest.mock('expo-background-task', () => ({
   BackgroundTaskStatus: { Restricted: 1, Available: 2 },
 }));
 
-import { fireEvent, screen } from '@testing-library/react-native';
+import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import MitzvahDetailScreen from '../mitzvah/[id]';
 import { CITIES } from '@/data/cities';
+import { useChokStore } from '@/stores/useChokStore';
+import { installChokFixture } from '@/testing/chok';
 import { renderWithTheme } from '@/testing/render';
 import { at } from '@/testing/zmanim';
 import { useMitzvotStore } from '@/stores/useMitzvotStore';
@@ -78,13 +85,16 @@ describe('Mitzvah screen', () => {
       isOnboarded: true,
     });
     useMitzvotStore.getState().reset();
+    useChokStore.getState().reset();
     mockPush.mockReset();
     mockBack.mockReset();
     mockReplace.mockReset();
   });
 
   afterEach(() => {
+    cleanup();
     jest.useRealTimers();
+    useChokStore.getState().reset();
   });
 
   it('gives an unknown id a header with a way back', () => {
@@ -114,6 +124,28 @@ describe('Mitzvah screen', () => {
     renderMitzvah({ id: 'shacharit' });
     expect(screen.getByRole('button', { name: 'חזרה לברירת מחדל' })).toHaveStyle({
       backgroundColor: THEMES.gold.surface2,
+    });
+  });
+
+  describe('Chok LeYisrael', () => {
+    it('offers the download and holds back the switch, the reminders and the text while not installed', () => {
+      renderMitzvah({ id: 'chok_leyisrael' });
+      expect(screen.getByRole('button', { name: 'הורדה' })).toBeOnTheScreen();
+      expect(screen.getByRole('switch').props.disabled).toBe(true);
+      expect(screen.getByText('אפשר להפעיל את המצווה אחרי ההורדה.')).toBeOnTheScreen();
+      expect(screen.queryByText('תזכורות')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'פתח נוסח' })).toBeNull();
+    });
+
+    it('shows the add-on, the 09:00 reminder and an enabled switch once installed', () => {
+      jest.setSystemTime(at(JERUSALEM, '2026-11-16T10:00'));
+      installChokFixture();
+      renderMitzvah({ id: 'chok_leyisrael' });
+      expect(screen.getByText(/^התוסף מותקן/)).toBeOnTheScreen();
+      expect(screen.getByText('תזכורות')).toBeOnTheScreen();
+      expect(screen.getByText(/ · 09:00$/)).toBeOnTheScreen();
+      expect(screen.getByRole('switch').props.disabled).toBeFalsy();
+      expect(screen.queryByText('אפשר להפעיל את המצווה אחרי ההורדה.')).toBeNull();
     });
   });
 });

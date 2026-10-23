@@ -37,6 +37,7 @@ import { fontFamilies } from '@/theme/typography';
 import { useUserStore } from '@/stores/useUserStore';
 import { initNotificationHandlers } from '@/services/NotificationScheduler';
 import { captureException } from '@/services/crashReporting';
+import { reconcileChokInstall } from '@/services/ChokContentService';
 import {
   initNotificationResponseHandler,
   consumePendingNotificationRoute,
@@ -311,6 +312,7 @@ function RootLayout() {
   useEffect(() => {
     if (!ready) return undefined;
     SplashScreen.hideAsync().catch(() => {});
+    reconcileChokInstall();
     return initNotificationHandlers();
   }, [ready]);
 

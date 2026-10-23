@@ -24,10 +24,18 @@ jest.mock('expo-background-task', () => ({
   BackgroundTaskStatus: { Restricted: 1, Available: 2 },
 }));
 
+const mockDeleteChokFiles = jest.fn();
+jest.mock('@/services/chokFiles', () => ({
+  ...jest.requireActual('@/services/chokFiles'),
+  deleteChokFiles: () => mockDeleteChokFiles(),
+}));
+
 import { AppResetService } from '../AppResetService';
 import { taharahStorage } from '../TaharahStorage';
 import { useUserStore } from '@/stores/useUserStore';
 import { useTaharahStore } from '@/stores/useTaharahStore';
+import { useChokStore } from '@/stores/useChokStore';
+import { installChokFixture } from '@/testing/chok';
 
 const SecureStore = require('expo-secure-store');
 
@@ -61,5 +69,15 @@ describe('AppResetService.reset', () => {
     expect(taharahStorage.getString('taharah-store')).toBeUndefined();
     expect(SecureStore.__store.get('taharah-mmkv-key')).toMatch(/^[A-Za-z0-9_-]{16}$/);
     expect(SecureStore.__store.get('taharah-mmkv-key')).not.toBe(keyBefore);
+  });
+
+  it('forgets the Chok LeYisrael add-on and deletes its files', async () => {
+    installChokFixture();
+    mockDeleteChokFiles.mockClear();
+
+    await AppResetService.reset();
+
+    expect(useChokStore.getState().installed).toBeNull();
+    expect(mockDeleteChokFiles).toHaveBeenCalledTimes(1);
   });
 });

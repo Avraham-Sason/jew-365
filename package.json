@@ -116,7 +116,6 @@
     ],
     "moduleNameMapper": {
       "\\.siddur$": "<rootDir>/scripts/jest-asset-stub.js",
-      "\\.chok$": "<rootDir>/scripts/jest-asset-stub.js",
       "(?:^|/)crashReporting$": "<rootDir>/src/services/crashReporting.ts"
     }
   },

@@ -34,7 +34,7 @@ import * as Haptics from 'expo-haptics';
 import { DateTime } from 'luxon';
 import Svg, { Path } from 'react-native-svg';
 import { findAnyMitzvah } from '@/data/customMitzvotAdapter';
-import { CHOK_TEXT_ID, chokAsset, hasChokContent } from '@/data/chok';
+import { CHOK_TEXT_ID } from '@/data/chok';
 import {
   SIDDUR_TEXTS,
   STANDALONE_TEXTS,
@@ -49,8 +49,10 @@ import {
 import { useDayModel } from '@/hooks/useDayModel';
 import { useNow } from '@/hooks/useNow';
 import { HDate } from '@hebcal/core';
+import { verifyChokInstall } from '@/services/ChokContentService';
 import { loadChokParasha, loadSiddurText } from '@/services/SiddurService';
 import { HebcalService } from '@/services/HebcalService';
+import { useChokStore } from '@/stores/useChokStore';
 import { useCompletionsStore, dateKey } from '@/stores/useCompletionsStore';
 import { selectActive, useMitzvotStore } from '@/stores/useMitzvotStore';
 import {
@@ -64,6 +66,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { BottomSheet, SheetAction } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ChokLicenseNotice } from '@/components/ChokLicenseNotice';
 import { ChokWeekControls } from '@/components/ChokWeekControls';
 import { MitzvahIcon } from '@/components/MitzvahIcon';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -332,6 +335,7 @@ export default function SiddurScreen() {
   const prayerMode = useUserStore((s) => s.prayerMode);
   const setPrayerMode = useUserStore((s) => s.setPrayerMode);
   const maritalStatus = useUserStore((s) => s.maritalStatus);
+  const chokInstall = useChokStore((s) => s.installed);
   const doubleChoice = useUserStore((s) => s.chokDoubleChoice);
   const setDoubleChoice = useUserStore((s) => s.setChokDoubleChoice);
   const standalone = mitzvah || chok ? null : standaloneTextId(params.id);
@@ -370,7 +374,9 @@ export default function SiddurScreen() {
   const place = useMemo(() => siddurPlace(location, inIsrael), [location, inIsrael]);
   const features = useMemo(() => dayFeatures(hebrewDay, place), [hebrewDay, place]);
   const available = chok
-    ? hasChokContent() && chokWeek.length > 0 && chokWeek.every((parasha) => chokAsset(parasha) !== undefined)
+    ? chokInstall !== null &&
+      chokWeek.length > 0 &&
+      chokWeek.every((parasha) => chokInstall.files[parasha] !== undefined)
     : standalone
       ? hasStandaloneText(standalone, nusach, features)
       : Boolean(mitzvah && hasSiddurText(mitzvah, nusach, windowDate, place));
@@ -468,7 +474,11 @@ export default function SiddurScreen() {
       setLoad({ status: 'loading' });
       Promise.all(chokWeek.map(loadChokParasha))
         .then((assets) => active && setLoad({ status: 'chok', assets }))
-        .catch(() => active && setLoad({ status: 'error' }));
+        .catch(() => {
+          if (!active) return;
+          verifyChokInstall();
+          setLoad({ status: 'error' });
+        });
       return () => {
         active = false;
       };
@@ -487,7 +497,7 @@ export default function SiddurScreen() {
     return () => {
       active = false;
     };
-  }, [mitzvah, available, nusach, textId, attempt, chok, chokWeek]);
+  }, [mitzvah, available, nusach, textId, attempt, chok, chokWeek, chokInstall?.version]);
 
   useEffect(() => {
     if (chokWeek.length < 2 || doubleChoice !== null || asked.current) return;
@@ -746,6 +756,18 @@ export default function SiddurScreen() {
 
   const body = (() => {
     if (!mitzvah && !standalone && !chok) return <Message text={t('errors.generic')} />;
+    if (chok && chokInstall === null) {
+      return (
+        <View style={styles.center}>
+          <Text style={[typography.body, { color: colors.textSub }]}>{t('chok.addon.readerMissing')}</Text>
+          <Button
+            label={t('chok.addon.goDownload')}
+            onPress={() => router.push(`/mitzvah/${CHOK_TEXT_ID}`)}
+            style={styles.retryAction}
+          />
+        </View>
+      );
+    }
     if (!available) return <Message text={t('siddur.unavailable')} />;
     if (load.status === 'loading') {
       return (
@@ -860,6 +882,7 @@ export default function SiddurScreen() {
           viewabilityConfig={SECTION_VIEWABILITY}
           onViewableItemsChanged={onViewableSectionsChanged}
           contentContainerStyle={styles.content}
+          ListHeaderComponent={chok ? <ChokLicenseNotice style={styles.licenseNotice} /> : null}
           onScrollToIndexFailed={() => {
             jumpMissed.current = true;
           }}
@@ -1252,6 +1275,9 @@ const styles = StyleSheet.create({
   retryAction: {
     marginTop: spacing.md,
     alignSelf: 'center',
+  },
+  licenseNotice: {
+    marginBottom: spacing.md,
   },
   doneRow: {
     flexDirection: 'row',

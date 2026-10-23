@@ -1,0 +1,71 @@
+&UniqueId=9001&ForcedBookName=בדיקה&TextSource=מקור בדיקה&LastLevelIndex=2&CosmeticsType=#nik=1#rep=(=<small><small>(^^)=)</small></small>#rep3=<RashiTitle1>=<span style='background-color:MIX1; color:MIX9;'><small>_nbsp;רש''י _nbsp;</small></span>_nbsp;#rep4=<RashiTitle2>=<span style='background-color:MIX2; color:MIX9;'><small>_nbsp;רש''י _nbsp;</small></span>_nbsp;#rep6=<BartaTitle>=<span style='color:MIX4; font-size:100%; font-family:FONT5;'><span style='background-color:MIX4; color:MIX9;'><small>_nbsp;ברטנורה _nbsp;</small></span>_nbsp;#rep7=<RashiTitle5>=<span style='color:MIX5; font-size:105%; font-family:FONT5;'><span style='background-color:MIX5; color:MIX9;'><small>_nbsp;רש''י_nbsp;</small></span>_nbsp;#rep8=<ZoharTitle>=<span style='color:MIX6; font-size:115%; font-family:FONT5;'><span style='background-color:MIX6; color:MIX9;'><small>_nbsp;תרגום הזוהר_nbsp;</small></span>_nbsp;#rep9=<90>=<span style='font-size:126%;'>#rep10=<100>=<span style='font-size:145%;'>#rep11=<110>=<span style='font-size:160%;'>#rep12=<150>=<span style='font-size:210%;'>#rep14=<b115>=<b style='font-size:185%'>#rep15=<OleStyle>=<small style='background color:RGB(118,148,218); color:white;'>#rep16=<j>=<span style='font-size:200%;'> </span>&GroupId=test&Comments=
+$ חק לישראל - ספר בדיקה
+
+# הקדמות
+@ הקדמה
+<100>מבוא שאינו נקרא<RashiTitle1>הערה במבוא</span>
+~ תפלה לפני הלימוד
+<100>תפלה</span>
+
+# פרשת ראשונה
+
+
+**INDEX_WRITE=<BR>
+
+@ ראשונה יום ראשון   תורה
+<small><small>כוונה לפני הקריאה:</small></small>
+
+
+<big><b>א</b></big> (א) <150>  <!--It=1,c=1,p=1--> פָּסוּק רִאשׁוֹן:<!--ep--> </span> <90><j><!--Io=2,c=1,p=1-->תַּרְגּוּם<j>רִאשׁוֹן:<!--ep--><j></span><span style='color:MIX1; font-size:70%; font-family:FONT5;'>
+
+<br><RashiTitle1><!--Ir=3,c=1,p=1-->פֵּירוּשׁ (מקור א) קָצָר: <!--ep-->  </span>
+
+(ב) <150>  <!--It=1,c=1,p=2--><b><small><OleStyle>&nbspשני&nbsp</small></small>&nbsp</b>פָּסוּק שֵׁנִי:<!--ep--> </span> <90><j><!--Io=2,c=1,p=2-->תַּרְגּוּם שֵׁנִי:<!--ep--><j></span>
+
+
+
+~ נביאים - ספר - פרק ג
+(ד)<150> <!--In=4,c=3,p=4-->פָּסוּק נָבִיא:<!--ep--> </span><90><j>תַּרְגּוּם<j>נָבִיא<j>: </span><span style='color:MIX2; font-size:70%; font-family:FONT5;'>
+
+<br><RashiTitle2><!--Ip=5,c=3,p=4--><b>דִּבּוּר .</b> פֵּירוּשׁ נָבִיא : <!--ep-->  </span>
+
+(ה)<150> <!--In=4,c=3,p=5-->פָּסוּק נָבִיא שֵׁנִי:<!--ep--> </span><90><j>תַּרְגּוּם נָבִיא שֵׁנִי<j>: </span>
+
+~ משנה מסכת פרק א
+<110> <b115>א.</b> מִשְׁנָה רִאשׁוֹנָה (גִּרְסָה) סוֹף:</span><br><br><BartaTitle><b>(א) משנה ראשונה.</b> פירוש ברטנורה: </span><br><br><110>  <b115>ב.</b> מִשְׁנָה שְׁנִיָּה:</span>
+
+~ גמרא מסכת דף ב' ע''א
+<100>גְּמָרָא אָמַר (פסוק ט''ו) וְגוֹ' סוֹף:</span>
+
+
+<RashiTitle5><b>אמר.</b> פירוש גמרא:</span>
+
+~ זוהר פרשה דף ג ע''ב
+<100>זֹהַר אֲרָמִית:</span>
+
+
+<ZoharTitle>זֹהַר עִבְרִית.</span>
+
+~ הלכה פסוקה
+<100> <small><small>מקור ההלכה ז''ל</small></small>
+
+ <b115>א.</b> הֲלָכָה רִאשׁוֹנָה<QM> כֵּן:</span>
+
+~ מוסר
+<100> מוּסָר קָצָר:</span>
+
+@ ראשונה ליל שישי   תורה
+(ג) <150>  <!--It=1,c=1,p=3-->פָּסוּק שְׁלִישִׁי:<!--ep--> </span> <90><j><!--Io=2,c=1,p=3-->תַּרְגּוּם שְׁלִישִׁי:<!--ep--><j></span>
+
+@ ראשונה יום שישי
+
+~ הפטרת ראשונה כמנהג הספרדים - ספר ד
+<110><110><small>(א)</small>  <!--Ih=6,c=4,p=1-->הַפְטָרָה סְפָרַדִּית:<!--ep--> </span></span>
+
+<small><small>כאן מסיימים</small></small>
+
+~ הפטרת ראשונה כמנהג האשכנזים - ספר ה
+<110><110><small>(א)</small>  <!--Ih=6,c=5,p=1-->הַפְטָרָה אַשְׁכְּנַזִּית:<!--ep--> </span></span>
+
+~ משנה מסכת פרק ב
+<110> <b115>א.</b> מִשְׁנַת שִׁשִּׁי:</span>

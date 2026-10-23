@@ -17,7 +17,6 @@ jest.mock('expo-background-task', () => ({
   BackgroundTaskStatus: { Restricted: 1, Available: 2 },
 }));
 
-import { parshiot } from '@hebcal/core';
 import { nextReminderAt } from '../NotificationScheduler';
 import * as web from '../NotificationScheduler.web';
 import { buildPlan } from '@/services/notifications/plan';
@@ -27,16 +26,12 @@ import { CITIES } from '@/data/cities';
 import { MITZVOT } from '@/data/mitzvot';
 import { rulesFor } from '@/data/taharahPresets';
 import { HebcalService } from '@/services/HebcalService';
+import { useChokStore } from '@/stores/useChokStore';
+import { installChokFixture } from '@/testing/chok';
 import { at, zmanimFor } from '@/testing/zmanim';
 import type { Mitzvah, Reminder, UserSettings } from '@/types/mitzvah';
 import type { Location } from '@/types/zmanim';
 import { isQuietAt } from '@/utils/skipRules';
-
-type ChokModules = {
-  mitzvot: typeof import('@/data/mitzvot');
-  plan: typeof import('@/services/notifications/plan');
-  planner: typeof import('@/services/notifications/planners/mitzvot');
-};
 
 const JERUSALEM = CITIES[0];
 const LONDON = CITIES.find((city) => city.cityId === 'london')!;
@@ -44,9 +39,6 @@ const LOS_ANGELES = CITIES.find((city) => city.nameEn === 'Los Angeles')!;
 const IL: UserSettings = { nusach: 'ashkenaz', halachicOpinions: { ksSofZman: 'GRA' }, inIsrael: true };
 const ABROAD: UserSettings = { ...IL, inIsrael: false };
 const MARK = 1_000;
-const EVERY_PARASHA: Record<string, number> = Object.fromEntries(
-  [...parshiot, 'Vezot Haberakhah'].map((parasha, index) => [parasha, index + 1]),
-);
 
 const byId = (id: string) => MITZVOT.find((mitzvah) => mitzvah.id === id)!;
 const zmanimOn = (iso: string, location: Location = JERUSALEM) => zmanimFor(at(location, `${iso}T12:00`), location);
@@ -232,35 +224,26 @@ describe('nextReminderAt', () => {
 });
 
 describe('nextReminderAt for Chok LeYisrael', () => {
-  let chok!: ChokModules;
-  jest.isolateModules(() => {
-    jest.doMock('../../data/chokAssets.generated', () => ({ CHOK_ASSETS: EVERY_PARASHA }));
-    chok = {
-      mitzvot: require('@/data/mitzvot'),
-      plan: require('@/services/notifications/plan'),
-      planner: require('@/services/notifications/planners/mitzvot'),
-    };
+  beforeAll(() => {
+    installChokFixture();
   });
-  const CHOK = chok.mitzvot.findMitzvah('chok_leyisrael')!;
-  const morning = (iso: string) => minutes(zmanimOn(iso).alotHaShachar, 240);
-  const evening = (iso: string) => at(JERUSALEM, `${iso}T20:30`);
+  afterAll(() => {
+    useChokStore.getState().reset();
+  });
+
+  const CHOK = byId('chok_leyisrael');
+  const morning = (iso: string) => at(JERUSALEM, `${iso}T09:00`);
   const nextChok = (now: Date, overrides: Partial<ReminderScope> = {}) =>
-    chok.planner.nextReminderAt(CHOK, CHOK.defaultReminders, scopeAt(now, overrides));
+    nextReminderAt(CHOK, CHOK.defaultReminders, scopeAt(now, overrides));
 
-  it('is the morning reminder while the day has not started, and the evening one once it has fired', () => {
+  it('is the 09:00 reminder while the day has not started, and the next day once it has fired', () => {
     expect(nextChok(at(JERUSALEM, '2026-12-14T04:00'))?.getTime()).toBe(morning('2026-12-14').getTime());
-    expect(nextChok(minutes(morning('2026-12-14'), 1))?.getTime()).toBe(evening('2026-12-14').getTime());
-  });
-
-  it("goes on to the next learning day's first reminder after the evening one", () => {
-    const afterEvening = minutes(evening('2026-12-14'), 30);
-    expect(afterEvening.getTime()).toBeLessThan(zmanimOn('2026-12-15').alotHaShachar.getTime());
-    expect(nextChok(afterEvening)?.getTime()).toBe(morning('2026-12-15').getTime());
+    expect(nextChok(minutes(morning('2026-12-14'), 1))?.getTime()).toBe(morning('2026-12-15').getTime());
     expect(nextChok(at(JERUSALEM, '2026-12-15T02:00'))?.getTime()).toBe(morning('2026-12-15').getTime());
   });
 
-  it('goes past Shabbat: Thursday night to Friday, and Friday, which has no evening reminder, to Sunday', () => {
-    expect(nextChok(minutes(evening('2026-12-17'), 30))?.getTime()).toBe(morning('2026-12-18').getTime());
+  it('goes past Shabbat: Thursday to Friday, and Friday to Sunday', () => {
+    expect(nextChok(minutes(morning('2026-12-17'), 1))?.getTime()).toBe(morning('2026-12-18').getTime());
     const sunday = nextChok(minutes(morning('2026-12-18'), 1))!;
     expect(sunday.getTime()).toBe(morning('2026-12-20').getTime());
     expect(isQuietAt(sunday, JERUSALEM)).toBe(false);
@@ -273,15 +256,22 @@ describe('nextReminderAt for Chok LeYisrael', () => {
     );
   });
 
-  it('names the 20:30 reminder on the clock of the location, the Friday one too where candle lighting is later', () => {
+  it('names the 09:00 reminder on the clock of the location, the Friday one too', () => {
     const london = { location: LONDON, settings: ABROAD };
-    const morningIn = (iso: string) => minutes(zmanimOn(iso, LONDON).alotHaShachar, 240);
-    const afterMorning = (iso: string) => minutes(morningIn(iso), 1);
-    expect(nextChok(afterMorning('2027-06-17'), london)?.getTime()).toBe(at(LONDON, '2027-06-17T20:30').getTime());
-    expect(nextChok(at(LONDON, '2027-06-17T21:00'), london)?.getTime()).toBe(morningIn('2027-06-18').getTime());
-    expect(nextChok(afterMorning('2027-06-18'), london)?.getTime()).toBe(at(LONDON, '2027-06-18T20:30').getTime());
-    for (const now of [afterMorning('2027-06-17'), at(LONDON, '2027-06-17T21:00'), afterMorning('2027-06-18')]) {
-      const planned = plannedNext(chok.plan.buildPlan(planInput(CHOK, now, london)), 'chok_leyisrael');
+    const londonMorning = (iso: string) => at(LONDON, `${iso}T09:00`);
+    expect(nextChok(at(LONDON, '2027-06-17T04:00'), london)?.getTime()).toBe(londonMorning('2027-06-17').getTime());
+    expect(nextChok(minutes(londonMorning('2027-06-17'), 1), london)?.getTime()).toBe(
+      londonMorning('2027-06-18').getTime(),
+    );
+    expect(nextChok(minutes(londonMorning('2027-06-18'), 1), london)?.getTime()).toBe(
+      londonMorning('2027-06-20').getTime(),
+    );
+    for (const now of [
+      at(LONDON, '2027-06-17T04:00'),
+      minutes(londonMorning('2027-06-17'), 1),
+      minutes(londonMorning('2027-06-18'), 1),
+    ]) {
+      const planned = plannedNext(buildPlan(planInput(CHOK, now, london)), 'chok_leyisrael');
       expect(nextChok(now, london)?.getTime()).toBe(planned!.getTime());
     }
   });
@@ -290,11 +280,10 @@ describe('nextReminderAt for Chok LeYisrael', () => {
     for (const now of [
       at(JERUSALEM, '2026-12-14T04:00'),
       minutes(morning('2026-12-14'), 1),
-      minutes(evening('2026-12-14'), 30),
-      minutes(evening('2026-12-17'), 30),
+      minutes(morning('2026-12-17'), 1),
       minutes(morning('2026-12-18'), 1),
     ]) {
-      const planned = plannedNext(chok.plan.buildPlan(planInput(CHOK, now)), 'chok_leyisrael');
+      const planned = plannedNext(buildPlan(planInput(CHOK, now)), 'chok_leyisrael');
       expect(nextChok(now)?.getTime()).toBe(planned!.getTime());
     }
   });

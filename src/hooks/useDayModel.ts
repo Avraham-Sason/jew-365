@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { customToMitzvah } from '@/data/customMitzvotAdapter';
 import { MITZVOT } from '@/data/mitzvot';
+import { useChokStore } from '@/stores/useChokStore';
 import { useCompletionsStore } from '@/stores/useCompletionsStore';
 import { useCustomMitzvotStore } from '@/stores/useCustomMitzvotStore';
 import { ActiveMitzvahState, enabledSinceOf, useMitzvotStore } from '@/stores/useMitzvotStore';
@@ -19,6 +20,7 @@ export type DayModelState = {
   halachicOpinions: UserSettings['halachicOpinions'];
   activeMitzvot: Record<string, ActiveMitzvahState>;
   customItems: Record<string, CustomMitzvah>;
+  chokInstalled: boolean;
 };
 
 export type DayModel = {
@@ -28,13 +30,14 @@ export type DayModel = {
   nusach: Nusach;
   inIsrael: boolean;
   language: 'he' | 'en';
+  chokInstalled: boolean;
   settings: UserSettings;
   nameFor: (mitzvah: Pick<Mitzvah, 'name'>) => string;
   checkInInput: () => CheckInInput;
 };
 
 export function dayModelFrom(state: DayModelState): DayModel {
-  const { location, nusach, inIsrael, language, halachicOpinions, activeMitzvot, customItems } = state;
+  const { location, nusach, inIsrael, language, halachicOpinions, activeMitzvot, customItems, chokInstalled } = state;
   const customs = Object.values(customItems)
     .sort((a, b) => a.createdAt - b.createdAt)
     .map(customToMitzvah);
@@ -48,6 +51,7 @@ export function dayModelFrom(state: DayModelState): DayModel {
     nusach,
     inIsrael,
     language,
+    chokInstalled,
     settings,
     nameFor: (mitzvah) => mitzvahName(mitzvah, language),
     checkInInput: () => {
@@ -79,5 +83,9 @@ export function useDayModel(): DayModel {
   );
   const activeMitzvot = useMitzvotStore((s) => s.activeMitzvot);
   const customItems = useCustomMitzvotStore((s) => s.items);
-  return useMemo(() => dayModelFrom({ ...user, activeMitzvot, customItems }), [user, activeMitzvot, customItems]);
+  const chokInstalled = useChokStore((s) => s.installed !== null);
+  return useMemo(
+    () => dayModelFrom({ ...user, activeMitzvot, customItems, chokInstalled }),
+    [user, activeMitzvot, customItems, chokInstalled],
+  );
 }
