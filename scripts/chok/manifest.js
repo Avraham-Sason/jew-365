@@ -65,13 +65,13 @@ const PARASHIYOT = [
 ].map(([parasha, heading]) => ({ parasha, heading }));
 
 const CREDIT = {
-  title: "ר' פנחס ראובן שליט״א, ר' שגיב מחפוד שליט״א ו-J. Alan Groves Center, מתוך מאגר תורת אמת",
+  title: "ר' פנחס ראובן שליט״א, ר' שגיב מחפוד שליט״א ומרכז J. Alan Groves, מתוך מאגר תורת אמת",
   license: 'CC BY-NC-SA 2.5',
   url: 'https://creativecommons.org/licenses/by-nc-sa/2.5/',
 };
 
 const MANIFEST_CREDIT = {
-  he: "ר' פנחס ראובן שליט״א, ר' שגיב מחפוד שליט״א ו-J. Alan Groves Center, תחת רישיון CC BY-NC-SA 2.5, מתוך מאגר תורת אמת",
+  he: "ר' פנחס ראובן שליט״א, ר' שגיב מחפוד שליט״א ומרכז J. Alan Groves, תחת רישיון CC BY-NC-SA 2.5, מתוך מאגר תורת אמת",
   en: "R' Pinchas Reuven, R' Sagiv Mahfud and the J. Alan Groves Center, under CC BY-NC-SA 2.5, from the Torat Emet database",
 };
 
