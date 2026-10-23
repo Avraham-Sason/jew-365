@@ -2,7 +2,7 @@
 
 ## App Store Connect App Record
 
-The record is shared by both languages: see [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md) (Apple ID `6825802248`, primary language Hebrew, name `יהודי 365`). The version page's language-independent fields (copyright, build, App Review information and notes) are recorded there too.
+The record is shared by both languages: see [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md) (Apple ID `6825802248`, primary language Hebrew, name `יהודי 365`). The version page's language-independent fields (copyright, build, App Review information and notes, release option, TestFlight) and the App Privacy answers are recorded there too.
 
 ## App Name
 

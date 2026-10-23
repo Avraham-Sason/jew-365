@@ -29,8 +29,8 @@ Reminders are local notifications scheduled on the device for each mitzvah's hal
 By design the app rests on Shabbat and Jewish holidays at the chosen city: from candle lighting until after nightfall it shows a rest screen and sends no notifications. If the review falls on a Friday evening or Saturday in Israel, pick a city in another time zone, such as New York, during onboarding.
 ```
 
-- Release option: not chosen yet.
-- TestFlight: internal group Team (Expo) (365jew@gmail.com); external group Beta testers with build 1.0.21 (4), public link https://testflight.apple.com/join/cZeSqPzG (open to anyone, no limit), Test Information: feedback 365jew@gmail.com, sign-in not required.
+- Release option: Manually release this version (saved 2026-10-23), so an approved version waits for the owner's Release.
+- TestFlight: internal group Team (Expo) (365jew@gmail.com); external group Beta testers with build 1.0.21 (4), public link https://testflight.apple.com/join/cZeSqPzG (open to anyone, no limit), Test Information: feedback 365jew@gmail.com, beta review contact Avraham Sason, +972546559314, 365jew@gmail.com, sign-in not required. The Beta App Review passed on 2026-10-23; that day the group listed 7 testers: moshechaim22@gmail.com invited, and 6 anonymous public-link installs of 1.0.21 (4) on iOS 26 and 27.
 - App Information: primary category Lifestyle, no secondary category. Content Rights: yes, third-party content with the necessary rights (the siddur texts, under Public Domain, CC0, CC-BY and CC-BY-SA, credited in the reader).
 - Pricing and Availability: free ($0.00, base country United States) in all 175 countries or regions and future ones. iPhone only on the App Store: Apple Silicon Mac and Apple Vision Pro availability off.
 
@@ -116,7 +116,7 @@ Age rating as saved in App Store Connect on 2026-10-22 (the owner's approval), f
 
 ## App Privacy Answers
 
-- Data collected: Diagnostics, Crash Data. Not linked to the user. Not used for tracking. Processor: Functional Software, Inc. (Sentry).
+- Data collected: Diagnostics, Crash Data. Not linked to the user. Used for App Functionality and Analytics. Not used for tracking. Processor: Functional Software, Inc. (Sentry).
 - The device's iCloud backup and the exported backup file do not reach the developer: the first is Apple's service in the user's account, the second goes only where the user sends it. Neither is data collection.
 - Data collected: Contact Info, Name and Phone Number, and User Content, Other User Content (the message). Sent only when the user sends a message from Settings → Contact us, through Formspree (Formspree, Inc.) to the developer's email. Linked to the user. Used for App Functionality (customer support). Not used for tracking.
 - Data collected: Identifiers, Device ID. expo-updates sends a random installation identifier (the EAS client id) with every update check, which Expo, a service provider, uses to count installs. Not linked to the user. Used for App Functionality and Analytics. Not used for tracking. The same answer as Play's Device or other IDs.

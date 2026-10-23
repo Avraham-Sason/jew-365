@@ -123,7 +123,7 @@ Submitted in the Play Console on 2026-10-20 (all ten declarations complete):
 - Exact alarms (asked once the first AAB declared `USE_EXACT_ALARM`, 2026-10-22): core functionality Calendar, the owner's call: a Hebrew calendar with day, week and month views and reminders at exact halachic times. Snooze, sounds and repeat stay within it; a full-screen ringing alarm would also need `USE_FULL_SCREEN_INTENT`, and then this answer moves to Alarm clock.
 - AI asset declaration (store listing, 2026-10-22): the app icon and the feature graphic are labelled created or edited using AI, since the logo was drawn after an AI-generated reference; the screenshots are not labelled.
 
-Store settings: category Lifestyle, contact email 365jew@gmail.com, website https://jew-365.github.io/jew-365/.
+Store settings: category Lifestyle, contact email 365jew@gmail.com, no phone, website https://jew-365.github.io/jew-365/, external marketing on (Play's default).
 
 ## Content Rating Draft
 
@@ -147,8 +147,7 @@ The redesigned set made on 2026-10-21 replaced the temporary graphics of 2026-10
 - Feature graphic: 1024x500, a cream background with the full logo, the name, the tagline and a one-line description.
 - Phone screenshots, 1080x1920 from the web build, in this order: Home, Siddur tab, Reader, History, Settings. The mitzvah detail screen is left out because the web build renders its switches broken.
 
-Uploading the set to the Hebrew default listing, and to the English translation, is still to do: a step the owner takes in the Play Console, or approves.
-
+In the console (checked 2026-10-23) the default listing carries them as `v3-icon-512.png`, `v2-feature-graphic-1024x500.png` and `v2-1-home.png` to `v2-5-settings.png`, and the English translation shows the same files.
 ## Closed Test
 
 The Play Console account is personal, so production needs at least 12 testers opted in for 14 days in a row (see [../not-close.md](../not-close.md)).
