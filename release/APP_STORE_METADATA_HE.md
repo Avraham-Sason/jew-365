@@ -1,5 +1,9 @@
 # App Store Metadata — Hebrew
 
+## App Store Connect App Record
+
+The record is shared by both languages: see [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md) (Apple ID `6825802248`, primary language Hebrew, name `יהודי 365`). The version page's language-independent fields (copyright, build, App Review information and notes) are recorded there too.
+
 ## App Name
 
 יהודי 365
@@ -71,24 +75,20 @@ https://jew-365.github.io/jew-365/privacy/
 - No user-generated content
 - No unrestricted web access
 - No gambling
-- No alcohol, tobacco, or drug references
-- No sexual content
+- Alcohol references: Infrequent (the wine blessings in the siddur texts); no tobacco or drugs
+- No sexual content; mature or suggestive themes Infrequent (the taharah screens)
 - Religious content only
 - Medical/Treatment Information: Infrequent/Mild. The optional taharah tracker records menstrual-cycle related dates on the device; it gives no medical advice, diagnosis or treatment.
 
 הדירוג הצפוי: הדירוג ש-App Store Connect מחשב מתוך השאלון שלו, והתשובה על Medical/Treatment Information היא שמעלה אותו. לא מגישים `4+`; לוקחים את הדירוג שהמערכת מחשבת.
 
+הדירוג שנשמר ב-App Store Connect ב-22 באוקטובר 2026: 13+ ב-172 מדינות ואזורים. התשובות המלאות, כולל אזכורי היין בברכות ונושאי הטהרה כ-Infrequent, רשומות ב-[APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md).
+
 ## Screenshot Plan
 
-- Home (gold)
-- Home (dark)
-- Siddur tab
-- Reader
-- Schedule (day)
-- Mitzvah detail
-- Settings
+Phone screenshots in use, 1206x2622 (iPhone 6.3 inch) from the web build, uploaded to the Hebrew version page on 2026-10-22, in the same order as Google Play: Home, Siddur tab, Reader, History, Settings. They were taken on 2026-10-22 in headless Edge at a 402x874 viewport with a device scale of 3, Hebrew, the gold palette, a seeded 30-day history, and the clock set to 19:10 in Jerusalem so the evening prayer is current; the web build's notification-permission banner is hidden, as on a device that granted it. The mitzvah detail screen is left out because the web build renders its switches broken. Local copies: `Downloads/jew365-appstore-assets/iphone-6.3` (a 1320x2868 set made first is in `iphone-6.9`, unused).
 
 Target sizes (Apple scales down from the largest of each family):
 
-- 6.9 inch iPhone — 1320x2868
+- iPhone with Dynamic Island (medium display), the one iPhone slot App Store Connect asks for since 2026: 1206x2622 or 1179x2556 (6.3 or 6.1 inch); it is used for every iPhone size and localization unless Media Manager overrides it.
 - No iPad screenshots: `supportsTablet` is false in [../app.json](../app.json) (the owner's call, 2026-10-22), so the app is iPhone only and an iPad runs it in iPhone compatibility mode. Turning it on is a native build plus 13 inch iPad screenshots (2064x2752) and `ios.requireFullScreen`, since the app is portrait only; once a version with iPad support ships, the support cannot be removed.

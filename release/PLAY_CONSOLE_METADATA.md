@@ -163,7 +163,7 @@ Release notes of the first test release:
 <en-US>First test release of Jew 365: zmanim, reminders inside each mitzvah's time window, a siddur in four nusachim, Shabbat rest and a weekly report. Feedback: 365jew@gmail.com</en-US>
 ```
 
-Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp; `*` marks bold, and each link stands on its own line so WhatsApp makes it tappable). Its web version is [../docs/testers/index.html](../docs/testers/index.html), served at `https://jew-365.github.io/jew-365/testers/`; a changed link or step changes both:
+Invitation to testers, Android (the Google Play closed test) and iPhone (the TestFlight public link of the external group, see [APP_STORE_METADATA_EN.md](APP_STORE_METADATA_EN.md)) (Hebrew, WhatsApp; `*` marks bold, and each link stands on its own line so WhatsApp makes it tappable). Its web version is [../docs/testers/index.html](../docs/testers/index.html), served at `https://jew-365.github.io/jew-365/testers/`; a changed link or step changes both:
 
 ```
 היי חברים יקרים! 👋
@@ -180,11 +180,11 @@ Invitation to testers, sent once Google approves the release (Hebrew, WhatsApp; 
 📖 סידור בארבעה נוסחים
 ועוד הרבה... ✨
 
-🙏 *מחפשים בודקים לפני ההשקה* (כרגע רק באנדרואיד)
+🙏 *מחפשים בודקים לפני ההשקה* (אנדרואיד ואייפון)
 מי שמצטרף נהנה מהאפליקציה לפני כולם, לוקח חלק בזיכוי הרבים, וכמובן לא מפספס אף מצווה 💪🏼
 
 ━━━━━━━━━━━━
-*איך מצטרפים? 3 שלבים קצרים*
+🤖 *באנדרואיד: 3 שלבים קצרים*
 (את כל השלבים עושים עם חשבון ה-Google שמחובר ל-Play בטלפון)
 
 *1️⃣ מצטרפים לקבוצה*
@@ -201,9 +201,17 @@ https://play.google.com/store/apps/details?id=com.jew365.app
 ⚠️ *מופיע "הפריט לא נמצא"?*
 חוזרים לקישור 2 ולוחצים שם על "download it on Google Play".
 ❌ לא ללחוץ על "Leave the program"!
-━━━━━━━━━━━━
 
 📌 *חשוב:* להשאיר את האפליקציה מותקנת לפחות 14 יום.
+━━━━━━━━━━━━
+🍎 *באייפון: 2 שלבים קצרים*
+
+*1️⃣ מתקינים את TestFlight מה-App Store*
+https://apps.apple.com/app/testflight/id899247664
+
+*2️⃣ פותחים את הקישור באייפון ולוחצים "Accept" ואז "Install":*
+https://testflight.apple.com/join/cZeSqPzG
+━━━━━━━━━━━━
 
 💬 *נשמח לשמוע מכם כדי לשפר:*
 365jew@gmail.com

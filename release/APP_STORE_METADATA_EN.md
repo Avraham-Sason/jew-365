@@ -1,5 +1,39 @@
 # App Store Metadata — English
 
+## App Store Connect App Record
+
+Created on 2026-10-22 under Avraham Shimon Sason (Individual, Team `KQ5K8G9ANH`), the same record for both languages:
+
+- Platform iOS, name `יהודי 365`, primary language Hebrew; English is a localization added on the version page.
+- Bundle ID `com.jew365.app` (registered by EAS as `jew365orgjew365 be12d567c3dd2425ba2b004571eb36c0`).
+- SKU `jew365-ios`, Apple ID `6825802248`, user access Full Access. Bundle ID and SKU cannot change; name and primary language can, in App Information.
+
+## Version Page (1.0.21)
+
+Saved on 2026-10-22 on the Hebrew version page; the English (U.S.) localization was added the same day with the English copy of this file and the English Privacy Policy URL. It reuses the Hebrew screenshots ("Using Existing Assets").
+
+- Copyright: `2026 Avraham Shimon Sason`.
+- Build: 1.0.21 (4), EAS build `72c51b1e`.
+- App Review Information: sign-in required off; contact Avraham Sason, +972546559314, 365jew@gmail.com; no attachment.
+- App Review notes, as submitted:
+
+```
+No account, login or payment anywhere in the app; every screen opens without signing in.
+
+The app is Hebrew-first. To review it in English: Settings > Device and notifications > Language > English.
+
+Optional family purity tracker: Settings > Profile, set Gender and Marital status: Married, then turn on Family purity tracking. Its screens open with the device's own Face ID, Touch ID or passcode; on a device without biometrics the lock is off, and it can also be turned off in the tracker's settings. Its data is kept on the device, encrypted.
+
+Reminders are local notifications scheduled on the device for each mitzvah's halachic time window, computed from the chosen city (Jerusalem by default).
+
+By design the app rests on Shabbat and Jewish holidays at the chosen city: from candle lighting until after nightfall it shows a rest screen and sends no notifications. If the review falls on a Friday evening or Saturday in Israel, pick a city in another time zone, such as New York, during onboarding.
+```
+
+- Release option: not chosen yet.
+- TestFlight: internal group Team (Expo) (365jew@gmail.com); external group Beta testers with build 1.0.21 (4), public link https://testflight.apple.com/join/cZeSqPzG (open to anyone, no limit), Test Information: feedback 365jew@gmail.com, sign-in not required.
+- App Information: primary category Lifestyle, no secondary category. Content Rights: yes, third-party content with the necessary rights (the siddur texts, under Public Domain, CC0, CC-BY and CC-BY-SA, credited in the reader).
+- Pricing and Availability: free ($0.00, base country United States) in all 175 countries or regions and future ones. iPhone only on the App Store: Apple Silicon Mac and Apple Vision Pro availability off.
+
 ## App Name
 
 Jew 365
@@ -71,12 +105,14 @@ https://jew-365.github.io/jew-365/privacy/en/
 - No user-generated content
 - No unrestricted web access
 - No gambling
-- No alcohol, tobacco, or drug references
-- No sexual content
+- Alcohol references: Infrequent (the wine blessings in the siddur texts); no tobacco or drugs
+- No sexual content; mature or suggestive themes Infrequent (the taharah screens)
 - Religious content only
 - Medical/Treatment Information: Infrequent/Mild. The optional taharah tracker records menstrual-cycle related dates on the device; it gives no medical advice, diagnosis or treatment.
 
 Expected rating: the rating App Store Connect computes from its questionnaire, driven by the Medical/Treatment Information answer. Do not submit `4+`; take the rating it computes.
+
+Age rating as saved in App Store Connect on 2026-10-22 (the owner's approval), from Apple's seven-step questionnaire: no parental controls, age assurance, web access, user-generated content, social media, messaging or advertising; profanity, horror and every violence item none; alcohol, tobacco or drug references Infrequent (the wine blessings of Kiddush, Havdalah, Birkat Hamazon's cup and Sheva Berachot); medical or treatment information Infrequent and health or wellness topics No (the taharah tracker); mature or suggestive themes Infrequent (the taharah screens refer to marital separation periods), sexual content and graphic content none; simulated gambling, contests, gambling and loot boxes none; no override. Calculated rating 13+ in 172 countries or regions, with local equivalents (12+ in Brazil, separate ratings for Vietnam and Korea) and a global 12+ on operating systems earlier than version 26. Apple noted that the Lifestyle category keeps the app out of Afghanistan.
 
 ## App Privacy Answers
 
@@ -86,18 +122,13 @@ Expected rating: the rating App Store Connect computes from its questionnaire, d
 - Data collected: Identifiers, Device ID. expo-updates sends a random installation identifier (the EAS client id) with every update check, which Expo, a service provider, uses to count installs. Not linked to the user. Used for App Functionality and Analytics. Not used for tracking. The same answer as Play's Device or other IDs.
 - Not collected: location, health data (the taharah tracker keeps cycle-related dates on the device), usage data, User ID, purchases.
 - Tracking: none.
+- Entered in App Store Connect on 2026-10-22 exactly as above, with the Hebrew Privacy Policy URL https://jew-365.github.io/jew-365/privacy/; the English localization takes https://jew-365.github.io/jew-365/privacy/en/. The contact message is declared as Other User Content; Apple also offers Customer Support for data from a support request, which fits it as well.
 
 ## Screenshot Plan
 
-- Home (gold)
-- Home (dark)
-- Siddur tab
-- Reader
-- Schedule (day)
-- Mitzvah detail
-- Settings
+Phone screenshots in use, 1206x2622 (iPhone 6.3 inch) from the web build, uploaded to the Hebrew version page on 2026-10-22, in the same order as Google Play: Home, Siddur tab, Reader, History, Settings. They were taken on 2026-10-22 in headless Edge at a 402x874 viewport with a device scale of 3, Hebrew, the gold palette, a seeded 30-day history, and the clock set to 19:10 in Jerusalem so the evening prayer is current; the web build's notification-permission banner is hidden, as on a device that granted it. The mitzvah detail screen is left out because the web build renders its switches broken. Local copies: `Downloads/jew365-appstore-assets/iphone-6.3` (a 1320x2868 set made first is in `iphone-6.9`, unused).
 
 Sizes (Apple scales down from the largest of each family):
 
-- 6.9 inch iPhone — 1320x2868
+- iPhone with Dynamic Island (medium display), the one iPhone slot App Store Connect asks for since 2026: 1206x2622 or 1179x2556 (6.3 or 6.1 inch); it is used for every iPhone size and localization unless Media Manager overrides it.
 - No iPad screenshots: `supportsTablet` is false in [../app.json](../app.json) (the owner's call, 2026-10-22), so the app is iPhone only and an iPad runs it in iPhone compatibility mode. Turning it on is a native build plus 13 inch iPad screenshots (2064x2752) and `ios.requireFullScreen`, since the app is portrait only; once a version with iPad support ships, the support cannot be removed.
